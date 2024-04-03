@@ -5,8 +5,8 @@ import multer from 'multer';
 // Configure AWS SDK
 AWS.config.update({
   region: process.env.Aws_region, // Replace with your region
-  accessKeyId: process.env.Aws_region, // Replace with your AWS Access Key ID
-  secretAccessKey: process.env.Aws_region, // Replace with your AWS Secret Access Key
+  accessKeyId: process.env.Aws_accessKeyId, // Replace with your AWS Access Key ID
+  secretAccessKey: process.env.Aws_secretAccessKey, // Replace with your AWS Secret Access Key
 });
 
 // Create S3 instance
