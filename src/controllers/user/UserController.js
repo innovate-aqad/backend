@@ -12,6 +12,8 @@ import jwt from "jsonwebtoken";
 import { environmentVars } from "../../config/environmentVar.js";
 import UserModel from "../../models/UserModel.js";
 import { storeImageMetadata, uploadImageToS3 } from "../../helpers/s3.js";
+import UploadsDocumentModel from "../../models/UploadsDocumentModel.js";
+import docClient from "../../config/dbConfig.js";
 // import axios from "axios";
 
 const options = {
@@ -311,23 +313,19 @@ class UserController {
       const filePath = req.file.path;
 
       const imageUrl = await uploadImageToS3(fileName, filePath);
-      await storeImageMetadata(fileName, imageUrl);
+      // await storeImageMetadata(fileName, imageUrl);
 
-      res
-        .status(200)
-        .json({
-          message: "File uploaded successfully",
-          image: imageUrl,
-          status: 201,
-        });
+      res.status(200).json({
+        message: "File uploaded successfully",
+        image: imageUrl,
+        status: 201,
+      });
     } catch (err) {
-      res
-        .status(500)
-        .json({
-          message: "Error uploading file",
-          error: err.message,
-          status: 404,
-        });
+      res.status(500).json({
+        message: "Error uploading file",
+        error: err.message,
+        status: 404,
+      });
     }
   }
 
@@ -351,15 +349,10 @@ class UserController {
     }
   }
 
-
-  
-
-
   // Customer API
 
   async customerAddNew(req, res) {
-
-    console.log(req,"res==============>");
+    console.log(req, "res==============>");
     try {
       let { error } = registerSchema.validate(req?.body, options);
 
@@ -394,11 +387,63 @@ class UserController {
     }
   }
 
-
   async getUserAccountInfo(req, res) {
     UserServicesObj.getUserAccountInfo(req, res);
   }
 
+  // uploaded document api
+  async uploadsDocument(req, res) {
+    try {
+      const fileName = req.file.originalname;
+      const filePath = req.file.path;
+      const typeOfUser = req.body.typeOfUser;
+      const typeOfDocument = req.body.typeOfDocument;
+      const nameOfDocument = req.body.nameOfDocument;
+      const id = req.body.id;
+
+      const imageUrl = await uploadImageToS3(fileName, filePath);
+      // await storeImageMetadata(fileName, imageUrl);
+
+      const params = {
+        TableName: "documents",
+        Item: {
+        id: parseInt(id),
+        typeOfUser: typeOfUser,
+        typeOfDocument: typeOfDocument,
+        nameOfDocument: nameOfDocument,
+        choose_documents: imageUrl,
+        },
+      };
+
+      console.log(params, "paramsparams");
+
+      docClient.put(params, (err, data) => {
+        if (err) {
+          console.error("Error inserting item:", err);
+        } else {
+          console.log("Successfully inserted item:", data);
+        }
+      });
+
+      console.log("llllllllllllllllllll====>");
+      // UploadsDocumentModel
+      const documentsData = await UploadsDocumentModel.create(params, {
+        raw: true,
+      });
+      // console.log(documentsData, "success");
+      res.json({
+        message: "documents uploaded successfully",
+        data: documentsData,
+        status: 200,
+      });
+    } catch (err) {
+      res.status(500).json({
+        message: "Error uploading documents",
+        error: err.message,
+        status: 404,
+      });
+    }
+  }
 }
 
 const UserControllerObj = new UserController();
