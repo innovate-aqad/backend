@@ -39,7 +39,7 @@ export const uploadImageToS3 = async (fileName, filePath) => {
   }
 };
 
-// Function to store metadata in DynamoDB
+// Function to store metadata in DynamoDB//
 export const storeImageMetadata = async (fileName, imageUrl) => {
   const params = {
     TableName: 'documents',
