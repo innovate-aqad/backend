@@ -61,6 +61,12 @@ UserRoutes.post("/send_email", UserControllerObj.sendEmailUserToAnother);
 // Customer All API
 UserRoutes.post("/customer_add", UserControllerObj.customerAddNew);
 
+// Uploads documents start
+UserRoutes.post("/uploads_document",upload.single("image"), UserControllerObj.uploadsDocument);
+// vendor on boarding api 
+UserRoutes.post("/vendor_on_board", UserControllerObj.vendorOnBoarding);
+
+
 
 export default UserRoutes;
 
