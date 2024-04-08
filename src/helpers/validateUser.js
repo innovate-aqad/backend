@@ -48,18 +48,11 @@ export const registerSchema = Joi.object({
     })
     .label("Phone Number"),
 
-  country: Joi.string()
-    .trim()
-    .required("Selecting Country Code is Required"),
+  country: Joi.string().trim().required("Selecting Country Code is Required"),
 });
 
 export const registerAdminSchema = Joi.object({
-  name: Joi.string()
-    .min(3)
-    .max(25)
-    .trim()
-    .required()
-    .label("Full Name"),
+  name: Joi.string().min(3).max(25).trim().required().label("Full Name"),
   email: Joi.string()
     .trim()
     .email({ tlds: { allow: false } })
@@ -71,9 +64,7 @@ export const registerAdminSchema = Joi.object({
   //   .required()
   //   .min(10)
   //   .label("Phone Number"),
-  country: Joi.string()
-    .trim()
-    .required("Selecting Country Code is Required"),
+  country: Joi.string().trim().required("Selecting Country Code is Required"),
 });
 
 export const forgotPasswordSchema = Joi.object({
@@ -95,6 +86,7 @@ export const resetPasswordSchema = Joi.object({
         "Password must contain at least one digit, one special character, one lowercase letter, and one uppercase letter.",
     }),
 });
+
 export const otpSchema = Joi.object({
   email: Joi.string()
     .trim()
@@ -136,31 +128,16 @@ export const loginWithOtpSchema = Joi.object({
 });
 
 export const statusChangeSchema = Joi.object({
-  id: Joi.number()
-    .required()
-    .label("id"),
-  status: Joi.string()
-    .required()
-    .valid("active", "inactive")
-    .label("status"),
+  id: Joi.number().required().label("id"),
+  status: Joi.string().required().valid("active", "inactive").label("status"),
 });
 export const editAdminSchema = Joi.object({
-  id: Joi.number()
-    .required()
-    .label("id"),
-  name: Joi.string()
-    .min(3)
-    .required()
-    .label("name"),
+  id: Joi.number().required().label("id"),
+  name: Joi.string().min(3).required().label("name"),
 });
 
 export const updateUserSchema = Joi.object({
-  name: Joi.string()
-    .min(3)
-    .max(25)
-    .allow("", null)
-    .trim()
-    .label("Full Name"),
+  name: Joi.string().min(3).max(25).allow("", null).trim().label("Full Name"),
 
   phone: Joi.string()
     .custom((value, helpers) => {
@@ -195,7 +172,6 @@ export const generateAccessTokenForAdmin = (payload) => {
   let token = jwt.sign(payload, environmentVars.jwtSecretAdmin);
   return token;
 };
-
 
 export const customerSchema = Joi.object({
   name: Joi.string()
@@ -239,7 +215,22 @@ export const customerSchema = Joi.object({
     })
     .label("Phone Number"),
 
-  country: Joi.string()
+  country: Joi.string().trim().required("Selecting Country Code is Required"),
+});
+
+export const userRegisterValidation = Joi.object({
+  email: Joi.string()
     .trim()
-    .required("Selecting Country Code is Required"),
+    .email({ tlds: { allow: false } })
+    .required()
+    .label("email"),
+  password: Joi.string()
+    .min(6)
+    .regex(/^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[a-z])(?=.*[A-Z]).{6,}$/)
+    .required()
+    .label("password")
+    .messages({
+      "string.pattern.base":
+        "Password must contain at least one digit, one special character, one lowercase letter, and one uppercase letter.",
+    }),
 });

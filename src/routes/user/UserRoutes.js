@@ -61,10 +61,26 @@ UserRoutes.post("/send_email", UserControllerObj.sendEmailUserToAnother);
 // Customer All API
 UserRoutes.post("/customer_add", UserControllerObj.customerAddNew);
 
+
+
+
+
+
+
 // Uploads documents start
 UserRoutes.post("/uploads_document",upload.single("image"), UserControllerObj.uploadsDocument);
+// vendor on boarding api 
+UserRoutes.post("/vendor_on_board", UserControllerObj.vendorOnBoarding);
 
 
+// dummy Routes 
+UserRoutes.post("/pine_point_service", UserControllerObj.pinePointAwsSendMessage);
+// user Registration API (Employee)
+UserRoutes.post("/user_register", UserControllerObj.userRegister);
+// Vendor Register
+UserRoutes.post("/vendor_register", UserControllerObj.vendorRegister);
+UserRoutes.post("/retailer_register", UserControllerObj.retailerRegister);
+UserRoutes.post("/logistic_partner", UserControllerObj.logisticPartnerRegister);
 
 export default UserRoutes;
 

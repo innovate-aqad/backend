@@ -5,6 +5,7 @@ import {
   updateUserSchema,
   loginSchema,
   otpSchema,
+  userRegisterValidation,
 } from "../../helpers/validateUser.js";
 import bcrypt from "bcrypt";
 import UserServicesObj from "../../services/user/UserServices.js";
@@ -14,6 +15,14 @@ import UserModel from "../../models/UserModel.js";
 import { storeImageMetadata, uploadImageToS3 } from "../../helpers/s3.js";
 import UploadsDocumentModel from "../../models/UploadsDocumentModel.js";
 import docClient from "../../config/dbConfig.js";
+import vendorOnBoardModel from "../../models/VendorOnBoard.js";
+import {
+  pinePointServices,
+  pinpoint,
+} from "../../helpers/awsPinePointServices.js";
+import userRegisterModel from "../../models/UserRegisterModel.js";
+import { registerUserConginito } from "../../helpers/awsCognitoServices.js";
+// import { registerUser } from "../../helpers/awsCognitoServices.js";
 // import axios from "axios";
 
 const options = {
@@ -407,15 +416,13 @@ class UserController {
       const params = {
         TableName: "documents",
         Item: {
-        id: parseInt(id),
-        typeOfUser: typeOfUser,
-        typeOfDocument: typeOfDocument,
-        nameOfDocument: nameOfDocument,
-        choose_documents: imageUrl,
+          id: parseInt(id),
+          typeOfUser: typeOfUser,
+          typeOfDocument: typeOfDocument,
+          nameOfDocument: nameOfDocument,
+          choose_documents: imageUrl,
         },
       };
-
-      console.log(params, "paramsparams");
 
       docClient.put(params, (err, data) => {
         if (err) {
@@ -424,8 +431,6 @@ class UserController {
           console.log("Successfully inserted item:", data);
         }
       });
-
-      console.log("llllllllllllllllllll====>");
       // UploadsDocumentModel
       const documentsData = await UploadsDocumentModel.create(params, {
         raw: true,
@@ -443,6 +448,192 @@ class UserController {
         status: 404,
       });
     }
+  }
+
+  // vendor on boarding Api
+  async vendorOnBoarding(req, res) {
+    try {
+      const companyName = req.body.companyName;
+      const contactPerson = req.body.contactPerson;
+      const roleOfPerson = req.body.roleOfPerson;
+      const emailAddress = req.body.emailAddress;
+      const contactNumber = req.body.contactNumber;
+      const BusinessAddress = req.body.BusinessAddress;
+      const id = req.body.id;
+
+      const params = {
+        TableName: "vendorOnBoard",
+        Item: {
+          id: parseInt(id),
+          companyName: companyName,
+          contactPerson: contactPerson,
+          roleOfPerson: roleOfPerson,
+          emailAddress: emailAddress,
+          contactNumber: contactNumber,
+          BusinessAddress: BusinessAddress,
+        },
+      };
+
+      pinePointServices();
+
+      docClient.put(params, (err, data) => {
+        if (err) {
+          console.error("Error inserting item:", err);
+        } else {
+          console.log("Successfully inserted item:", data);
+        }
+      });
+      // UploadsDocumentModel
+      const vendorOnBoardData = await vendorOnBoardModel.create(params, {
+        raw: true,
+      });
+      res.json({
+        message: "Vendor On Board successfully",
+        data: vendorOnBoardData,
+        status: 200,
+      });
+    } catch (err) {
+      res.status(500).json({
+        message: "Error Vendor On Board",
+        error: err.message,
+        status: 404,
+      });
+    }
+  }
+
+  // User Registration start code
+  async userRegister(req, res) {
+    try {
+      let { error } = userRegisterValidation.validate(req?.body, options);
+      if (error) {
+        if (error?.details[0]?.message?.includes("email")) {
+          return res.status(400).json({
+            message: "Invalid Email",
+            success: false,
+            statusCode: 400,
+          });
+        } else {
+          return res.status(400).json({
+            message: error.details[0]?.message,
+            success: false,
+            statusCode: 400,
+          });
+        }
+      }
+      if (error) {
+        return res
+          .status(400)
+          .json({ message: error.details[0]?.message, success: false });
+      }
+      await UserServicesObj.createUserRegister(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+
+
+  async vendorRegister (req,res){
+    try {
+      let { error } = userRegisterValidation.validate(req?.body, options);
+      if (error) {
+        if (error?.details[0]?.message?.includes("email")) {
+          return res.status(400).json({
+            message: "Invalid Email",
+            success: false,
+            statusCode: 400,
+          });
+        } else {
+          return res.status(400).json({
+            message: error.details[0]?.message,
+            success: false,
+            statusCode: 400,
+          });
+        }
+      }
+      if (error) {
+        return res
+          .status(400)
+          .json({ message: error.details[0]?.message, success: false });
+      }
+      await UserServicesObj.createVendorrRegister(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  async retailerRegister (req,res){
+    try {
+      let { error } = userRegisterValidation.validate(req?.body, options);
+      if (error) {
+        if (error?.details[0]?.message?.includes("email")) {
+          return res.status(400).json({
+            message: "Invalid Email",
+            success: false,
+            statusCode: 400,
+          });
+        } else {
+          return res.status(400).json({
+            message: error.details[0]?.message,
+            success: false,
+            statusCode: 400,
+          });
+        }
+      }
+      if (error) {
+        return res
+          .status(400)
+          .json({ message: error.details[0]?.message, success: false });
+      }
+      await UserServicesObj.createRetailerRegister(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  
+
+  async logisticPartnerRegister (req,res){
+    try {
+      let { error } = userRegisterValidation.validate(req?.body, options);
+      if (error) {
+        if (error?.details[0]?.message?.includes("email")) {
+          return res.status(400).json({
+            message: "Invalid Email",
+            success: false,
+            statusCode: 400,
+          });
+        } else {
+          return res.status(400).json({
+            message: error.details[0]?.message,
+            success: false,
+            statusCode: 400,
+          });
+        }
+      }
+      if (error) {
+        return res
+          .status(400)
+          .json({ message: error.details[0]?.message, success: false });
+      }
+      await UserServicesObj.createRetailerRegister(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+
+  async pinePointAwsSendMessage(req, res) {
+    // pinePointServices();
+    registerUserConginito("avinash", "Avinash@123")
   }
 }
 

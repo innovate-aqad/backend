@@ -20,6 +20,10 @@ import Sequence from "../../models/SequenceModel.js";
 import { v4 as uuidv4 } from "uuid";
 
 import formidable from "formidable";
+import userRegisterModel from "../../models/UserRegisterModel.js";
+import vendorRegisterModel from "../../models/VendorRegisterModel.js";
+import retailerRegisterModel from "../../models/RetailerRegisterModel.js";
+import logisticPartnerRegisterModel from "../../models/LogisticPartnerModel.js";
 
 async function getNextSequenceValue(sequenceName) {
   let sequenceDoc = await Sequence.get({ sequenceName });
@@ -393,11 +397,12 @@ class UserServices {
       //   .attributes(["email", "id", "name"])
       //   .exec();
 
-      let findEmailExist = await UserModel.scan().where('email').eq(email).exec();
+      let findEmailExist = await UserModel.scan()
+        .where("email")
+        .eq(email)
+        .exec();
 
-
-
-        console.log(findEmailExist,"kkkkkkkkkkkkkk===>");
+      console.log(findEmailExist, "kkkkkkkkkkkkkk===>");
 
       if (!findEmailExist) {
         return res.status(404).json({
@@ -431,6 +436,168 @@ class UserServices {
       }
     } catch (err) {
       // console.log(err);
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  async createUserRegister(req, res) {
+    try {
+      // let id = req.body.id;
+      let email = req.body.email;
+      let password = req.body.password;
+      let salt = environmentVars.salt;
+      let hashPassword = await bcrypt.hash(`${password}`, `${salt}`);
+      const findById = await (await userRegisterModel.scan().exec()).length;
+      const params = {
+        TableName: "userRegister",
+        Item: {
+          id: Number(findById+1),
+          email: email,
+          password: hashPassword,
+        },
+      };
+
+      console.log(params, "params");
+
+      let findEmailExist = await userRegisterModel
+        .scan()
+        .where("email")
+        .eq(email)
+        .exec();
+
+      if (findEmailExist.count > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exist!",
+          statusCode: 400,
+        });
+      }
+      docClient.put(params, (err, data) => {
+        if (err) {
+          console.error("Error inserting item:", err);
+        } else {
+          console.log("Successfully inserted item:", data);
+        }
+      });
+      const userData = await userRegisterModel.create(params, { raw: true });
+      console.log("userData:", userData);
+      return res.json({
+        success: true,
+        status_code: 201,
+        data: userData,
+        message: "User Register Successfully",
+      });
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  async createVendorrRegister(req,res){
+    try {
+      // let id = req.body.id;
+      let email = req.body.email;
+      let password = req.body.password;
+      let salt = environmentVars.salt;
+      let hashPassword = await bcrypt.hash(`${password}`, `${salt}`);
+      const findById = await (await vendorRegisterModel.scan().exec()).length;
+      const params = {
+        TableName: "vendorRegister",
+        Item: {
+          id: Number(findById+1),
+          email: email,
+          password: hashPassword,
+        },
+      };
+
+      console.log(params, "params");
+
+      let findEmailExist = await vendorRegisterModel
+        .scan()
+        .where("email")
+        .eq(email)
+        .exec();
+
+      if (findEmailExist.count > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exist!",
+          statusCode: 400,
+        });
+      }
+      docClient.put(params, (err, data) => {
+        if (err) {
+          console.error("Error inserting item:", err);
+        } else {
+          console.log("Successfully inserted item:", data);
+        }
+      });
+      const userData = await vendorRegisterModel.create(params, { raw: true });
+      console.log("userData:", userData);
+      return res.json({
+        success: true,
+        status_code: 201,
+        data: userData,
+        message: "Vendor Register Successfully",
+      });
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  async createRetailerRegister(req,res){
+    try {
+      // let id = req.body.id;
+      let email = req.body.email;
+      let password = req.body.password;
+      let salt = environmentVars.salt;
+      let hashPassword = await bcrypt.hash(`${password}`, `${salt}`);
+      const findById = await (await logisticPartnerRegisterModel.scan().exec()).length;
+      const params = {
+        TableName: "logisticPartnerRegister",
+        Item: {
+          id: Number(findById+1),
+          email: email,
+          password: hashPassword,
+        },
+      };
+
+      console.log(params, "params");
+
+      let findEmailExist = await logisticPartnerRegisterModel
+        .scan()
+        .where("email")
+        .eq(email)
+        .exec();
+
+      if (findEmailExist.count > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exist!",
+          statusCode: 400,
+        });
+      }
+      docClient.put(params, (err, data) => {
+        if (err) {
+          console.error("Error inserting item:", err);
+        } else {
+          console.log("Successfully inserted item:", data);
+        }
+      });
+      const userData = await logisticPartnerRegisterModel.create(params, { raw: true });
+      console.log("userData:", userData);
+      return res.json({
+        success: true,
+        status_code: 201,
+        data: userData,
+        message: "logistic Partner Register Successfully",
+      });
+    } catch (err) {
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
