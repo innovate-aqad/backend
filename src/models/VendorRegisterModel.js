@@ -22,10 +22,20 @@ const vendorRegisterSchema = new dynamoose.Schema(
     name: {
       type: String,
       required: true,
+      validate: function(value) {
+        if (!value) {
+          throw new Error('name is required');
+        }
+      }
     },
     email: {
       type: String,
       required: true,
+      validate: function(value) {
+        if (!value) {
+          throw new Error('email is required');
+        }
+      }
     },
     email_otp: {
       type: Number,
@@ -34,6 +44,11 @@ const vendorRegisterSchema = new dynamoose.Schema(
     phone: {
       type: String,
       required: true,
+      validate: function(value) {
+        if (!value) {
+          throw new Error('phone is required');
+        }
+      }
     },
     phone_otp: {
       type: Number,
@@ -42,14 +57,29 @@ const vendorRegisterSchema = new dynamoose.Schema(
     company_name: {
       type: String,
       required: true,
+      validate: function(value) {
+        if (!value) {
+          throw new Error('company is required');
+        }
+      }
     },
     register_company_name: {
       type: String,
       required: true,
+      validate: function(value) {
+        if (!value) {
+          throw new Error('register company name is required');
+        }
+      }
     },
     company_phone_no: {
       type: String,
-      required: false,
+      required: true,
+      validate: function(value) {
+        if (!value) {
+          throw new Error('company phone number is required');
+        }
+      }
     },
     check_email: {
       type: Boolean,

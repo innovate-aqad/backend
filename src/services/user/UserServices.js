@@ -505,6 +505,7 @@ class UserServices {
   // company_phone_no
   async createVendorrRegister(req, res) {
     try {
+      let data = req.body;
       let role = req.body.role;
       let name = req.body.name;
       let email = req.body.email;
@@ -520,10 +521,36 @@ class UserServices {
       // console.log(otp,"getRandomNumber");
       const phoneOTP = Math.floor(10000 + Math.random() * 90000);
       const findById = await (await vendorRegisterModel.scan().exec()).length;
+      console.log(findById, "findByIdfindByIdfindById");
+
+      if (!data.name) {
+        return res.status(400).json({ error: "name is required" });
+      }
+      if (!data.email) {
+        return res.status(400).json({ error: "email is required" });
+      }
+      if (!data.phone) {
+        return res.status(400).json({ error: "phone number is required" });
+      }
+      if (!data.role) {
+        return res.status(400).json({ error: "role is required" });
+      }
+      if (!data.company_phone_no) {
+        return res.status(400).json({ error: "company phone no. is required" });
+      }
+      if (!data.company_name) {
+        return res.status(400).json({ error: "company name is required" });
+      }
+      if (!data.register_company_name) {
+        return res
+          .status(400)
+          .json({ error: "Register company name is required" });
+      }
+
       const params = {
         TableName: "vendorRegister",
         Item: {
-          id: Number(findById + 1),
+          id: findById != 0 ? Number(findById)+1 : 1,
           role: role,
           name: name,
           email: email,
@@ -571,7 +598,6 @@ class UserServices {
         }
       });
       const userData = await vendorRegisterModel.create(params, { raw: true });
-      console.log("userData:", userData);
       return res.json({
         success: true,
         status_code: 201,
@@ -614,11 +640,11 @@ class UserServices {
       }
       console.log("trueueeuueeuue");
       const user = await vendorRegisterModel.update(
-        { id:findEmailExist?.[0]?.id },
+        { id: findEmailExist?.[0]?.id },
         { check_email: true }
       );
 
-      console.log(user,"kkkkkkkk");
+      console.log(user, "kkkkkkkk");
 
       if (Number(findEmailExist?.[0]?.email_otp) === Number(email_otp)) {
         return res.status(400).json({
@@ -669,7 +695,7 @@ class UserServices {
 
       if (Number(findphoneExist?.[0]?.phone_otp) === Number(phone_otp)) {
         const user = await vendorRegisterModel.update(
-          { id:findphoneExist?.[0]?.id },
+          { id: findphoneExist?.[0]?.id },
           { check_phone: true }
         );
         return res.status(400).json({
