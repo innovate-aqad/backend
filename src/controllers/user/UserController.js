@@ -6,6 +6,8 @@ import {
   loginSchema,
   otpSchema,
   userRegisterValidation,
+  emailCheckVerify,
+  phoneCheckVerify,
 } from "../../helpers/validateUser.js";
 import bcrypt from "bcrypt";
 import UserServicesObj from "../../services/user/UserServices.js";
@@ -585,7 +587,77 @@ class UserController {
     }
   }
 
+  async verifyEmailVendor(req,res){
+    
+    try {
+      let { error } = emailCheckVerify.validate(req?.body, options);
+      if (error) {
+        if (error?.details[0]?.message?.includes("email")) {
+          return res.status(400).json({
+            message: "Invalid Email",
+            success: false,
+            statusCode: 400,
+          });
+        } else {
+          return res.status(400).json({
+            message: error.details[0]?.message,
+            success: false,
+            statusCode: 400,
+          });
+        }
+      }
+     
 
+      if (error) {
+        return res
+          .status(400)
+          .json({ message: error.details[0]?.message, success: false });
+      }
+      await UserServicesObj.verifyEmailVendorService(req, res);
+
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  // verifyPhoneVendor
+
+  async verifyPhoneVendor(req,res){
+    
+    try {
+      let { error } = phoneCheckVerify.validate(req?.body, options);
+      if (error) {
+        if (error?.details[0]?.message?.includes("phone")) {
+          return res.status(400).json({
+            message: "Invalid Phone",
+            success: false,
+            statusCode: 400,
+          });
+        } else {
+          return res.status(400).json({
+            message: error.details[0]?.message,
+            success: false,
+            statusCode: 400,
+          });
+        }
+      }
+     
+
+      if (error) {
+        return res
+          .status(400)
+          .json({ message: error.details[0]?.message, success: false });
+      }
+      await UserServicesObj.verifyPhoneVendorService(req, res);
+
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
 
   
 

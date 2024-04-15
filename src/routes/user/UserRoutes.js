@@ -79,7 +79,10 @@ UserRoutes.post("/pine_point_service", UserControllerObj.pinePointAwsSendMessage
 UserRoutes.post("/user_register", UserControllerObj.userRegister);
 // Vendor Register
 UserRoutes.post("/vendor_register", UserControllerObj.vendorRegister);
+UserRoutes.post("/email_varify_vendor", UserControllerObj.verifyEmailVendor);
+UserRoutes.post("/phone_varify_vendor", UserControllerObj.verifyPhoneVendor);
 
+// End Vendor Register
 
 
 

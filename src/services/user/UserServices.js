@@ -584,6 +584,124 @@ class UserServices {
     }
   }
 
+  // verifyEmailVendorService
+
+  async verifyEmailVendorService(req,res){
+    try {
+      let email = req.body.email;
+      let email_otp = req.body.email_otp;
+      let findEmailExist = await vendorRegisterModel
+        .scan()
+        .where("email")
+        .eq(email)
+        .exec();
+        if(!email){
+          return res.status(400).json({
+            success: false,
+            message: "Email is Required",
+            statusCode: 400,
+          });
+        }
+        if(!email_otp){
+          return res.status(400).json({
+            success: false,
+            message: "OTP is Required",
+            statusCode: 400,
+          });
+        }
+
+      if (Number(findEmailExist?.[0]?.email_otp) === Number(email_otp)) {
+        return res.status(400).json({
+          success: true,
+          message: "Email Verify Successfully",
+          statusCode: 201,
+        });
+      }
+      else{
+        return res.status(400).json({
+          success: false,
+          message: "Wrong OTP",
+          statusCode: 400,
+        });
+      }
+      
+      // return res.json({
+      //   success: true,
+      //   status_code: 201,
+      //   data: userData,
+      //   message: "OTP Send Your Email and Phone No. to verify frather step.",
+      // });
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  async verifyPhoneVendorService(req,res){
+    try {
+      let phone = req.body.phone;
+      let phone_otp = req.body.phone_otp;
+      let findphoneExist = await vendorRegisterModel
+        .scan()
+        .where("phone")
+        .eq(phone)
+        .exec();
+
+      console.log(findphoneExist);
+        if(!phone){
+          return res.status(400).json({
+            success: false,
+            message: "phone is Required",
+            statusCode: 400,
+          });
+        }
+        if(!phone_otp){
+          return res.status(400).json({
+            success: false,
+            message: "OTP is Required",
+            statusCode: 400,
+          });
+        }
+
+      if (Number(findphoneExist?.[0]?.phone_otp) === Number(phone_otp)) {
+        return res.status(400).json({
+          success: true,
+          message: "Phone Verify Successfully",
+          statusCode: 201,
+        });
+      }
+      else{
+        return res.status(400).json({
+          success: false,
+          message: "Wrong OTP",
+          statusCode: 400,
+        });
+      }
+      
+      // return res.json({
+      //   success: true,
+      //   status_code: 201,
+      //   data: userData,
+      //   message: "OTP Send Your Email and Phone No. to verify frather step.",
+      // });
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
   async createRetailerRegister(req,res){
     try {
       // let id = req.body.id;

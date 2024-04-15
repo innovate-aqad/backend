@@ -233,3 +233,21 @@ export const userRegisterValidation = Joi.object({
       "any.required": "Invalid Phone number",
     })
 });
+
+export const emailCheckVerify = Joi.object({
+  email: Joi.string()
+    .trim()
+    .email({ tlds: { allow: false } })
+    .required()
+    .label("email"),
+});
+export const phoneCheckVerify = Joi.object({
+  phone: Joi.string()
+    .trim()
+    .required()
+    .min(10)
+    .max(17)
+    .messages({
+      "any.required": "Invalid Phone number",
+    })
+});
