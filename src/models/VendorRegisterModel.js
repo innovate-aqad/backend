@@ -8,16 +8,6 @@ AWS.config.update({
 
 dynamoose.aws.sdk = AWS;
 
-// role : "AQAD VENDOR"
-// Name: "",
-// Email
-// email_otp
-// phone_no.
-// phone_OTP
-// company_name
-// register_company_name
-// company_phone_no
-
 const vendorRegisterSchema = new dynamoose.Schema(
   {
     id: {
@@ -27,27 +17,27 @@ const vendorRegisterSchema = new dynamoose.Schema(
     role: {
       type: String,
       default: "AQAD VENDOR",
-      required:true
+      required: true,
     },
     name: {
       type: String,
-      required:true
+      required: true,
     },
     email: {
       type: String,
-      required:true
+      required: true,
     },
     email_otp: {
       type: Number,
-      required:true
+      required: true,
     },
     phone: {
       type: String,
-      required:true
+      required: true,
     },
     phone_otp: {
       type: Number,
-      required:true
+      required: true,
     },
     company_name: {
       type: String,
@@ -61,15 +51,27 @@ const vendorRegisterSchema = new dynamoose.Schema(
       type: String,
       required: false,
     },
+    check_email: {
+      type: Boolean,
+      default: false,
+    },
+    check_phone: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-const vendorRegisterModel = dynamoose.model("vendorRegister", vendorRegisterSchema, {
-  create: true,
-  throughput: "ON_DEMAND",
-});
+const vendorRegisterModel = dynamoose.model(
+  "vendorRegister",
+  vendorRegisterSchema,
+  {
+    create: true,
+    throughput: "ON_DEMAND",
+  }
+);
 
 export default vendorRegisterModel;

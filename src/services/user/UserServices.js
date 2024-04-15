@@ -457,7 +457,7 @@ class UserServices {
       const params = {
         TableName: "userRegister",
         Item: {
-          id: Number(findById+1),
+          id: Number(findById + 1),
           email: email,
           password: hashPassword,
         },
@@ -500,11 +500,10 @@ class UserServices {
     }
   }
 
-
-//   company_name
-// register_company_name
-// company_phone_no
-  async createVendorrRegister(req,res){
+  //   company_name
+  // register_company_name
+  // company_phone_no
+  async createVendorrRegister(req, res) {
     try {
       let role = req.body.role;
       let name = req.body.name;
@@ -515,7 +514,7 @@ class UserServices {
       let company_phone_no = req.body.company_phone_no;
       const otp = Math.floor(10000 + Math.random() * 90000);
       // sendEmailOtp(email,otp)
-      sendEmailOTP(req, res, email,otp);
+      sendEmailOTP(req, res, email, otp);
       // console.log(phone,"phone");
       // sendPhoneOTP(phone,otp)
       // console.log(otp,"getRandomNumber");
@@ -524,16 +523,18 @@ class UserServices {
       const params = {
         TableName: "vendorRegister",
         Item: {
-          id: Number(findById+1),
-          role:role,
+          id: Number(findById + 1),
+          role: role,
           name: name,
           email: email,
-          email_otp:otp,
+          email_otp: otp,
           phone: phone,
-          phone_otp:phoneOTP,
+          phone_otp: phoneOTP,
           company_name: company_name,
           register_company_name: register_company_name,
           company_phone_no: company_phone_no,
+          check_email: false,
+          check_phone: false,
         },
       };
 
@@ -586,51 +587,53 @@ class UserServices {
 
   // verifyEmailVendorService
 
-  async verifyEmailVendorService(req,res){
+  async verifyEmailVendorService(req, res) {
     try {
-      let email = req.body.email;
-      let email_otp = req.body.email_otp;
-      let findEmailExist = await vendorRegisterModel
+      var email = req.body.email;
+      var email_otp = req.body.email_otp;
+      var findEmailExist = await vendorRegisterModel
         .scan()
         .where("email")
         .eq(email)
         .exec();
-        if(!email){
-          return res.status(400).json({
-            success: false,
-            message: "Email is Required",
-            statusCode: 400,
-          });
-        }
-        if(!email_otp){
-          return res.status(400).json({
-            success: false,
-            message: "OTP is Required",
-            statusCode: 400,
-          });
-        }
+
+      console.log(findEmailExist, "findEmailExist");
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: "Email is Required",
+          statusCode: 400,
+        });
+      }
+      if (!email_otp) {
+        return res.status(400).json({
+          success: false,
+          message: "OTP is Required",
+          statusCode: 400,
+        });
+      }
+      console.log("trueueeuueeuue");
+      const user = await vendorRegisterModel.update(
+        { id:findEmailExist?.[0]?.id },
+        { check_email: true }
+      );
+
+      console.log(user,"kkkkkkkk");
 
       if (Number(findEmailExist?.[0]?.email_otp) === Number(email_otp)) {
         return res.status(400).json({
           success: true,
+          data: user,
           message: "Email Verify Successfully",
           statusCode: 201,
         });
-      }
-      else{
+      } else {
         return res.status(400).json({
           success: false,
           message: "Wrong OTP",
           statusCode: 400,
         });
       }
-      
-      // return res.json({
-      //   success: true,
-      //   status_code: 201,
-      //   data: userData,
-      //   message: "OTP Send Your Email and Phone No. to verify frather step.",
-      // });
     } catch (err) {
       return res
         .status(500)
@@ -638,7 +641,7 @@ class UserServices {
     }
   }
 
-  async verifyPhoneVendorService(req,res){
+  async verifyPhoneVendorService(req, res) {
     try {
       let phone = req.body.phone;
       let phone_otp = req.body.phone_otp;
@@ -649,36 +652,40 @@ class UserServices {
         .exec();
 
       console.log(findphoneExist);
-        if(!phone){
-          return res.status(400).json({
-            success: false,
-            message: "phone is Required",
-            statusCode: 400,
-          });
-        }
-        if(!phone_otp){
-          return res.status(400).json({
-            success: false,
-            message: "OTP is Required",
-            statusCode: 400,
-          });
-        }
+      if (!phone) {
+        return res.status(400).json({
+          success: false,
+          message: "phone is Required",
+          statusCode: 400,
+        });
+      }
+      if (!phone_otp) {
+        return res.status(400).json({
+          success: false,
+          message: "OTP is Required",
+          statusCode: 400,
+        });
+      }
 
       if (Number(findphoneExist?.[0]?.phone_otp) === Number(phone_otp)) {
+        const user = await vendorRegisterModel.update(
+          { id:findphoneExist?.[0]?.id },
+          { check_phone: true }
+        );
         return res.status(400).json({
           success: true,
+          data: user,
           message: "Phone Verify Successfully",
           statusCode: 201,
         });
-      }
-      else{
+      } else {
         return res.status(400).json({
           success: false,
           message: "Wrong OTP",
           statusCode: 400,
         });
       }
-      
+
       // return res.json({
       //   success: true,
       //   status_code: 201,
@@ -692,28 +699,20 @@ class UserServices {
     }
   }
 
-
-
-
-
-
-
-
-
-
-
-  async createRetailerRegister(req,res){
+  async createRetailerRegister(req, res) {
     try {
       // let id = req.body.id;
       let email = req.body.email;
       let password = req.body.password;
       let salt = environmentVars.salt;
       let hashPassword = await bcrypt.hash(`${password}`, `${salt}`);
-      const findById = await (await logisticPartnerRegisterModel.scan().exec()).length;
+      const findById = await (
+        await logisticPartnerRegisterModel.scan().exec()
+      ).length;
       const params = {
         TableName: "logisticPartnerRegister",
         Item: {
-          id: Number(findById+1),
+          id: Number(findById + 1),
           email: email,
           password: hashPassword,
         },
@@ -741,7 +740,9 @@ class UserServices {
           console.log("Successfully inserted item:", data);
         }
       });
-      const userData = await logisticPartnerRegisterModel.create(params, { raw: true });
+      const userData = await logisticPartnerRegisterModel.create(params, {
+        raw: true,
+      });
       console.log("userData:", userData);
       return res.json({
         success: true,
