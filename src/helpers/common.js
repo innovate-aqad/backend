@@ -32,6 +32,13 @@ let transporter2 = nodemailer.createTransport({
   },
 });
 
+let transporter5 = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "akmaurya31@gmail.com",
+    pass: 'bigo msvn ymdz vali',
+  },
+});
 // export async function sendPasswordViaEmail(res, data) {
 //   try {
 //     // console.log(data, "AAAAAAAAAAAAAAAAAAAAAAAAAA");
@@ -1299,6 +1306,100 @@ export async function sendEmailUser(req, res, obj) {
     });
     try {
       await transporter.sendMail(mailOptions);
+    } catch (err) {
+      console.log(err, "error occur");
+    }
+    return;
+  } catch (error) {
+    console.log(error);
+    return res.json({
+      status: "Failed",
+      message: error.message,
+    });
+  }
+}
+
+
+
+
+
+
+export async function sendEmailOTP(req, res, email,otp) {
+  try {
+  
+    const mailOptions = {
+      from: "akmaurya31@gmail.com",
+      to: email,
+      subject: "Email OTP send successfully",
+      html: `<!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Email OTP</title>
+          <style>
+              body {
+                  font-family: 'Arial', sans-serif;
+                  background: url('https://example.com/your-background-image.jpg') center/cover no-repeat;
+                  margin: 0;
+                  padding: 0;
+                  height: 100vh;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+              }
+              .container {
+                  max-width: 600px;
+                  background-color: rgba(255, 255, 255, 0.9);
+                  padding: 20px;
+                  border-radius: 10px;
+                  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+              }
+              h2 {
+                  color: #007BFF;
+              }
+              p {
+                  color: #555;
+                  line-height: 1.6;
+                  margin-bottom: 15px;
+              }
+              a {
+                  display: inline-block;
+                  padding: 12px 24px;
+                  margin-top: 20px;
+                  text-decoration: none;
+                  color: #ffffff;
+                  background-color: #007BFF;
+                  border-radius: 5px;
+                  transition: background-color 0.3s ease;
+              }
+              a:hover {
+                  background-color: #0056b3;
+              }
+              .nn{
+                color: #FFFFFF;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <h2>Email OTP</h2>
+              <p>Dear ${email} User,</p>
+               <p>It seems that you've send email and verify email, but don't worry, we've got you covered!</p>
+               <p>Email OTP, otp is ${otp}</p>
+
+          </div>
+      </body>
+      </html>
+      `,
+    };
+    // res.status(200).json({
+    //   success: true,
+    //   statusCode: 200,
+    //   message: "OTP Send Sucecessfully",
+    // });
+    try {
+      await transporter5.sendMail(mailOptions);
     } catch (err) {
       console.log(err, "error occur");
     }

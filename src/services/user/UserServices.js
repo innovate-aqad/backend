@@ -9,6 +9,7 @@ import {
   forgotPasswordEmail,
   encryptStringWithKey,
   sendEmailUser,
+  sendEmailOTP,
 } from "../../helpers/common.js";
 import { Op, where } from "sequelize";
 // import userOtpModel from "../../models/userOtpModel.js";
@@ -24,6 +25,9 @@ import userRegisterModel from "../../models/UserRegisterModel.js";
 import vendorRegisterModel from "../../models/VendorRegisterModel.js";
 import retailerRegisterModel from "../../models/RetailerRegisterModel.js";
 import logisticPartnerRegisterModel from "../../models/LogisticPartnerModel.js";
+import { log } from "console";
+import { vendorSendEmail } from "../../helpers/awsCognitoServices.js";
+import { sendEmailOtp, sendPhoneOTP } from "../../helpers/aswSesServices.js";
 
 async function getNextSequenceValue(sequenceName) {
   let sequenceDoc = await Sequence.get({ sequenceName });
@@ -496,28 +500,51 @@ class UserServices {
     }
   }
 
+
+//   company_name
+// register_company_name
+// company_phone_no
   async createVendorrRegister(req,res){
     try {
-      // let id = req.body.id;
+      let role = req.body.role;
+      let name = req.body.name;
       let email = req.body.email;
-      let password = req.body.password;
-      let salt = environmentVars.salt;
-      let hashPassword = await bcrypt.hash(`${password}`, `${salt}`);
+      let phone = req.body.phone;
+      let company_name = req.body.company_name;
+      let register_company_name = req.body.register_company_name;
+      let company_phone_no = req.body.company_phone_no;
+      const otp = Math.floor(10000 + Math.random() * 90000);
+      // sendEmailOtp(email,otp)
+      sendEmailOTP(req, res, email,otp);
+      // console.log(phone,"phone");
+      // sendPhoneOTP(phone,otp)
+      // console.log(otp,"getRandomNumber");
+      const phoneOTP = Math.floor(10000 + Math.random() * 90000);
       const findById = await (await vendorRegisterModel.scan().exec()).length;
       const params = {
         TableName: "vendorRegister",
         Item: {
           id: Number(findById+1),
+          role:role,
+          name: name,
           email: email,
-          password: hashPassword,
+          email_otp:otp,
+          phone: phone,
+          phone_otp:phoneOTP,
+          company_name: company_name,
+          register_company_name: register_company_name,
+          company_phone_no: company_phone_no,
         },
       };
-
-      console.log(params, "params");
 
       let findEmailExist = await vendorRegisterModel
         .scan()
         .where("email")
+        .eq(email)
+        .exec();
+      let findPhoneExist = await vendorRegisterModel
+        .scan()
+        .where("phone")
         .eq(email)
         .exec();
 
@@ -525,6 +552,13 @@ class UserServices {
         return res.status(400).json({
           success: false,
           message: "Email already exist!",
+          statusCode: 400,
+        });
+      }
+      if (findPhoneExist.count > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Phone Number already exist!",
           statusCode: 400,
         });
       }
@@ -541,7 +575,7 @@ class UserServices {
         success: true,
         status_code: 201,
         data: userData,
-        message: "Vendor Register Successfully",
+        message: "OTP Send Your Email and Phone No. to verify frather step.",
       });
     } catch (err) {
       return res

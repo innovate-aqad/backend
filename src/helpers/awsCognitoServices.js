@@ -1,4 +1,4 @@
-// const AWS = require("aws-sdk");
+import AmazonCognitoIdentity from "amazon-cognito-identity-js";
 import AWS from "aws-sdk";
 
 // Configure AWS SDK
@@ -9,30 +9,54 @@ AWS.config.update({
 });
 
 // // Create a new CognitoIdentityServiceProvider object
-// const cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
+const cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
 
-// // Function to register a new user
-// export function registerUserConginito(username, password){
-//   const params = {
-//     ClientId: "44r5rj6be272c8m2dtgp2vovrm", // Your client id from AWS Cognito
-//     Username: username,
-//     Password: password,
-//     UserAttributes: [
-//       {
-//         Name: "email",
-//         Value: username,
-//       },
-//     ],
-//   };
+export function registerUserConginito(username, password) {
+  var poolData = {
+    UserPoolId: "me-central-1_fAyC1sK9I",
+    ClientId: "1hvv0kepvqqapp62ac06t46ffu",
+  };
 
-//   cognitoIdentityServiceProvider.signUp(params, function (err, data) {
-//     if (err) {
-//       console.error("Error registering user:", err);
-//     } else {
-//       console.log("User registered successfully:", data);
-//     }
-//   });
-// }
+  var userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+
+  console.log(userPool, "userrrrrrrr");
+  var attributeList = [];
+
+  var dataEmail = {
+    Name: "email",
+    Value: "avinash2@gmail.com",
+  };
+  var dataPhone = {
+    Name: "phone_number",
+    Value: "+917355049718",
+  };
+  // var dataGender = {
+  //   Name: "gender",
+  //   Value: 'm',
+  // };
+
+  var attributeEmail = new AmazonCognitoIdentity.CognitoUserAttribute(
+    dataEmail
+  );
+
+  //   console.log(attributeEmail,"aaaaaaaaaaaaaaaaaaa");
+  attributeList.push(attributeEmail);
+  attributeList.push(dataPhone);
+  // attributeList.push(dataGender);
+  userPool.signUp(
+    "avinash2",
+    "Avinash@1234",
+    attributeList,
+    null,
+    function (err, result) {
+      if (err) {
+        console.error(err, "error");
+        return;
+      }
+      console.log("User registered successfully:", result.user);
+    }
+  );
+}
 
 // Function to authenticate a user
 // function authenticateUser(username, password) {
@@ -53,133 +77,60 @@ AWS.config.update({
 //     }
 //   });
 // }
-
-// Example usage
-// registerUser("example@example.com", "password123");
 // authenticateUser("example@example.com", "password123");
 
-// module.exports={registerUserConginito}
+export const vendorSendEmail = async (email) => {
+  //   var poolData = {
+  //     UserPoolId: "me-central-1_fAyC1sK9I",
+  //     ClientId: "1hvv0kepvqqapp62ac06t46ffu",
+  //   };
 
-// var authenticationData = {
-//     Username : 'username',
-//     Password : 'password',
-// };
-// var authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
-// var poolData = { UserPoolId : 'me-central-1_U50BTVeUS',
-//     ClientId : '1example23456789'
-// };
-// var userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
-// var userData = {
-//     Username : 'username',
-//     Pool : userPool
-// };
-// var cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
-// cognitoUser.authenticateUser(authenticationDetails, {
-//     onSuccess: function (result) {
-//         var accessToken = result.getAccessToken().getJwtToken();
+  //   var userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+  //   var attributeList = [];
 
-//         /* Use the idToken for Logins Map when Federating User Pools with identity pools or when passing through an Authorization Header to an API Gateway Authorizer */
-//         var idToken = result.idToken.jwtToken;
-//     },
+  //   var dataEmail = {
+  //     Name: "email",
+  //     Value: 'avinash2@gmail.com',
+  //   };
+  //   var dataPhone = {
+  //     Name: "phone_number",
+  //     Value: "+917355049718",
+  //   };
 
-//     onFailure: function(err) {
-//         alert(err);
-//     },
+  //   var attributeEmail = new AmazonCognitoIdentity.CognitoUserAttribute(
+  //     dataEmail
+  //   );
 
-// });
+  // //   console.log(attributeEmail,"aaaaaaaaaaaaaaaaaaa");
+  //   attributeList.push(attributeEmail);
+  //   attributeList.push(dataPhone);
+  //   // attributeList.push(dataGender);
+  //   userPool.signUp(
+  //     "avinash2",
+  //     "Avinash@1234",
+  //     attributeList,
+  //     null,
+  //     function (err, result) {
+  //       if (err) {
+  //         console.error(err,"error");
+  //         return;
+  //       }
+  //       console.log("User registered successfully:", result.user);
+  //     }
+  //   );
 
-import AmazonCognitoIdentity from "amazon-cognito-identity-js";
-
-// var poolData = {
-//   UserPoolId: "me-central-1_U50BTVeUS",
-//   ClientId: "44r5rj6be272c8m2dtgp2vovrm",
-// };
-
-// export function registerUserConginito(username, password) {
-//   var authenticationData = {
-//     Username: username,
-//     Password: password,
-//   };
-
-//   var authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(
-//     authenticationData
-//   );
-
-//   var userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
-//   var userData = {
-//     Username: username,
-//     Pool: userPool,
-//   };
-//   var cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
-//   cognitoUser.authenticateUser(authenticationDetails, {
-//     onSuccess: function (result) {
-//       var accessToken = result.getAccessToken().getJwtToken();
-
-//       /* Use the idToken for Logins Map when Federating User Pools with identity pools or when passing through an Authorization Header to an API Gateway Authorizer */
-//       var idToken = result.idToken.jwtToken;
-
-//       console.log(accessToken, "access Tken");
-//     },
-
-//     onFailure: function (err) {
-//       console.log(err, "kkkkkk");
-//     },
-//   });
-// }
-
-export function registerUserConginito(username, password) {
-  // Define pool data
-
-  console.log(username,password,"kkkkkkkkkkkk");
-  var poolData = {
-    UserPoolId: "me-central-1_fAyC1sK9I",
-    ClientId: "1hvv0kepvqqapp62ac06t46ffu",
+  const params = {
+    ClientId: "me-central-1_fAyC1sK9I",
+    Username: email,
   };
-
-  var userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
-
-  console.log(userPool,"userrrrrrrr");
-  // Define user attributes
-  var attributeList = [];
-
-  var dataEmail = {
-    Name: "email",
-    Value: 'avinash2@gmail.com',
-  };
-  var dataPhone = {
-    Name: "phone_number",
-    Value: "+917355049718",
-  };
-  var dataGender = {
-    Name: "gender",
-    Value: 'm',
-  };
-
-  var attributeEmail = new AmazonCognitoIdentity.CognitoUserAttribute(
-    dataEmail
-  );
-
-//   console.log(attributeEmail,"aaaaaaaaaaaaaaaaaaa");
-  attributeList.push(attributeEmail);
-  attributeList.push(dataPhone);
-  attributeList.push(dataGender);
-
-
-  console.log(attributeList,"List");
-// return
-//   console.log(attributeEmail,"aaaaaaaaaaaaaaaaaaa");
-  // Register the user
-  userPool.signUp(
-    "avinash2",
-    "Avinash@1234",
-    attributeList,
-    null,
-    function (err, result) {
-      if (err) {
-        console.error(err,"error");
-        return;
-      }
-      console.log("User registered successfully:", result.user);
-    }
-  );
-}
+  try {
+    const response = await cognitoIdentityServiceProvider
+      .forgotPassword(params)
+      .promise();
+    console.log("OTP email sent successfully:", response);
+    return response;
+  } catch (error) {
+    console.error("Error sending OTP email:", error);
+    throw error;
+  }
+};

@@ -18,10 +18,10 @@ import docClient from "../../config/dbConfig.js";
 import vendorOnBoardModel from "../../models/VendorOnBoard.js";
 import {
   pinePointServices,
-  pinpoint,
 } from "../../helpers/awsPinePointServices.js";
 import userRegisterModel from "../../models/UserRegisterModel.js";
 import { registerUserConginito } from "../../helpers/awsCognitoServices.js";
+import { LamdaFunction } from "../../helpers/awsLamdaFunction.js";
 // import { registerUser } from "../../helpers/awsCognitoServices.js";
 // import axios from "axios";
 
@@ -217,7 +217,9 @@ class UserController {
     }
   }
 
-  async logoutUser(req, res) {}
+  async logoutUser(req, res) {
+    console.log("hhhh");
+  }
 
   async updateUserInfo(req, res) {
     try {
@@ -554,17 +556,38 @@ class UserController {
         }
       }
       if (error) {
+        if (error?.details[0]?.message?.includes("phone")) {
+          return res.status(400).json({
+            message: "Invalid Phone Number",
+            success: false,
+            statusCode: 400,
+          });
+        } else {
+          return res.status(400).json({
+            message: error.details[0]?.message,
+            success: false,
+            statusCode: 400,
+          });
+        }
+      }
+
+      if (error) {
         return res
           .status(400)
           .json({ message: error.details[0]?.message, success: false });
       }
       await UserServicesObj.createVendorrRegister(req, res);
+
     } catch (err) {
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
+
+
+  
 
   async retailerRegister (req,res){
     try {
@@ -632,9 +655,24 @@ class UserController {
 
 
   async pinePointAwsSendMessage(req, res) {
-    // pinePointServices();
-    registerUserConginito("avinash", "Avinash@123")
+    pinePointServices();
+    // registerUserConginito("avinash", "Avinash@123")
   }
+
+
+  async lamdaFunction(req,res){
+    LamdaFunction(req,res)
+  }
+  async testAPI(req,res){
+    try{
+      console.log("hello");
+
+    }
+    catch(err){
+      console.log("err");
+    }
+      }
+
 }
 
 const UserControllerObj = new UserController();

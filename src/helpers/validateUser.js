@@ -224,13 +224,12 @@ export const userRegisterValidation = Joi.object({
     .email({ tlds: { allow: false } })
     .required()
     .label("email"),
-  password: Joi.string()
-    .min(6)
-    .regex(/^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[a-z])(?=.*[A-Z]).{6,}$/)
+  phone: Joi.string()
+    .trim()
     .required()
-    .label("password")
+    .min(10)
+    .max(17)
     .messages({
-      "string.pattern.base":
-        "Password must contain at least one digit, one special character, one lowercase letter, and one uppercase letter.",
-    }),
+      "any.required": "Invalid Phone number",
+    })
 });

@@ -5,6 +5,7 @@ import UserRoutes from "./routes/user/UserRoutes.js";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { environmentVars } from "./config/environmentVar.js";
+import bodyParser from 'body-parser'
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const app = express();
@@ -13,6 +14,7 @@ const app = express();
 // Set up middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
 //making upload folder statically accessable
 // app.use(express.static("uploads"));

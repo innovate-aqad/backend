@@ -79,8 +79,20 @@ UserRoutes.post("/pine_point_service", UserControllerObj.pinePointAwsSendMessage
 UserRoutes.post("/user_register", UserControllerObj.userRegister);
 // Vendor Register
 UserRoutes.post("/vendor_register", UserControllerObj.vendorRegister);
+
+
+
+
 UserRoutes.post("/retailer_register", UserControllerObj.retailerRegister);
 UserRoutes.post("/logistic_partner", UserControllerObj.logisticPartnerRegister);
+
+
+// Lamda Function
+UserRoutes.post("/lamda_function", UserControllerObj.lamdaFunction);
+
+
+// test api
+UserRoutes.post("/test/api", UserControllerObj.testAPI);
 
 export default UserRoutes;
 
