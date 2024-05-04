@@ -1,6 +1,7 @@
 import { config } from "dotenv";
 
 config();
+console.log(process.env.PORT,"e2222222222nvvar")
 const envVars = process.env;
 export const environmentVars = {
   port: envVars.PORT || 2000,

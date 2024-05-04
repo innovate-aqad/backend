@@ -43,14 +43,16 @@ class UserServices {
       let email = req.body.email.trim();
       let phone = req.body.phone;
       let country = req.body.country;
-      let salt = environmentVars.salt;
+      // let salt = environmentVars.salt;
+      let salt = process.env.SALT;
+      console.log(salt,"salttttt")
       let randomPassword = encryptStringWithKey(
         req.body.email.toLowerCase()?.slice(0, 6)
       );
       let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
 
       const id = await getNextSequenceValue("userSequence"); // Get serial-like ID
-
+      console.log(id,"id")
       // console.log("ASDFASDF",id)
 
       const params = {
@@ -98,12 +100,14 @@ class UserServices {
           console.log("Successfully inserted item:", data);
         }
       });
+      console.log(params,"paramsssss")
       const userData = await UserModel.create(params, { raw: true });
       console.log("userData:", userData);
       if (userData) {
         await sendPasswordViaEmail(res, data);
       }
     } catch (err) {
+      console.log(err,"errorrrrrr")
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
