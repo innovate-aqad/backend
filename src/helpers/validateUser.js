@@ -9,7 +9,7 @@ const phonePattern = /^\+\d{1,3}-\d{10,16}$/; // Regex pattern for +xx-xxxxxxxxx
 export const registerSchema = Joi.object({
   name: Joi.string()
     .min(3)
-    .max(25)
+    .max(55)
     .trim()
     .required()
     .pattern(/^[a-zA-Z\s]+$/)

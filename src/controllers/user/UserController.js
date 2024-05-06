@@ -51,13 +51,6 @@ class UserController {
         }
       }
       // Check if 'name' field exists and is not empty or only whitespace
-      if (!req.body.name || req.body.name.trim() === "") {
-        return res.status(400).json({
-          message: "Name is required",
-          success: false,
-          statusCode: 400,
-        });
-      }
       await UserServicesObj.createUser(req, res);
     } catch (err) {
       return res

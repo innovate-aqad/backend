@@ -40,9 +40,10 @@ let salt = environmentVars.salt;
 class UserServices {
   async createUser(req, res) {
     try {
-      let email = req.body.email.trim();
-      let phone = req.body.phone;
-      let country = req.body.country;
+      let{name,email,phone,}=req.body
+      email =email.trim();
+      phone = phone;
+      country = country;
       let salt = environmentVars.salt;
       let randomPassword = encryptStringWithKey(
         req.body.email.toLowerCase()?.slice(0, 6)
@@ -101,7 +102,7 @@ class UserServices {
       const userData = await UserModel.create(params, { raw: true });
       console.log("userData:", userData);
       if (userData) {
-        await sendPasswordViaEmail(res, data);
+        await sendPasswordViaEmail(res, data)   ;
       }
     } catch (err) {
       return res

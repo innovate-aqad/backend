@@ -1,5 +1,5 @@
-import dynamoose from 'dynamoose';
-import AWS from 'aws-sdk';
+import dynamoose from "dynamoose";
+import AWS from "aws-sdk";
 
 AWS.config.update({
   region: process.env.Aws_region,
@@ -8,15 +8,24 @@ AWS.config.update({
 dynamoose.aws.sdk = AWS;
 
 const schema = new dynamoose.Schema(
-  { 
-    
+  {
     id: {
-    type: String,
-    required: false,
+      type: String,
+      required: false,
+    },
+
+    user_type: {
+      type: String,
+      required: true,
+      enum: ["vendor", "logistics", "seller", "employee", "admin"],
+    },
+    profile_photo: {
+      type: String,
+      required: false,
     },
     // _id: {
     //   type: String,
-    //   hashKey: true,  
+    //   hashKey: true,
     // },
     name: {
       type: String,
@@ -30,6 +39,15 @@ const schema = new dynamoose.Schema(
       type: String,
       required: true,
     },
+    dob: { type: String, required: false },
+    //slide 2
+    company_name: { type: String },
+    company_address: { type: String },
+    designation: { type: String },
+    //slide 3
+    trade_license: { type: String },
+    cheque_scan: { type: String },
+    vat_certificate: { type: String },
     country: {
       type: String,
       required: true,
@@ -42,6 +60,7 @@ const schema = new dynamoose.Schema(
       type: String,
       required: false,
     },
+
     role: {
       type: String,
       required: false,
