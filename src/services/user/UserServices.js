@@ -18,12 +18,15 @@ import jwt from "jsonwebtoken";
 import docClient from "../../config/dbConfig.js";
 import Sequence from "../../models/SequenceModel.js";
 import { v4 as uuidv4 } from "uuid";
+import { DynamoDBClient, PutItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
 
 import formidable from "formidable";
 
+const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
+
 async function getNextSequenceValue(sequenceName) {
   let sequenceDoc = await Sequence.get({ sequenceName });
-  console.log(sequenceDoc,"sequenceDocsequenceDoc");
+  console.log(sequenceDoc, "sequenceDocsequenceDoc");
   if (!sequenceDoc) {
     // If sequence does not exist, create a new one
     sequenceDoc = new Sequence({
@@ -32,7 +35,7 @@ async function getNextSequenceValue(sequenceName) {
     });
   }
   sequenceDoc.value++; // Increment the sequence value
-  console.log(sequenceDoc,"sequenceDocsequenceDoc");
+  console.log(sequenceDoc, "sequenceDocsequenceDoc");
   await sequenceDoc.save(); // Save the updated sequence value
   return sequenceDoc.value;
 }
@@ -40,78 +43,108 @@ async function getNextSequenceValue(sequenceName) {
 let salt = environmentVars.salt;
 
 class UserServices {
-  
+
   async createUser(req, res) {
-    try {
-      let { name, email, phone, country } = req.body;
-      console.log(req.body, "req,bodydydyy");
-      email = email.trim();
-      phone = phone;
-      let salt = environmentVars.salt;
-      let randomPassword = encryptStringWithKey(
-        req.body.email.toLowerCase()?.slice(0, 6)
-      );
-      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+      try {
+        let { name, email, phone, country, user_type, } = req.body;
+        console.log(req.body, "req,bodydydyy");
+        email = email.trim();
+        phone = phone;
+        let salt = environmentVars.salt;
+        let randomPassword = encryptStringWithKey(
+          req.body.email.toLowerCase()?.slice(0, 6)
+        );
+        let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
 
-      console.log("ASDFASDF","asdasdsssssssssssss")
-      // const id = await getNextSequenceValue("userSequence"); // Get serial-like ID
-      const id = await getNextSequenceValue(email); // Get serial-like ID
+        console.log("ASDFASDF", "asdasdsssssssssssss")
+        const id = await getNextSequenceValue("userSequence"); // Get serial-like ID
+        // const id = await getNextSequenceValue(email); // Get serial-like ID
 
-      console.log("ASDFASDF",id)
+        console.log("ASDFASDF", id)
 
-      const params = {
-        TableName: "users",
-        Item: {
-          id: String(id),
-          // _id: uuidv4(),
-          name: req.body.name?.trim(),
-          role: req.body.role,
-          email: email,
-          phone: phone,
-          country: country,
-          password: hashPassword,
-          is_verified: false,
-          is_social_login: 0,
-        },
-      };
-      let findEmailExist = await UserModel.scan()
-        .where("email")
-        .eq(email)
-        .exec();
-      console.log(findEmailExist, "findididn email exist");
-      let findPhoneExist = await UserModel.scan()
-        .where("phone")
-        .eq(phone)
-        .exec();
-      console.log(findPhoneExist, "findphoneeee");
-      if (findPhoneExist.count > 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Phone number already exists!",
-          statusCode: 400,
-        });
-      }
-      if (findEmailExist.count > 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Email already exist!",
-          statusCode: 400,
-        });
-      }
-      console.log(docClient, "docccleint");
-      docClient.put(params, (err, data) => {
-        if (err) {
-          console.error("Error inserting item:", err);
-        } else {
-          console.log("Successfully inserted item:", data);
+        const params = {
+          TableName: "users",
+          Item: {
+            id: String(id),
+            // _id: uuidv4(),
+            name: name?.trim(),
+            role: req.body.role,
+            user_type: user_type,
+            email: email,
+            phone: phone,
+            country: country,
+            password: hashPassword,
+            is_verified: false,
+            is_social_login: 0,
+          },
+        };
+        // let findEmailExist = await UserModel.scan()
+        //   .where("email")
+        //   .eq(email)
+        //   .exec();
+        // console.log(findEmailExist, "findididn email exist");
+        // let findPhoneExist = await UserModel.scan()
+        //   .where("phone") 
+        //   .eq(phone)
+        //   .exec();
+
+        // Check if email or phone already exist
+      
+        const findEmailExist = await dynamoDBClient.send(new ScanCommand({
+          TableName: "users",
+          FilterExpression: "email = :email",
+          ExpressionAttributeValues: {
+            ":email": { S: email }
+          }
+        }));
+        console.log(findEmailExist, "asdasdas")
+        if (findEmailExist.Count > 0) {
+          return res.status(400).json({
+            success: false,
+            message: "Email already exist!",
+            statusCode: 400,
+          });
         }
-      });
-      const userData = await UserModel.create(params, { raw: true });
+        const findPhoneExist = await dynamoDBClient.send(new ScanCommand({
+          TableName: "users",
+          FilterExpression: "phone = :phone",
+          ExpressionAttributeValues: {
+            ":phone": { S: phone }
+          }
+        }));
+
+        console.log(findPhoneExist, "12@@! findphoneeee");
+        if (findPhoneExist.Count > 0) {
+          return res.status(400).json({
+            success: false,
+            message: "Phone number already exists!",
+            statusCode: 400,
+          });
+        }
+        console.log(docClient, "docccleint", params);
+        // nsert user data into DynamoDB
+        let userData;
+        // try {
+          userData = await dynamoDBClient.send(new PutItemCommand(params));
+      // } catch (error) {
+      //   console.log(error,"Eorororororoasasasa")
+      // }
+
+      // docClient.put(params, (err, data) => {
+      //   if (err) {
+      //     console.error("Error inserting item:", err);
+      //   } else {
+      //     console.log("Successfully inserted item:", data);
+      //   }
+      // });
+      // const userData = await UserModel.create(params, { raw: true });
       console.log("userData:12", userData);
-      if (userData) {
-        await sendPasswordViaEmail(res, data);
-      }
+      // if (userData) {
+      // await sendPasswordViaEmail(res, data);
+      // }
+      return res.status(201).json({ message: "user register", statusCode: 201, success: true })
     } catch (err) {
+      console.log(err, "errorororro")
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
@@ -370,7 +403,7 @@ class UserServices {
     }
   }
 
-  
+
   // async getUserAccountInfo(req, res) {
   //   try {
   //     const carts = await CartModel.count({

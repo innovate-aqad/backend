@@ -1,11 +1,20 @@
 import dynamoose from "dynamoose";
 import AWS from "aws-sdk";
+import { DynamoDB } from "@aws-sdk/client-dynamodb";
+import { marshall } from "@aws-sdk/util-dynamodb";
+import { DataMapper } from "@aws/dynamodb-data-mapper";
+import { v4 as uuidv4 } from "uuid";
 
-AWS.config.update({
-  region: process.env.Aws_region,
-});
+// Update AWS configuration
+const dynamoDBClient = new DynamoDB({ region: process.env.Aws_region });
+dynamoose.aws.sdk = dynamoDBClient;
 
-dynamoose.aws.sdk = AWS;
+
+// AWS.config.update({
+//   region: process.env.Aws_region,
+// });
+
+// dynamoose.aws.sdk = AWS;
 
 const schema = new dynamoose.Schema(
   {
@@ -79,9 +88,16 @@ const schema = new dynamoose.Schema(
   }
 );
 
-const UserModel = dynamoose.model("users", schema, {
-  create: true,
-  throughput: "ON_DEMAND",
+const mapper = new DataMapper({
+  client: dynamoDBClient, // Use the AWS SDK v3 client
 });
+
+
+const UserModel = dynamoose.model("users", schema
+// , {
+//   create: true,
+//   throughput: "ON_DEMAND",
+// }
+);
 
 export default UserModel;
