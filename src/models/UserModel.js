@@ -17,7 +17,7 @@ const schema = new dynamoose.Schema(
     user_type: {
       type: String,
       required: true,
-      enum: ["vendor", "logistics", "seller", "employee", "admin"],
+      enum: ["vendor", "logistic", "seller", "employee", "admin"],
     },
     profile_photo: {
       type: String,

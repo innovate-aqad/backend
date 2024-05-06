@@ -6,7 +6,33 @@ import { upload } from "../../helpers/s3.js";
 
 const UserRoutes = express.Router();
 
-UserRoutes.post("/register", UserControllerObj.register);
+
+UserRoutes.post("/register",  upload.fields([
+  {
+    name: "profile_photo",
+    maxCount: 1,
+  },
+  {
+    name: "trade_license",
+    maxCount: 1,
+  },
+  {
+    name: "cheque_scan",
+    maxCount: 1,
+  },
+  {
+    name: "residence_proof",
+    maxCount: 1,
+  },
+  {
+    name: "vat_certificate",
+    maxCount: 1,
+  },
+]), UserControllerObj.register);
+
+
+
+
 
 UserRoutes.post("/login", UserControllerObj.login);
 

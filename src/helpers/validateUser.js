@@ -2,56 +2,139 @@ import Joi from "joi";
 import jwt from "jsonwebtoken";
 import { environmentVars } from "../config/environmentVar.js";
 import { phone } from "phone";
-
 // const phonePattern = /^\+\d{3}-\d{10,15}$/; // Regex pattern for +xx-xxxxxxxxxx format
 const phonePattern = /^\+\d{1,3}-\d{10,16}$/; // Regex pattern for +xx-xxxxxxxxxx format
 
-export const registerSchema = Joi.object({
+//vendor  // slide 1 //retail 
+export  const registerSchema = Joi.object({
   name: Joi.string()
     .min(3)
     .max(55)
     .trim()
-    .required()
-    .pattern(/^[a-zA-Z\s]+$/)
     .label("Full Name"),
   email: Joi.string()
     .trim()
     .email({ tlds: { allow: false } })
-    .required()
     .label("Email"),
-
-  // phone: Joi.string()
-  //   .trim()
-  //   .required()
-  //   .min(10)
-  //   .max(17)
-  //   .messages({
-  //     "any.required": "Invalid Phone number",
-  //   })
-  //   // .custom((value, helpers) => {
-  //   //   const phoneNumberPattern = /^\+(?:[0-9] ?){6,14}[0-9]$/;
-  //   //   if (!phoneNumberPattern.test(value)) {
-  //   //     return helpers.error("any.invalid");
-  //   //   }
-  //   //   return value;
-  //   // }, "Phone Number Validation")
-  //   .label("Phone Number"),
   phone: Joi.string()
     .trim()
-    .required()
     .regex(phonePattern)
     .messages({
       "string.pattern.base":
         "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
-      "any.required": "Phone number is required",
-      "string.empty": "Phone number must not be empty",
     })
     .label("Phone Number"),
-
-  country: Joi.string()
-    .trim()
-    .required("Selecting Country Code is Required"),
+  country: Joi.string().trim(),
+  dob: Joi.string().trim(),
+  emirate_id: Joi.string().trim(),
+  residence_visa: Joi.string().trim(),
+  passport: Joi.string().trim(),
+  vat_certificate: Joi.string().trim(),
+  trade_license: Joi.string().trim(),
 });
+
+
+
+
+
+
+
+
+// export const registerSchema = (req) => {
+//   const { slide, user_type } = req.body;
+
+//   let schema = Joi.object({
+//     name: Joi.string()
+//       .min(3)
+//       .max(55)
+//       .trim()
+//       .label("Full Name"),
+//     email: Joi.string()
+//       .trim()
+//       .email({ tlds: { allow: false } })
+//       .label("Email"),
+//     phone: Joi.string()
+//       .trim()
+//       .regex(phonePattern)
+//       .messages({
+//         "string.pattern.base":
+//           "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
+//       })
+//       .label("Phone Number"),
+//     country: Joi.string().trim(),
+//     dob: Joi.string().trim(),
+//     emirate_id: Joi.string().trim(),
+//     residence_visa: Joi.string().trim(),
+//     passport: Joi.string().trim(),
+//     vat_certificate: Joi.string().trim(),
+//     trade_license: Joi.string().trim(),
+//   });
+
+//   // Adjust schema based on conditions
+//   if (slide === 1) {
+//     schema = schema.concat(
+//       Joi.object({
+//         name: Joi.string().required(),
+//         email: Joi.string().email().required(),
+//         phone: Joi.string().regex(phonePattern).required(),
+//       })
+//     );
+//     if (user_type === "employee") {
+//       schema = schema.concat(
+//         Joi.object({
+//           dob: Joi.string().required(),
+//           emirate_id: Joi.string().required(),
+//           residence_visa: Joi.string().required(),
+//           passport: Joi.string().required(),
+//         })
+//       );
+//     }
+//   } else if (slide === 3) {
+//     schema = schema.concat(
+//       Joi.object({
+//         vat_certificate: Joi.string().required(),
+//       })
+//     );
+//     if (user_type === "logistic") {
+//       schema = schema.concat(
+//         Joi.object({
+//           trade_license: Joi.string().required(),
+//         })
+//       );
+//     }
+//   }
+
+//   return schema;
+// };
+
+// export const registerSchema = Joi.object({
+//   name: Joi.string()
+//     .min(3)
+//     .max(55)
+//     .trim()
+//     .required()
+//     .pattern(/^[a-zA-Z\s]+$/)
+//     .label("Full Name"),
+//   email: Joi.string()
+//     .trim()
+//     .email({ tlds: { allow: false } })
+//     .required()
+//     .label("Email"),
+//   phone: Joi.string()
+//     .trim()
+//     .required()
+//     .regex(phonePattern)
+//     .messages({
+//       "string.pattern.base":
+//         "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
+//       "any.required": "Phone number is required",
+//       "string.empty": "Phone number must not be empty",
+//     })
+//     .label("Phone Number"),
+//   country: Joi.string()
+//     .trim()
+//     .required("Selecting Country Code is Required"),
+// });
 
 export const registerAdminSchema = Joi.object({
   name: Joi.string()

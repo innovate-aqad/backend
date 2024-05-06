@@ -23,14 +23,14 @@ function checkFileSignature(buffer) {
 const maxSize = 500 * 1024;
 export async function ImageFileCheck(name, data, size) {
   let filePath = `./src/uploads/${name}`;
-  if (data == "category") {
-    filePath = `./src/uploads/filterProduct/category/${name}`;
-  } else if (data == "bestSeller") {
-    filePath = `./src/uploads/bestSeller/${name}`;
-  } else if (data == "gender") {
-    filePath = `./src/uploads/filterProduct/gender/${name}`;
-  } else if (data == "educationInfo") {
-    filePath = `./src/uploads/educationCertificate/${name}`;
+  if (data == "employee") {
+    filePath = `./src/uploads/employee/${name}`;
+  } else if (data == "logistic") {
+    filePath = `./src/uploads/logistic/${name}`;
+  } else if (data == "seller") {
+    filePath = `./src/uploads/seller/${name}`;
+  } else if (data == "vendor") {
+    filePath = `./src/uploads/vendor/${name}`;
   }
   // console.log(filePath,"filepasthhhhhhh")
   let check = fs.readFileSync(filePath);
@@ -44,11 +44,6 @@ export async function ImageFileCheck(name, data, size) {
       return "valid file";
     }
   } else if (filetype == null) {
-    // res.status(400).json({
-    //   message: "Invalid file uploaded",
-    //   success: false,
-    //   statusCode: 400,
-    // });
     await fs.unlinkSync(filePath);
     return "invalid file";
   }

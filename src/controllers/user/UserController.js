@@ -15,6 +15,7 @@ import { storeImageMetadata, uploadImageToS3 } from "../../helpers/s3.js";
 import UploadsDocumentModel from "../../models/UploadsDocumentModel.js";
 import docClient from "../../config/dbConfig.js";
 import vendorOnBoardModel from "../../models/VendorOnBoard.js";
+import { ImageFileCheck } from "../../helpers/validateImageFile.js";
 // import axios from "axios";
 
 const options = {
@@ -26,31 +27,87 @@ const options = {
 class UserController {
   async register(req, res) {
     try {
-      // Commented out captcha verification for future purpose
-      // const capchaSecret = process.env.GOOGLE_SECRET_KEY;
-      // const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${capchaSecret}&response=${req.body?.captchaValue}`);
-      // if (!response?.data?.success) {
-      //   return res.status(400).json({ message: "Invalid captcha", success: false, statusCode: 400 });
-      // }
+      const { slide, user_type } = req.body;
+      console.log(req.body, "reqoqoqo");
+      if (user_type != "employee" && user_type != "admin") {
+        let { error } = registerSchema.validate(req.body, options);
+        console.log(error, "Eorrooror 2222");
+        if (error) {
+          if (error?.details[0]?.message?.includes("Phone")) {
+            return res.status(400).json({
+              message: "Invalid phone number",
+              success: false,
+              statusCode: 400,
+            });
+          } else {
+            return res.status(400).json({
+              message: error.details[0]?.message,
+              success: false,
+              statusCode: 400,
+            });
+          }
+        }
+      }
+      //vat_certificate
+      if (
+        (user_type == "vendor" && slide == 3) ||
+        (user_type == "seller" && slide == 3) ||
+        (user_type == "logistic" && slide == 3)
+      ) {
+        // console.log("asdadadadasdasd",req.files,"Sd");
+        if (req.files && req.files?.vat_certificate?.length) {
+          let name = req.files?.vat_certificate[0]?.filename;
+          let size = req.files?.vat_certificate[0].size;
+          console.log(size,"dizeeeeeeeee");
+          let get = await ImageFileCheck(name, req.body.user_tye, size);
+          console.log(get, "GGGGFFFFFFFFFFDDDDDDDDDDDDDDDDDDD prodcut image");
+          if (get == "invalid file") {
+            return res.status(400).json({
+              message:
+                "Image must be png or jpeg or webp file and size must be less than 500 kb",
+              statusCode: 400,
+              success: false,
+            });
+          }
+        }else{
+          return res.status(400).json({message:"Vat certificate is required",statusCode:400,success:false})
+        }
+      }
 
-      let { error } = registerSchema.validate(req?.body, options);
-
-      if (error) {
-        if (error?.details[0]?.message?.includes("Phone")) {
+      //logistic and trade_license
+      if ((user_type == "logistic" && slide == 3)) {
+        if (req.files && req.files?.trade_license?.length) {
+          let name = req.files?.trade_license[0]?.filename;
+          let size = req.files?.trade_license[0].size;
+          let get = await ImageFileCheck(name, req.body.user_tye, size);
+          console.log(get, "DDDDDDDDDDDDDDDDD prodcut image");
+          if (get == "invalid file") {
+            return res.status(400).json({
+              message:
+                "Image must be png or jpeg or webp file and size must be less than 500 kb",
+              statusCode: 400,
+              success: false,
+            });
+          }
+        }
+        else{
+          return res.status(400).json({message:"Trade license is required",statusCode:400,success:false})
+        }
+      }
+      if (req.files && req.files?.profile_photo?.length) {
+        let name = req.files?.profile_photo[0]?.filename;
+        let size = req.files?.profile_photo[0].size;
+        let get = await ImageFileCheck(name, req.body.user_tye, size);
+        // console.log(get, "GGGGFFFFFFFFFFDDDDDDDDDDDDDDDDDDD prodcut image");
+        if (get == "invalid file") {
           return res.status(400).json({
-            message: "Invalid phone number",
-            success: false,
+            message:
+              "Image must be png or jpeg or webp file and size must be less than 500 kb",
             statusCode: 400,
-          });
-        } else {
-          return res.status(400).json({
-            message: error.details[0]?.message,
             success: false,
-            statusCode: 400,
           });
         }
       }
-      // Check if 'name' field exists and is not empty or only whitespace
       await UserServicesObj.createUser(req, res);
     } catch (err) {
       return res
@@ -450,12 +507,12 @@ class UserController {
         TableName: "vendorOnBoard",
         Item: {
           id: parseInt(id),
-          companyName:companyName,
-          contactPerson:contactPerson,
-          roleOfPerson:roleOfPerson,
-          emailAddress:emailAddress,
-          contactNumber:contactNumber,
-          BusinessAddress:BusinessAddress,
+          companyName: companyName,
+          contactPerson: contactPerson,
+          roleOfPerson: roleOfPerson,
+          emailAddress: emailAddress,
+          contactNumber: contactNumber,
+          BusinessAddress: BusinessAddress,
         },
       };
 

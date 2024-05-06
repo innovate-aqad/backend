@@ -23,6 +23,7 @@ import formidable from "formidable";
 
 async function getNextSequenceValue(sequenceName) {
   let sequenceDoc = await Sequence.get({ sequenceName });
+  console.log(sequenceDoc,"sequenceDocsequenceDoc");
   if (!sequenceDoc) {
     // If sequence does not exist, create a new one
     sequenceDoc = new Sequence({
@@ -31,6 +32,7 @@ async function getNextSequenceValue(sequenceName) {
     });
   }
   sequenceDoc.value++; // Increment the sequence value
+  console.log(sequenceDoc,"sequenceDocsequenceDoc");
   await sequenceDoc.save(); // Save the updated sequence value
   return sequenceDoc.value;
 }
@@ -38,21 +40,24 @@ async function getNextSequenceValue(sequenceName) {
 let salt = environmentVars.salt;
 
 class UserServices {
+  
   async createUser(req, res) {
     try {
-      let{name,email,phone,}=req.body
-      email =email.trim();
+      let { name, email, phone, country } = req.body;
+      console.log(req.body, "req,bodydydyy");
+      email = email.trim();
       phone = phone;
-      country = country;
       let salt = environmentVars.salt;
       let randomPassword = encryptStringWithKey(
         req.body.email.toLowerCase()?.slice(0, 6)
       );
       let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
 
-      const id = await getNextSequenceValue("userSequence"); // Get serial-like ID
+      console.log("ASDFASDF","asdasdsssssssssssss")
+      // const id = await getNextSequenceValue("userSequence"); // Get serial-like ID
+      const id = await getNextSequenceValue(email); // Get serial-like ID
 
-      // console.log("ASDFASDF",id)
+      console.log("ASDFASDF",id)
 
       const params = {
         TableName: "users",
@@ -73,11 +78,12 @@ class UserServices {
         .where("email")
         .eq(email)
         .exec();
+      console.log(findEmailExist, "findididn email exist");
       let findPhoneExist = await UserModel.scan()
         .where("phone")
         .eq(phone)
         .exec();
-
+      console.log(findPhoneExist, "findphoneeee");
       if (findPhoneExist.count > 0) {
         return res.status(400).json({
           success: false,
@@ -92,6 +98,7 @@ class UserServices {
           statusCode: 400,
         });
       }
+      console.log(docClient, "docccleint");
       docClient.put(params, (err, data) => {
         if (err) {
           console.error("Error inserting item:", err);
@@ -100,9 +107,9 @@ class UserServices {
         }
       });
       const userData = await UserModel.create(params, { raw: true });
-      console.log("userData:", userData);
+      console.log("userData:12", userData);
       if (userData) {
-        await sendPasswordViaEmail(res, data)   ;
+        await sendPasswordViaEmail(res, data);
       }
     } catch (err) {
       return res
@@ -344,6 +351,7 @@ class UserServices {
     }
   }
 
+
   async updateUserDetails(id, data, res) {
     try {
       UserModel.update(data, { where: { id: id } })
@@ -362,6 +370,7 @@ class UserServices {
     }
   }
 
+  
   // async getUserAccountInfo(req, res) {
   //   try {
   //     const carts = await CartModel.count({
@@ -394,11 +403,12 @@ class UserServices {
       //   .attributes(["email", "id", "name"])
       //   .exec();
 
-      let findEmailExist = await UserModel.scan().where('email').eq(email).exec();
+      let findEmailExist = await UserModel.scan()
+        .where("email")
+        .eq(email)
+        .exec();
 
-
-
-        console.log(findEmailExist,"kkkkkkkkkkkkkk===>");
+      console.log(findEmailExist, "kkkkkkkkkkkkkk===>");
 
       if (!findEmailExist) {
         return res.status(404).json({
@@ -437,6 +447,8 @@ class UserServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
+
 }
 
 const UserServicesObj = new UserServices();
