@@ -51,7 +51,7 @@ app.use(
 app.get("/", async (req, res) => {
   return res.status(200).send("Hello World");
 });
-
+console.log("hello wordl");
 //routes here like this => app.use('/user',userRoutes);
 app.use("/api/user", UserRoutes);
  
