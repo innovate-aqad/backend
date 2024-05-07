@@ -17,7 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 //making upload folder statically accessable
 // app.use(express.static("uploads"));
 
-app.use("/uploads", express.static("src/uploads"));
+app.use("/uploads", express.static("uploads"));
 // app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
 
 // Increase the JSON payload limit

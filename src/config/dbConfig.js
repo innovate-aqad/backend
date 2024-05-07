@@ -4,7 +4,7 @@ AWS.config.update({
   accessKeyId: process.env.Aws_accessKeyId, // Replace with your AWS Access Key ID
   secretAccessKey: process.env.Aws_secretAccessKey, // Replace with your AWS Secret Access Key
 });
-const dynamodb = new AWS.DynamoDB();  //instance
+export const dynamodb = new AWS.DynamoDB();  //instance
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 // console.log(dynamodb,"AWSAWSAWS")

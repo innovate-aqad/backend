@@ -5,19 +5,27 @@ import { phone } from "phone";
 // const phonePattern = /^\+\d{3}-\d{10,15}$/; // Regex pattern for +xx-xxxxxxxxxx format
 const phonePattern = /^\+\d{1,3}-\d{10,16}$/; // Regex pattern for +xx-xxxxxxxxxx format
 
-//vendor  // slide 1 //retail 
-export  const registerSchema = Joi.object({
-  name: Joi.string()
-    .min(3)
-    .max(55)
-    .trim()
-    .label("Full Name"),
+//vendor  // slide 1 //retail
+export const registerSchema = Joi.object({
+  slide: Joi.string()
+    .required()
+    .custom((value, helpers) => {
+      const intValue = parseInt(value);
+      if (isNaN(intValue) || intValue <= 0) {
+        return helpers.message({ custom: "Slide must be a positive number" });
+      }
+      return value;
+    })
+    .label("slide"),
+  name: Joi.string().min(3).max(55).trim().required().label("Full Name"),
   email: Joi.string()
     .trim()
+    .required()
     .email({ tlds: { allow: false } })
     .label("Email"),
   phone: Joi.string()
     .trim()
+    .required()
     .regex(phonePattern)
     .messages({
       "string.pattern.base":
@@ -25,20 +33,64 @@ export  const registerSchema = Joi.object({
     })
     .label("Phone Number"),
   country: Joi.string().trim(),
-  dob: Joi.string().trim(),
-  emirate_id: Joi.string().trim(),
-  residence_visa: Joi.string().trim(),
-  passport: Joi.string().trim(),
+  dob: Joi.when("user_type", {
+    is: "employee",
+    then: Joi.when("slide", {
+      is: "1",
+      then: Joi.string().required().label("Date of Birth"),
+      otherwise: Joi.string().trim().allow(""),
+    }),
+    otherwise: Joi.string().trim().allow(""),
+  }),
   vat_certificate: Joi.string().trim(),
   trade_license: Joi.string().trim(),
+  user_type: Joi.string()
+    .valid("vendor", "retailor", "logistic", "employee")
+    .required()
+    .label("User Type"),
+  emirate_id: Joi.when("user_type", {
+    is: "employee",
+    then: Joi.when("slide", {
+      is: "2",
+      then: Joi.string().trim().required().label("Emirate ID"),
+      otherwise: Joi.string().trim().allow(""),
+    }),
+    otherwise: Joi.string().trim().allow(""),
+  }),
+  residence_visa: Joi.when("user_type", {
+    is: "employee",
+    then: Joi.when("slide", {
+      is: "2",
+      then: Joi.string().trim().required().label("Residence Visa"),
+      otherwise: Joi.string().trim().allow(""),
+    }),
+    otherwise: Joi.string().trim().allow(""),
+  }),
+  passport: Joi.when("user_type", {
+    is: "employee",
+    then: Joi.when("slide", {
+      is: "2",
+      then: Joi.string().trim().required().label("Passport"),
+      otherwise: Joi.string().trim().allow(""),
+    }),
+    otherwise: Joi.string().trim().allow(""),
+  }),
+  // emirate_id: Joi.when(["user_type", "slide"], {
+  //   is: ["employee", "2"],
+  //   then: Joi.string().trim().required().label("Emirate ID"),
+  //   otherwise: Joi.string().trim().allow(""),
+  // }),
+  // residence_visa: Joi.when(["user_type", "slide"], {
+  //   is: ["employee", "2"],
+  //   then: Joi.string().trim().required().label("Residence Visa"),
+  //   otherwise: Joi.string().trim().allow(""),
+  // }),
+  // passport: Joi.when(["user_type", "slide"], {
+  //   is: ["employee", "2"],
+  //   then: Joi.string().trim().required().label("Passport"),
+  //   otherwise: Joi.string().trim().allow(""),
+  // }),
 });
-
-
-
-
-
-
-
 
 // export const registerSchema = (req) => {
 //   const { slide, user_type } = req.body;
@@ -137,12 +189,7 @@ export  const registerSchema = Joi.object({
 // });
 
 export const registerAdminSchema = Joi.object({
-  name: Joi.string()
-    .min(3)
-    .max(25)
-    .trim()
-    .required()
-    .label("Full Name"),
+  name: Joi.string().min(3).max(25).trim().required().label("Full Name"),
   email: Joi.string()
     .trim()
     .email({ tlds: { allow: false } })
@@ -154,9 +201,7 @@ export const registerAdminSchema = Joi.object({
   //   .required()
   //   .min(10)
   //   .label("Phone Number"),
-  country: Joi.string()
-    .trim()
-    .required("Selecting Country Code is Required"),
+  country: Joi.string().trim().required("Selecting Country Code is Required"),
 });
 
 export const forgotPasswordSchema = Joi.object({
@@ -219,31 +264,16 @@ export const loginWithOtpSchema = Joi.object({
 });
 
 export const statusChangeSchema = Joi.object({
-  id: Joi.number()
-    .required()
-    .label("id"),
-  status: Joi.string()
-    .required()
-    .valid("active", "inactive")
-    .label("status"),
+  id: Joi.number().required().label("id"),
+  status: Joi.string().required().valid("active", "inactive").label("status"),
 });
 export const editAdminSchema = Joi.object({
-  id: Joi.number()
-    .required()
-    .label("id"),
-  name: Joi.string()
-    .min(3)
-    .required()
-    .label("name"),
+  id: Joi.number().required().label("id"),
+  name: Joi.string().min(3).required().label("name"),
 });
 
 export const updateUserSchema = Joi.object({
-  name: Joi.string()
-    .min(3)
-    .max(25)
-    .allow("", null)
-    .trim()
-    .label("Full Name"),
+  name: Joi.string().min(3).max(25).allow("", null).trim().label("Full Name"),
 
   phone: Joi.string()
     .custom((value, helpers) => {
@@ -278,7 +308,6 @@ export const generateAccessTokenForAdmin = (payload) => {
   let token = jwt.sign(payload, environmentVars.jwtSecretAdmin);
   return token;
 };
-
 
 export const customerSchema = Joi.object({
   name: Joi.string()
@@ -322,7 +351,5 @@ export const customerSchema = Joi.object({
     })
     .label("Phone Number"),
 
-  country: Joi.string()
-    .trim()
-    .required("Selecting Country Code is Required"),
+  country: Joi.string().trim().required("Selecting Country Code is Required"),
 });

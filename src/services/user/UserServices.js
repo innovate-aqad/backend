@@ -17,14 +17,26 @@ import { generateAccessToken } from "../../helpers/validateUser.js";
 import jwt from "jsonwebtoken";
 import docClient from "../../config/dbConfig.js";
 import Sequence from "../../models/SequenceModel.js";
+import {
+  DynamoDBClient,
+  PutItemCommand,
+  ScanCommand,
+} from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
-import { DynamoDBClient, PutItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
 
 import formidable from "formidable";
 
-const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
+// const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
+const dynamoDBClient = new DynamoDBClient({
+  region: process.env.Aws_region,
+  credentials: {
+    accessKeyId: process.env.Aws_accessKeyId,
+    secretAccessKey: process.env.Aws_secretAccessKey,
+  },
+});
 
 async function getNextSequenceValue(sequenceName) {
+  console.log(sequenceName, "sequence nameee");
   let sequenceDoc = await Sequence.get({ sequenceName });
   console.log(sequenceDoc, "sequenceDocsequenceDoc");
   if (!sequenceDoc) {
@@ -40,79 +52,93 @@ async function getNextSequenceValue(sequenceName) {
   return sequenceDoc.value;
 }
 
+// const dynamoDBClient = new DynamoDBClient({ region: 'us-east-1' });
+async function insertItem(table) {
+  const params = {
+    TableName: table,
+    Item: {
+      id: { S: "123" },
+      name: { S: " updateJohn Doe" },
+      email: { S: "je@example.com" },
+      phone: { S: "123-456-7890" },
+      role: { S: "add product" },
+      user_type: { S: "vendor" },
+      // Additional attributes...
+    },
+  };
+
+  try {
+    const result = await dynamoDBClient.send(new PutItemCommand(params));
+    console.log("Item inserted successfully:", result);
+  } catch (err) {
+    console.error("Error inserting item:", err);
+  }
+}
+// insertItem('users');
 let salt = environmentVars.salt;
 
 class UserServices {
-
   async createUser(req, res) {
-      try {
-        let { name, email, phone, country, user_type, } = req.body;
-        console.log(req.body, "req,bodydydyy");
-        email = email.trim();
-        phone = phone;
-        let salt = environmentVars.salt;
-        let randomPassword = encryptStringWithKey(
-          req.body.email.toLowerCase()?.slice(0, 6)
-        );
-        let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+    try {
+      let { name, email, phone, country, user_type, slide, role } = req.body;
+      console.log(req.body, "req,bodydydyy");
+      email = email.trim();
+      phone = phone;
+      let salt = environmentVars.salt;
+      let randomPassword = encryptStringWithKey(
+        req.body.email.toLowerCase()?.slice(0, 6)
+      );
+      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
 
-        console.log("ASDFASDF", "asdasdsssssssssssss")
-        const id = await getNextSequenceValue("userSequence"); // Get serial-like ID
-        // const id = await getNextSequenceValue(email); // Get serial-like ID
+      // const id = await getNextSequenceValue("userSequence"); // Get serial-like ID
+      let id = uuidv4();
+      id = id?.replace(/-/g, "");
+      console.log("ASDFASDF", id);
+     console.log(req.files,"req.fisldl");
+     return 
+      if (req.files && req.files?.profile_photo?.length) {
 
-        console.log("ASDFASDF", id)
-
-        const params = {
-          TableName: "users",
-          Item: {
-            id: String(id),
-            // _id: uuidv4(),
-            name: name?.trim(),
-            role: req.body.role,
-            user_type: user_type,
-            email: email,
-            phone: phone,
-            country: country,
-            password: hashPassword,
-            is_verified: false,
-            is_social_login: 0,
-          },
-        };
-        // let findEmailExist = await UserModel.scan()
-        //   .where("email")
-        //   .eq(email)
-        //   .exec();
-        // console.log(findEmailExist, "findididn email exist");
-        // let findPhoneExist = await UserModel.scan()
-        //   .where("phone") 
-        //   .eq(phone)
-        //   .exec();
-
-        // Check if email or phone already exist
-      
-        const findEmailExist = await dynamoDBClient.send(new ScanCommand({
+      }
+      const params = {
+        TableName: "users",
+        Item: {
+          id: { S: id },
+          name: { S: name },
+          role: { S: role },
+          user_type: { S: user_type },
+          email: { S: email },
+          phone: { S: phone },
+          country: { S: country },
+          password: { S: hashPassword },
+        },
+      };
+      const findEmailExist = await dynamoDBClient.send(
+        new ScanCommand({
           TableName: "users",
           FilterExpression: "email = :email",
           ExpressionAttributeValues: {
-            ":email": { S: email }
-          }
-        }));
-        console.log(findEmailExist, "asdasdas")
-        if (findEmailExist.Count > 0) {
-          return res.status(400).json({
-            success: false,
-            message: "Email already exist!",
-            statusCode: 400,
-          });
-        }
-        const findPhoneExist = await dynamoDBClient.send(new ScanCommand({
-          TableName: "users",
-          FilterExpression: "phone = :phone",
-          ExpressionAttributeValues: {
-            ":phone": { S: phone }
-          }
-        }));
-
+            ":email": { S: email },
+          },
+        })
+      );
+      console.log(findEmailExist, "asdasdas");
+      if (findEmailExist.Count > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exist!",
+          statusCode: 400,
+        });
+      }
+      if (phone) {
+        const findPhoneExist = await dynamoDBClient.send(
+          new ScanCommand({
+            TableName: "users",
+            FilterExpression: "phone = :phone",
+            ExpressionAttributeValues: {
+              ":phone": { S: phone },
+            },
+          })
+        );
         console.log(findPhoneExist, "12@@! findphoneeee");
         if (findPhoneExist.Count > 0) {
           return res.status(400).json({
@@ -121,11 +147,12 @@ class UserServices {
             statusCode: 400,
           });
         }
-        console.log(docClient, "docccleint", params);
-        // nsert user data into DynamoDB
-        let userData;
-        // try {
-          userData = await dynamoDBClient.send(new PutItemCommand(params));
+      }
+      console.log("docClient", "docccleint", params);
+      // nsert user data into DynamoDB
+      let userData;
+      // try {
+      userData = await dynamoDBClient.send(new PutItemCommand(params));
       // } catch (error) {
       //   console.log(error,"Eorororororoasasasa")
       // }
@@ -142,9 +169,11 @@ class UserServices {
       // if (userData) {
       // await sendPasswordViaEmail(res, data);
       // }
-      return res.status(201).json({ message: "user register", statusCode: 201, success: true })
+      return res
+        .status(201)
+        .json({ message: "user register", statusCode: 201, success: true });
     } catch (err) {
-      console.log(err, "errorororro")
+      console.log(err, "errorororro");
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
@@ -384,7 +413,6 @@ class UserServices {
     }
   }
 
-
   async updateUserDetails(id, data, res) {
     try {
       UserModel.update(data, { where: { id: id } })
@@ -402,7 +430,6 @@ class UserServices {
       return res.status(500).json({ success: false, message: err?.message });
     }
   }
-
 
   // async getUserAccountInfo(req, res) {
   //   try {
@@ -480,8 +507,6 @@ class UserServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
-
 }
 
 const UserServicesObj = new UserServices();

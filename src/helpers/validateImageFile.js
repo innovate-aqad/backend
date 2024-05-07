@@ -22,17 +22,18 @@ function checkFileSignature(buffer) {
 }
 const maxSize = 500 * 1024;
 export async function ImageFileCheck(name, data, size) {
-  let filePath = `./src/uploads/${name}`;
+  let filePath = `./uploads/${name}`;
+  console.log(name,"nameasd",data,"Dataas",size,"sizeeee");
   if (data == "employee") {
-    filePath = `./src/uploads/employee/${name}`;
+    filePath = `./uploads/employee/${name}`;
   } else if (data == "logistic") {
-    filePath = `./src/uploads/logistic/${name}`;
+    filePath = `./uploads/logistic/${name}`;
   } else if (data == "seller") {
-    filePath = `./src/uploads/seller/${name}`;
+    filePath = `./uploads/seller/${name}`;
   } else if (data == "vendor") {
-    filePath = `./src/uploads/vendor/${name}`;
+    filePath = `./uploads/vendor/${name}`;
   }
-  // console.log(filePath,"filepasthhhhhhh")
+  console.log(filePath,"filepasthhhhhhh")
   let check = fs.readFileSync(filePath);
   const filetype = checkFileSignature(check);
   if (filetype == "PNG" || filetype == "JPEG" || filetype == "WEBP") {
@@ -50,7 +51,7 @@ export async function ImageFileCheck(name, data, size) {
 }
 
 export async function ImageFileCheckForUI(name, res, size) {
-  const filePath = `./src/uploads/ui/${name}`;
+  const filePath = `./uploads/ui/${name}`;
   // console.log(filePath,"filepasthhhhhhh")
   let check = fs.readFileSync(filePath);
   const filetype = checkFileSignature(check);
@@ -74,15 +75,15 @@ export async function ImageFileCheckForUI(name, res, size) {
 }
 
 export async function removefIle(name, data) {
-  let filePath = `./src/uploads/${name}`;
+  let filePath = `./uploads/${name}`;
   if (data == "category") {
-    filePath = `./src/uploads/filterProduct/category/${name}`;
+    filePath = `./uploads/filterProduct/category/${name}`;
   } else if (data == "bestSeller") {
-    filePath = `./src/uploads/bestSeller/${name}`;
+    filePath = `./uploads/bestSeller/${name}`;
   } else if (data == "gender") {
-    filePath = `./src/uploads/filterProduct/gender/${name}`;
+    filePath = `./uploads/filterProduct/gender/${name}`;
   } else if (data == "educationInfo") {
-    filePath = `./src/uploads/educationCertificate/${name}`;
+    filePath = `./uploads/educationCertificate/${name}`;
   }
   await fs.unlinkSync(filePath);
 }

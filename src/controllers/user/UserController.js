@@ -28,26 +28,15 @@ class UserController {
   async register(req, res) {
     try {
       const { slide, user_type } = req.body;
-      console.log(req.body, "reqoqoqo");
-      if (user_type != "employee" && user_type != "admin") {
-        let { error } = registerSchema.validate(req.body, options);
-        console.log(error, "Eorrooror 2222");
-        if (error) {
-          if (error?.details[0]?.message?.includes("Phone")) {
-            return res.status(400).json({
-              message: "Invalid phone number",
-              success: false,
-              statusCode: 400,
-            });
-          } else {
-            return res.status(400).json({
-              message: error.details[0]?.message,
-              success: false,
-              statusCode: 400,
-            });
-          }
-        }
+      let { error } = registerSchema.validate(req.body, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
       }
+
       //vat_certificate
       if (
         (user_type == "vendor" && slide == 3) ||
@@ -58,9 +47,7 @@ class UserController {
         if (req.files && req.files?.vat_certificate?.length) {
           let name = req.files?.vat_certificate[0]?.filename;
           let size = req.files?.vat_certificate[0].size;
-          console.log(size,"dizeeeeeeeee");
           let get = await ImageFileCheck(name, req.body.user_tye, size);
-          console.log(get, "GGGGFFFFFFFFFFDDDDDDDDDDDDDDDDDDD prodcut image");
           if (get == "invalid file") {
             return res.status(400).json({
               message:
@@ -69,18 +56,21 @@ class UserController {
               success: false,
             });
           }
-        }else{
-          return res.status(400).json({message:"Vat certificate is required",statusCode:400,success:false})
+        } else {
+          return res.status(400).json({
+            message: "Vat certificate is required",
+            statusCode: 400,
+            success: false,
+          });
         }
       }
 
       //logistic and trade_license
-      if ((user_type == "logistic" && slide == 3)) {
+      if (user_type == "logistic" && slide == 3) {
         if (req.files && req.files?.trade_license?.length) {
           let name = req.files?.trade_license[0]?.filename;
           let size = req.files?.trade_license[0].size;
           let get = await ImageFileCheck(name, req.body.user_tye, size);
-          console.log(get, "DDDDDDDDDDDDDDDDD prodcut image");
           if (get == "invalid file") {
             return res.status(400).json({
               message:
@@ -89,16 +79,23 @@ class UserController {
               success: false,
             });
           }
-        }
-        else{
-          return res.status(400).json({message:"Trade license is required",statusCode:400,success:false})
+        } else {
+          return res.status(400).json({
+            message: "Trade license is required",
+            statusCode: 400,
+            success: false,
+          });
         }
       }
-      if (req.files && req.files?.profile_photo?.length) {
+      if (
+        req.files &&
+        req.files?.profile_photo?.length &&
+        user_type == "employee" &&
+        slide == 1
+      ) {
         let name = req.files?.profile_photo[0]?.filename;
         let size = req.files?.profile_photo[0].size;
-        let get = await ImageFileCheck(name, req.body.user_tye, size);
-        // console.log(get, "GGGGFFFFFFFFFFDDDDDDDDDDDDDDDDDDD prodcut image");
+        let get = await ImageFileCheck(name, req.body.user_type, size);
         if (get == "invalid file") {
           return res.status(400).json({
             message:
@@ -107,6 +104,17 @@ class UserController {
             success: false,
           });
         }
+      } else if (
+        req.files &&
+        !req.files?.profile_photo?.length &&
+        user_type == "employee" &&
+        slide == 1
+      ) {
+        return res.status(400).json({
+          message: "Profile image is mandatory",
+          statusCode: 400,
+          success: false,
+        });
       }
       await UserServicesObj.createUser(req, res);
     } catch (err) {
