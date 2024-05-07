@@ -1,9 +1,5 @@
 import UserModel from "../../models/UserModel.js";
 import bcrypt from "bcrypt";
-import crypto from "crypto";
-// import CartModel from "../../models/CartModel.js";
-// import WishlistModel from "../../models/WishlistModel.js";
-// import CouponModel from "../../models/couponModel.js";
 import {
   sendPasswordViaEmail,
   forgotPasswordEmail,
@@ -11,7 +7,6 @@ import {
   sendEmailUser,
 } from "../../helpers/common.js";
 import { Op, where } from "sequelize";
-// import userOtpModel from "../../models/userOtpModel.js";
 import { environmentVars } from "../../config/environmentVar.js";
 import { generateAccessToken } from "../../helpers/validateUser.js";
 import jwt from "jsonwebtoken";
@@ -20,7 +15,7 @@ import Sequence from "../../models/SequenceModel.js";
 import {
   DynamoDBClient,
   PutItemCommand,
-  ScanCommand,
+  ScanCommand, UpdateItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
@@ -80,38 +75,105 @@ let salt = environmentVars.salt;
 class UserServices {
   async createUser(req, res) {
     try {
-      let { name, email, phone, country, user_type, slide, role } = req.body;
-      console.log(req.body, "req,bodydydyy");
-      email = email.trim();
-      phone = phone;
-      let salt = environmentVars.salt;
-      let randomPassword = encryptStringWithKey(
-        req.body.email.toLowerCase()?.slice(0, 6)
-      );
-      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
-
-      // const id = await getNextSequenceValue("userSequence"); // Get serial-like ID
-      let id = uuidv4();
-      id = id?.replace(/-/g, "");
-      console.log("ASDFASDF", id);
-     console.log(req.files,"req.fisldl");
-     return 
-      if (req.files && req.files?.profile_photo?.length) {
-
+      let { name, email, phone, country, user_type, slide, role, dob, company_name, company_address, designation, doc_id, emirates_id } = req.body;
+      email = email?.trim();
+      let findData;
+      if (slide == 2 || slide == 3) {
+        findData = await dynamoDBClient.send(
+          new ScanCommand({
+            TableName: "users",
+            FilterExpression: "id = :id",
+            ExpressionAttributeValues: {
+              ":id": { S: doc_id },
+            },
+          })
+        );
       }
-      const params = {
-        TableName: "users",
-        Item: {
-          id: { S: id },
-          name: { S: name },
-          role: { S: role },
-          user_type: { S: user_type },
-          email: { S: email },
-          phone: { S: phone },
-          country: { S: country },
-          password: { S: hashPassword },
-        },
-      };
+      if (findData?.Count > 0 && slide == 2) {
+        if (["vendor", "seller", "logistic"].includes(user_type?.toLowerCase()) && slide == 2) {
+          const params = {
+            TableName: "users",
+            Key: { id: { S: doc_id } },
+            UpdateExpression: "SET #company_name = :company_name, #company_address = :company_address, #designation = :designation",
+            ExpressionAttributeNames: {
+              "#company_name": "company_name",
+              "#company_address": "company_address",
+              "#designation": "designation"
+            },
+            ExpressionAttributeValues: {
+              ":company_name": { S: company_name || "" },
+              ":company_address": { S: company_address || "" },
+              ":designation": { S: designation || "" }
+            },
+          };
+          await dynamoDBClient.send(new UpdateItemCommand(params));
+          return res.status(200).json({ message: "User data updated successfully", statusCode: 200, success: true });
+        } else if (user_type == 'employee' && slide == 2) {
+          console.log(req.files, "req.filesssss")
+          let passport = req.files.passport[0]?.filename
+          let residence_visa = req.files.residence_visa[0]?.filename
+          const params = {
+            TableName: "users",
+            Key: { id: { S: doc_id } },
+            UpdateExpression: "SET #emirates_id = :emirates_id, #passport = :passport, #residence_visa = :residence_visa",
+            ExpressionAttributeNames: {
+              "#emirates_id": "emirates_id",
+              "#passport": "passport",
+              "#residence_visa": "residence_visa"
+            },
+            ExpressionAttributeValues: {
+              ":emirates_id": { S: emirates_id || "" },
+              ":passport": { S: passport || "" },
+              ":residence_visa": { S: residence_visa || "" }
+            },
+          };
+          console.log(params, "paramsnasdas")
+          await dynamoDBClient.send(new UpdateItemCommand(params));
+          return res.status(200).json({ message: "User data updated successfully", statusCode: 200, success: true });
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: "Email already exist!..",
+            statusCode: 400,
+          });
+        }
+      }
+      if (findData?.Count > 0 && slide == 3) {
+        console.log(req.files, "req.filesssssssssssssss")
+        let trade_license = req?.files?.trade_license?.length ? req?.files?.trade_license[0]?.filename : ""
+        let cheque_scan = req.files?.cheque_scan?.length ? req.files?.cheque_scan[0]?.filename : ""
+        let vat_certificate = req.files?.vat_certificate?.length ? req.files?.vat_certificate[0]?.filename : ""
+        let residence_visa = req.files?.residence_visa?.length ? req.files?.residence_visa[0]?.filename : ""
+        if (["vendor", "seller", "logistic"].includes(user_type?.toLowerCase()) && slide == 3) {
+          const params = {
+            TableName: "users",
+            Key: { id: { S: doc_id } },
+            UpdateExpression: "SET #trade_license = :trade_license, #cheque_scan = :cheque_scan, #vat_certificate = :vat_certificate, #residence_visa= :residence_visa , #emirates_id=:emirates_id",
+            ExpressionAttributeNames: {
+              "#trade_license": "trade_license",
+              "#cheque_scan": "cheque_scan",
+              "#vat_certificate": "vat_certificate",
+              "#residence_visa": "residence_visa",
+              "#emirates_id": "emirates_id"
+            },
+            ExpressionAttributeValues: {
+              ":trade_license": { S: trade_license || "" },
+              ":cheque_scan": { S: cheque_scan || "" },
+              ":vat_certificate": { S: vat_certificate || "" },
+              ":residence_visa": { S: residence_visa || "" },
+              ":emirates_id": { S: emirates_id || "" }
+            },
+          };
+          await dynamoDBClient.send(new UpdateItemCommand(params));
+          return res.status(200).json({ message: "User data updated successfully", statusCode: 200, success: true });
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: "Email already exist!..",
+            statusCode: 400,
+          });
+        }
+      }
       const findEmailExist = await dynamoDBClient.send(
         new ScanCommand({
           TableName: "users",
@@ -121,14 +183,7 @@ class UserServices {
           },
         })
       );
-      console.log(findEmailExist, "asdasdas");
-      if (findEmailExist.Count > 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Email already exist!",
-          statusCode: 400,
-        });
-      }
+
       if (phone) {
         const findPhoneExist = await dynamoDBClient.send(
           new ScanCommand({
@@ -148,6 +203,37 @@ class UserServices {
           });
         }
       }
+      let salt = environmentVars.salt;
+      let randomPassword = encryptStringWithKey(
+        req.body.email.toLowerCase()?.slice(0, 6)
+      );
+      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+
+      // const id = await getNextSequenceValue("userSequence"); // Get serial-like ID
+      let id = uuidv4();
+      id = id?.replace(/-/g, "");
+      console.log("ASDFASDF", id);
+      console.log(req.files, "req.fisldl");
+
+      let profile_photo;
+      if (req.files && req.files?.profile_photo?.length) {
+        profile_photo = req.files?.profile_photo[0]?.filename
+      }
+      const params = {
+        TableName: "users",
+        Item: {
+          profile_photo: { S: profile_photo || "" },
+          id: { S: id },
+          name: { S: name },
+          email: { S: email },
+          phone: { S: phone || "" },
+          dob: { S: dob || "" },
+          user_type: { S: user_type },
+          role: { S: role || "" },
+          country: { S: country || "" },
+          password: { S: hashPassword },
+        },
+      };
       console.log("docClient", "docccleint", params);
       // nsert user data into DynamoDB
       let userData;

@@ -13,6 +13,10 @@ UserRoutes.post("/register",  upload.fields([
     maxCount: 1,
   },
   {
+    name: "passport",
+    maxCount: 1,
+  },
+  {
     name: "trade_license",
     maxCount: 1,
   },
@@ -21,13 +25,13 @@ UserRoutes.post("/register",  upload.fields([
     maxCount: 1,
   },
   {
-    name: "residence_proof",
-    maxCount: 1,
-  },
-  {
     name: "vat_certificate",
     maxCount: 1,
   },
+  {
+    name: "residence_visa",
+    maxCount: 1,
+  }
 ]), UserControllerObj.register);
 
 

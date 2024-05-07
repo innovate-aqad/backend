@@ -49,10 +49,15 @@ const schema = new dynamoose.Schema(
       required: true,
     },
     dob: { type: String, required: false },
+
     //slide 2
     company_name: { type: String },
     company_address: { type: String },
     designation: { type: String },
+    emirates_id: { type: String },
+    residence_visa: { type: String },
+    passport: { type: String },
+    
     //slide 3
     trade_license: { type: String },
     cheque_scan: { type: String },
@@ -94,10 +99,10 @@ const mapper = new DataMapper({
 
 
 const UserModel = dynamoose.model("users", schema
-// , {
-//   create: true,
-//   throughput: "ON_DEMAND",
-// }
+  // , {
+  //   create: true,
+  //   throughput: "ON_DEMAND",
+  // }
 );
 
 export default UserModel;

@@ -2,7 +2,6 @@ import Joi from "joi";
 import jwt from "jsonwebtoken";
 import { environmentVars } from "../config/environmentVar.js";
 import { phone } from "phone";
-// const phonePattern = /^\+\d{3}-\d{10,15}$/; // Regex pattern for +xx-xxxxxxxxxx format
 const phonePattern = /^\+\d{1,3}-\d{10,16}$/; // Regex pattern for +xx-xxxxxxxxxx format
 
 //vendor  // slide 1 //retail
@@ -17,21 +16,44 @@ export const registerSchema = Joi.object({
       return value;
     })
     .label("slide"),
-  name: Joi.string().min(3).max(55).trim().required().label("Full Name"),
-  email: Joi.string()
-    .trim()
-    .required()
-    .email({ tlds: { allow: false } })
-    .label("Email"),
-  phone: Joi.string()
-    .trim()
-    .required()
-    .regex(phonePattern)
-    .messages({
-      "string.pattern.base":
-        "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
-    })
-    .label("Phone Number"),
+  // name: Joi.string().min(3).max(55).trim().required().label("Full Name"),
+  // email: Joi.string()
+  //   .trim()
+  //   .required()
+  //   .email({ tlds: { allow: false } })
+  //   .label("Email"),
+
+    
+  name: Joi.when("slide", {
+    is: "1",
+    then: Joi.string().min(3).max(55).trim().required(),
+    otherwise: Joi.string().min(3).max(55).trim().allow(""),
+  }).label("Full Name"),
+  email: Joi.when("slide", {
+    is: "1",
+    then: Joi.string().trim().required().email({ tlds: { allow: false } }),
+    otherwise: Joi.string().trim().allow("").email({ tlds: { allow: false } }),
+  }).label("Email"),
+
+    phone: Joi.when("slide", {
+      is: "1",
+      then: Joi.string().trim().required().regex(phonePattern).messages({
+        "string.pattern.base": "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
+      }),
+      otherwise: Joi.string().trim().allow("").regex(phonePattern).messages({
+        "string.pattern.base": "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
+      }),
+    }).label("Phone Number"),
+
+  // phone: Joi.string()
+  //   .trim()
+  //   .required()
+  //   .regex(phonePattern)
+  //   .messages({
+  //     "string.pattern.base":
+  //       "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
+  //   })
+  //   .label("Phone Number"),
   country: Joi.string().trim(),
   dob: Joi.when("user_type", {
     is: "employee",
@@ -42,13 +64,13 @@ export const registerSchema = Joi.object({
     }),
     otherwise: Joi.string().trim().allow(""),
   }),
-  vat_certificate: Joi.string().trim(),
-  trade_license: Joi.string().trim(),
+  // vat_certificate: Joi.string().trim(),
+  // trade_license: Joi.string().trim(),
   user_type: Joi.string()
-    .valid("vendor", "retailor", "logistic", "employee")
+    .valid("vendor", "seller", "logistic", "employee")
     .required()
     .label("User Type"),
-  emirate_id: Joi.when("user_type", {
+  emirates_id: Joi.when("user_type", {
     is: "employee",
     then: Joi.when("slide", {
       is: "2",
@@ -57,136 +79,31 @@ export const registerSchema = Joi.object({
     }),
     otherwise: Joi.string().trim().allow(""),
   }),
-  residence_visa: Joi.when("user_type", {
-    is: "employee",
-    then: Joi.when("slide", {
-      is: "2",
-      then: Joi.string().trim().required().label("Residence Visa"),
-      otherwise: Joi.string().trim().allow(""),
-    }),
+  // residence_visa: Joi.when("user_type", {
+  //   is: "employee",
+  //   then: Joi.when("slide", {
+  //     is: "2",
+  //     then: Joi.string().trim().required().label("Residence Visa"),
+  //     otherwise: Joi.string().trim().allow(""),
+  //   }),
+  //   otherwise: Joi.string().trim().allow(""),
+  // }),
+  // passport: Joi.when("user_type", {
+  //   is: "employee",
+  //   then: Joi.when("slide", {
+  //     is: "2",
+  //     then: Joi.string().trim().required().label("Passport"),
+  //     otherwise: Joi.string().trim().allow(""),
+  //   }),
+  //   otherwise: Joi.string().trim().allow(""),
+  // }), 
+  doc_id: Joi.when("slide", {
+    is: Joi.valid("2", "3"),
+    then: Joi.string().required().label("Document ID"),
     otherwise: Joi.string().trim().allow(""),
-  }),
-  passport: Joi.when("user_type", {
-    is: "employee",
-    then: Joi.when("slide", {
-      is: "2",
-      then: Joi.string().trim().required().label("Passport"),
-      otherwise: Joi.string().trim().allow(""),
-    }),
-    otherwise: Joi.string().trim().allow(""),
-  }),
-  // emirate_id: Joi.when(["user_type", "slide"], {
-  //   is: ["employee", "2"],
-  //   then: Joi.string().trim().required().label("Emirate ID"),
-  //   otherwise: Joi.string().trim().allow(""),
-  // }),
-  // residence_visa: Joi.when(["user_type", "slide"], {
-  //   is: ["employee", "2"],
-  //   then: Joi.string().trim().required().label("Residence Visa"),
-  //   otherwise: Joi.string().trim().allow(""),
-  // }),
-  // passport: Joi.when(["user_type", "slide"], {
-  //   is: ["employee", "2"],
-  //   then: Joi.string().trim().required().label("Passport"),
-  //   otherwise: Joi.string().trim().allow(""),
-  // }),
+  })
 });
 
-// export const registerSchema = (req) => {
-//   const { slide, user_type } = req.body;
-
-//   let schema = Joi.object({
-//     name: Joi.string()
-//       .min(3)
-//       .max(55)
-//       .trim()
-//       .label("Full Name"),
-//     email: Joi.string()
-//       .trim()
-//       .email({ tlds: { allow: false } })
-//       .label("Email"),
-//     phone: Joi.string()
-//       .trim()
-//       .regex(phonePattern)
-//       .messages({
-//         "string.pattern.base":
-//           "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
-//       })
-//       .label("Phone Number"),
-//     country: Joi.string().trim(),
-//     dob: Joi.string().trim(),
-//     emirate_id: Joi.string().trim(),
-//     residence_visa: Joi.string().trim(),
-//     passport: Joi.string().trim(),
-//     vat_certificate: Joi.string().trim(),
-//     trade_license: Joi.string().trim(),
-//   });
-
-//   // Adjust schema based on conditions
-//   if (slide === 1) {
-//     schema = schema.concat(
-//       Joi.object({
-//         name: Joi.string().required(),
-//         email: Joi.string().email().required(),
-//         phone: Joi.string().regex(phonePattern).required(),
-//       })
-//     );
-//     if (user_type === "employee") {
-//       schema = schema.concat(
-//         Joi.object({
-//           dob: Joi.string().required(),
-//           emirate_id: Joi.string().required(),
-//           residence_visa: Joi.string().required(),
-//           passport: Joi.string().required(),
-//         })
-//       );
-//     }
-//   } else if (slide === 3) {
-//     schema = schema.concat(
-//       Joi.object({
-//         vat_certificate: Joi.string().required(),
-//       })
-//     );
-//     if (user_type === "logistic") {
-//       schema = schema.concat(
-//         Joi.object({
-//           trade_license: Joi.string().required(),
-//         })
-//       );
-//     }
-//   }
-
-//   return schema;
-// };
-
-// export const registerSchema = Joi.object({
-//   name: Joi.string()
-//     .min(3)
-//     .max(55)
-//     .trim()
-//     .required()
-//     .pattern(/^[a-zA-Z\s]+$/)
-//     .label("Full Name"),
-//   email: Joi.string()
-//     .trim()
-//     .email({ tlds: { allow: false } })
-//     .required()
-//     .label("Email"),
-//   phone: Joi.string()
-//     .trim()
-//     .required()
-//     .regex(phonePattern)
-//     .messages({
-//       "string.pattern.base":
-//         "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
-//       "any.required": "Phone number is required",
-//       "string.empty": "Phone number must not be empty",
-//     })
-//     .label("Phone Number"),
-//   country: Joi.string()
-//     .trim()
-//     .required("Selecting Country Code is Required"),
-// });
 
 export const registerAdminSchema = Joi.object({
   name: Joi.string().min(3).max(25).trim().required().label("Full Name"),
@@ -196,11 +113,6 @@ export const registerAdminSchema = Joi.object({
     .required()
     .label("Email"),
   role_id: Joi.string().required(),
-  // phone: Joi.string()
-  //   .trim()
-  //   .required()
-  //   .min(10)
-  //   .label("Phone Number"),
   country: Joi.string().trim().required("Selecting Country Code is Required"),
 });
 
@@ -223,6 +135,7 @@ export const resetPasswordSchema = Joi.object({
         "Password must contain at least one digit, one special character, one lowercase letter, and one uppercase letter.",
     }),
 });
+
 export const otpSchema = Joi.object({
   email: Joi.string()
     .trim()
@@ -250,6 +163,7 @@ export const loginSchema = Joi.object({
     .required()
     .label("Password"),
 });
+
 export const loginWithOtpSchema = Joi.object({
   email: Joi.string()
     .trim()

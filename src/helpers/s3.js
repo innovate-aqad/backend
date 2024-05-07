@@ -21,13 +21,13 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const { user_type } = req.body;
     let destination = "./uploads/";
-    if (user_type === "vendor") {
+    if (user_type == "vendor") {
       destination += "vendor/";
-    } else if (user_type === "retailor") {
-      destination += "retailor/";
-    } else if (user_type === "logistic") {
+    } else if (user_type == "seller" ) {
+      destination += "seller/";
+    } else if (user_type == "logistic") {
       destination += "logistic/";
-    } else if (user_type === "employee") {
+    } else if (user_type == "employee") {
       destination += "employee/";
     } else {
       destination += "other/";

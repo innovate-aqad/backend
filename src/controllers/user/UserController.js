@@ -36,8 +36,7 @@ class UserController {
           statusCode: 400,
         });
       }
-
-      //vat_certificate
+      //v a t _ c e r t i f i c a t e
       if (
         (user_type == "vendor" && slide == 3) ||
         (user_type == "seller" && slide == 3) ||
@@ -47,7 +46,7 @@ class UserController {
         if (req.files && req.files?.vat_certificate?.length) {
           let name = req.files?.vat_certificate[0]?.filename;
           let size = req.files?.vat_certificate[0].size;
-          let get = await ImageFileCheck(name, req.body.user_tye, size);
+          let get = await ImageFileCheck(name, user_type, size);
           if (get == "invalid file") {
             return res.status(400).json({
               message:
@@ -70,7 +69,7 @@ class UserController {
         if (req.files && req.files?.trade_license?.length) {
           let name = req.files?.trade_license[0]?.filename;
           let size = req.files?.trade_license[0].size;
-          let get = await ImageFileCheck(name, req.body.user_tye, size);
+          let get = await ImageFileCheck(name, user_type, size);
           if (get == "invalid file") {
             return res.status(400).json({
               message:
@@ -95,7 +94,7 @@ class UserController {
       ) {
         let name = req.files?.profile_photo[0]?.filename;
         let size = req.files?.profile_photo[0].size;
-        let get = await ImageFileCheck(name, req.body.user_type, size);
+        let get = await ImageFileCheck(name,user_type, size);
         if (get == "invalid file") {
           return res.status(400).json({
             message:
@@ -112,6 +111,64 @@ class UserController {
       ) {
         return res.status(400).json({
           message: "Profile image is mandatory",
+          statusCode: 400,
+          success: false,
+        });
+      }
+      if (
+        req.files &&
+        req.files?.residence_visa?.length &&
+        user_type == "employee" &&
+        slide == 2
+      ) {
+        let name = req.files?.residence_visa[0]?.filename;
+        let size = req.files?.residence_visa[0].size;
+        let get = await ImageFileCheck(name, user_type, size);
+        if (get == "invalid file") {
+          return res.status(400).json({
+            message:
+              "Image must be png or jpeg or webp file and size must be less than 500 kb",
+            statusCode: 400,
+            success: false,
+          });
+        }
+      } else if (
+        req.files &&
+        !req.files?.residence_visa?.length &&
+        user_type == "employee" &&
+        slide == 2
+      ) {
+        return res.status(400).json({
+          message: "Residence visa is mandatory",
+          statusCode: 400,
+          success: false,
+        });
+      }
+      if (
+        req.files &&
+        req.files?.passport?.length &&
+        user_type == "employee" &&
+        slide == 2
+      ) {
+        let name = req.files?.passport[0]?.filename;
+        let size = req.files?.passport[0].size;
+        let get = await ImageFileCheck(name, user_type, size);
+        if (get == "invalid file") {
+          return res.status(400).json({
+            message:
+              "Image must be png or jpeg or webp file and size must be less than 500 kb",
+            statusCode: 400,
+            success: false,
+          });
+        }
+      } else if (
+        req.files &&
+        !req.files?.passport?.length &&
+        user_type == "employee" &&
+        slide == 2
+      ) {
+        return res.status(400).json({
+          message: "Passport is mandatory",
           statusCode: 400,
           success: false,
         });
@@ -267,7 +324,7 @@ class UserController {
     }
   }
 
-  async logoutUser(req, res) {}
+  async logoutUser(req, res) { }
 
   async updateUserInfo(req, res) {
     try {
