@@ -65,6 +65,24 @@ export const uploadImageToS3 = async (fileName, filePath) => {
   }
 };
 
+// Function to delete a file from S3
+export const deleteImageFromS3 = async (fileName, bucketName = "aqad-documents") => {
+  try {
+    const params = {
+      Bucket: bucketName,
+      Key: fileName,
+    };
+
+    const data = await s3.deleteObject(params).promise();
+    console.log("File deleted successfully");
+    return data; // Returns data about the deletion
+  } catch (err) {
+    console.error("Error deleting file:", err);
+    throw err;
+  }
+};
+
+
 // Function to store metadata in DynamoDB//
 export const storeImageMetadata = async (fileName, imageUrl) => {
   const params = {

@@ -42,7 +42,6 @@ class UserController {
         (user_type == "seller" && slide == 3) ||
         (user_type == "logistic" && slide == 3)
       ) {
-        // console.log("asdadadadasdasd",req.files,"Sd");
         if (req.files && req.files?.vat_certificate?.length) {
           let name = req.files?.vat_certificate[0]?.filename;
           let size = req.files?.vat_certificate[0].size;
@@ -54,16 +53,19 @@ class UserController {
               statusCode: 400,
               success: false,
             });
+          } else {
+            uploadImageToS3(name, req.files?.vat_certificate[0]?.path)
           }
         } else {
-          return res.status(400).json({
-            message: "Vat certificate is required",
-            statusCode: 400,
-            success: false,
-          });
+          if (!req.body.doc_id) {
+            return res.status(400).json({
+              message: "Vat certificate is required",
+              statusCode: 400,
+              success: false,
+            });
+          }
         }
       }
-
       //logistic and trade_license
       if (user_type == "logistic" && slide == 3) {
         if (req.files && req.files?.trade_license?.length) {
@@ -77,6 +79,8 @@ class UserController {
               statusCode: 400,
               success: false,
             });
+          } else {
+            uploadImageToS3(name, req.files?.trade_license[0]?.path)
           }
         } else {
           return res.status(400).json({
@@ -94,7 +98,7 @@ class UserController {
       ) {
         let name = req.files?.profile_photo[0]?.filename;
         let size = req.files?.profile_photo[0].size;
-        let get = await ImageFileCheck(name,user_type, size);
+        let get = await ImageFileCheck(name, user_type, size);
         if (get == "invalid file") {
           return res.status(400).json({
             message:
@@ -102,6 +106,8 @@ class UserController {
             statusCode: 400,
             success: false,
           });
+        } else {
+          uploadImageToS3(name, req.files?.profile_photo[0]?.path)
         }
       } else if (
         req.files &&
@@ -131,6 +137,8 @@ class UserController {
             statusCode: 400,
             success: false,
           });
+        } {
+          uploadImageToS3(name, req.files?.residence_visa[0]?.path)
         }
       } else if (
         req.files &&
@@ -160,6 +168,8 @@ class UserController {
             statusCode: 400,
             success: false,
           });
+        } else {
+          uploadImageToS3(name, req.files?.passport[0]?.path)
         }
       } else if (
         req.files &&

@@ -78,7 +78,7 @@ class UserServices {
       let { name, email, phone, country, user_type, slide, role, dob, company_name, company_address, designation, doc_id, emirates_id } = req.body;
       email = email?.trim();
       let findData;
-      if (slide == 2 || slide == 3) {
+      if (slide == 2 || slide == 3 || doc_id) {
         findData = await dynamoDBClient.send(
           new ScanCommand({
             TableName: "users",
@@ -89,6 +89,32 @@ class UserServices {
           })
         );
       }
+      console.log(findData?.Items[0]?.profile_photo?.S, "findDatafindData22", findData?.Items[0])
+      // return
+      if (findData?.Count > 0 && slide == 1) {
+        let profile_photo = findData?.Items[0]?.profile_photo?.S
+        if (req.files && req.files?.profile_photo?.length) {
+          profile_photo = req.files?.profile_photo[0]?.filename
+        }
+        const params = {
+          TableName: "users",
+          Key: { id: { S: doc_id } },
+          UpdateExpression: "SET #profile_photo = :profile_photo, #name = :name, #dob = :dob",
+          ExpressionAttributeNames: {
+            "#profile_photo": "profile_photo",
+            "#name": "name",
+            "#dob": "dob"
+          },
+          ExpressionAttributeValues: {
+            ":profile_photo": { S: profile_photo },
+            ":name": { S: name || findData?.Items[0]?.name?.S },
+            ":dob": { S: dob || findData?.Items[0]?.dob?.S }
+          },
+        };
+        await dynamoDBClient.send(new UpdateItemCommand(params));
+        return res.status(200).json({ message: "User data updated successfully", statusCode: 200, success: true });
+      }
+
       if (findData?.Count > 0 && slide == 2) {
         if (["vendor", "seller", "logistic"].includes(user_type?.toLowerCase()) && slide == 2) {
           const params = {
@@ -101,15 +127,15 @@ class UserServices {
               "#designation": "designation"
             },
             ExpressionAttributeValues: {
-              ":company_name": { S: company_name || "" },
-              ":company_address": { S: company_address || "" },
-              ":designation": { S: designation || "" }
+              ":company_name": { S: company_name || findData?.Items[0]?.company_name?.S || "" },
+              ":company_address": { S: company_address || findData?.Items[0]?.company_address?.S || "" },
+              ":designation": { S: designation || findData?.Items[0]?.designation?.S || "" }
             },
           };
           await dynamoDBClient.send(new UpdateItemCommand(params));
           return res.status(200).json({ message: "User data updated successfully", statusCode: 200, success: true });
         } else if (user_type == 'employee' && slide == 2) {
-          console.log(req.files, "req.filesssss")
+          console.log(req.files, "req.filesssss employee")
           let passport = req.files.passport[0]?.filename
           let residence_visa = req.files.residence_visa[0]?.filename
           const params = {
@@ -122,9 +148,9 @@ class UserServices {
               "#residence_visa": "residence_visa"
             },
             ExpressionAttributeValues: {
-              ":emirates_id": { S: emirates_id || "" },
-              ":passport": { S: passport || "" },
-              ":residence_visa": { S: residence_visa || "" }
+              ":emirates_id": { S: emirates_id || findData?.Items[0]?.emirates_id?.S || "" },
+              ":passport": { S: passport || findData?.Items[0]?.passport?.S || "" },
+              ":residence_visa": { S: residence_visa || findData?.Items[0]?.residence_visa?.S || "" }
             },
           };
           console.log(params, "paramsnasdas")
@@ -140,15 +166,16 @@ class UserServices {
       }
       if (findData?.Count > 0 && slide == 3) {
         console.log(req.files, "req.filesssssssssssssss")
-        let trade_license = req?.files?.trade_license?.length ? req?.files?.trade_license[0]?.filename : ""
-        let cheque_scan = req.files?.cheque_scan?.length ? req.files?.cheque_scan[0]?.filename : ""
-        let vat_certificate = req.files?.vat_certificate?.length ? req.files?.vat_certificate[0]?.filename : ""
-        let residence_visa = req.files?.residence_visa?.length ? req.files?.residence_visa[0]?.filename : ""
+        let trade_license = req?.files?.trade_license?.length ? req?.files?.trade_license[0]?.filename :
+          (findData?.Items[0]?.trade_license?.S || "")
+        let cheque_scan = req.files?.cheque_scan?.length ? req.files?.cheque_scan[0]?.filename : (findData?.Items[0]?.cheque_scan?.S || "")
+        let vat_certificate = req.files?.vat_certificate?.length ? req.files?.vat_certificate[0]?.filename : (findData?.Items[0]?.vat_certificate?.S || "")
+        let residence_visa = req.files?.residence_visa?.length ? req.files?.residence_visa[0]?.filename : (findData?.Items[0]?.residence_visa?.S || "")
         if (["vendor", "seller", "logistic"].includes(user_type?.toLowerCase()) && slide == 3) {
           const params = {
             TableName: "users",
             Key: { id: { S: doc_id } },
-            UpdateExpression: "SET #trade_license = :trade_license, #cheque_scan = :cheque_scan, #vat_certificate = :vat_certificate, #residence_visa= :residence_visa , #emirates_id=:emirates_id",
+            UpdateExpression: "SET #trade_license = :trade_license, #cheque_scan = :cheque_scan, #vat_certificate = :vat_certificate, #residence_visa = :residence_visa , #emirates_id = :emirates_id",
             ExpressionAttributeNames: {
               "#trade_license": "trade_license",
               "#cheque_scan": "cheque_scan",
@@ -157,11 +184,11 @@ class UserServices {
               "#emirates_id": "emirates_id"
             },
             ExpressionAttributeValues: {
-              ":trade_license": { S: trade_license || "" },
-              ":cheque_scan": { S: cheque_scan || "" },
-              ":vat_certificate": { S: vat_certificate || "" },
-              ":residence_visa": { S: residence_visa || "" },
-              ":emirates_id": { S: emirates_id || "" }
+              ":trade_license": { S: trade_license },
+              ":cheque_scan": { S: cheque_scan },
+              ":vat_certificate": { S: vat_certificate },
+              ":residence_visa": { S: residence_visa },
+              ":emirates_id": { S: emirates_id }
             },
           };
           await dynamoDBClient.send(new UpdateItemCommand(params));
@@ -183,7 +210,13 @@ class UserServices {
           },
         })
       );
-
+      if (findEmailExist.Count > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exist!",
+          statusCode: 400,
+        });
+      }
       if (phone) {
         const findPhoneExist = await dynamoDBClient.send(
           new ScanCommand({
@@ -194,7 +227,6 @@ class UserServices {
             },
           })
         );
-        console.log(findPhoneExist, "12@@! findphoneeee");
         if (findPhoneExist.Count > 0) {
           return res.status(400).json({
             success: false,
@@ -209,11 +241,8 @@ class UserServices {
       );
       let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
 
-      // const id = await getNextSequenceValue("userSequence"); // Get serial-like ID
       let id = uuidv4();
       id = id?.replace(/-/g, "");
-      console.log("ASDFASDF", id);
-      console.log(req.files, "req.fisldl");
 
       let profile_photo;
       if (req.files && req.files?.profile_photo?.length) {
@@ -235,14 +264,8 @@ class UserServices {
         },
       };
       console.log("docClient", "docccleint", params);
-      // nsert user data into DynamoDB
       let userData;
-      // try {
       userData = await dynamoDBClient.send(new PutItemCommand(params));
-      // } catch (error) {
-      //   console.log(error,"Eorororororoasasasa")
-      // }
-
       // docClient.put(params, (err, data) => {
       //   if (err) {
       //     console.error("Error inserting item:", err);
