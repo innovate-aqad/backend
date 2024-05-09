@@ -5,6 +5,7 @@ import UserRoutes from "./routes/user/UserRoutes.js";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { environmentVars } from "./config/environmentVar.js";
+import CategoryRoutes from "./routes/user/CategoryRoutes.js";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const app = express();
@@ -54,6 +55,8 @@ app.get("/", async (req, res) => {
 console.log("hello wordl");
 //routes here like this => app.use('/user',userRoutes);
 app.use("/api/user", UserRoutes);
+
+app.use("/api/category", CategoryRoutes);
  
 
 // app.use("/")

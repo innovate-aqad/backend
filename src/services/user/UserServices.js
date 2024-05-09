@@ -130,6 +130,7 @@ class UserServices {
               ":company_name": { S: company_name || findData?.Items[0]?.company_name?.S || "" },
               ":company_address": { S: company_address || findData?.Items[0]?.company_address?.S || "" },
               ":designation": { S: designation || findData?.Items[0]?.designation?.S || "" }
+              
             },
           };
           await dynamoDBClient.send(new UpdateItemCommand(params));

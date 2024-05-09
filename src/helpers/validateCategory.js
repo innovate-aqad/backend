@@ -1,19 +1,23 @@
 import Joi from "joi";
 
-// export const CategorySchema = Joi.object({
-//   title: Joi.string()
-//     .min(3)
-//     .max(50)
-//     .trim()
-//     .required()
-//     .label("title"),
-//   value: Joi.string()
-//     .min(3)
-//     .max(150)
-//     .trim()
-//     // .required()
-//     .label("summary"),
-// });
+export const CategorySchema = Joi.object({
+  // title: Joi.string()
+  //   .min(2)
+  //   .max(50)
+  //   .trim()
+  //   .required()
+  //   .label("category title"),
+  title: Joi.alternatives().conditional('id', {
+    is: Joi.exist(),  // If 'id' exists
+    then: Joi.string().min(2).max(50).trim().optional(),  // Make 'title' optional
+    otherwise: Joi.string().min(2).max(50).trim().required().label("category title")  // Make 'title' required if 'id' does not exist
+  }),
+  id: Joi.string().optional(),
+
+});
+export const deleteCategorySchema = Joi.object({
+  id: Joi.string().required().label("id"),
+});
 
 // export const CategorySchema = Joi.object({
 //   data: Joi.array()
@@ -87,55 +91,55 @@ import Joi from "joi";
 //     .label("data"),
 // });
 
-export const CategorySchema = Joi.object({
-  mainTitle: Joi.string()
-    .valid(
-      "categories",
-      "weight_group",
-      "size",
-      "material",
-      "gender",
-      "shape",
-      "color",
-      "price_range"
-    )
-    .trim()
-    .required()
-    .label("mainTitle"),
-  value: Joi.when("mainTitle", {
-    is: Joi.not("price_range"),
-    then: Joi.string()
-      .min(1)
-      .max(150)
-      .trim()
-      .required()
-      .label("value"),
-    otherwise: Joi.string()
-      .min(3)
-      .max(150)
-      .trim()
-      .allow("")
-      .label("value"),
-  }),
-  status: Joi.string()
-    .trim()
-    .required()
-    .label("status"),
-  min: Joi.when("mainTitle", {
-    is: "price_range",
-    then: Joi.string()
-      .required()
-      .label("min"),
-    otherwise: Joi.forbidden(),
-  }),
-  max: Joi.when("mainTitle", {
-    is: "price_range",
-    then: Joi.string()
-      .optional()
-      .label("max"),
-    otherwise: Joi.forbidden(),
-  }),
-});
+// export const CategorySchema = Joi.object({
+//   mainTitle: Joi.string()
+//     .valid(
+//       "categories",
+//       "weight_group",
+//       "size",
+//       "material",
+//       "gender",
+//       "shape",
+//       "color",
+//       "price_range"
+//     )
+//     .trim()
+//     .required()
+//     .label("mainTitle"),
+//   value: Joi.when("mainTitle", {
+//     is: Joi.not("price_range"),
+//     then: Joi.string()
+//       .min(1)
+//       .max(150)
+//       .trim()
+//       .required()
+//       .label("value"),
+//     otherwise: Joi.string()
+//       .min(3)
+//       .max(150)
+//       .trim()
+//       .allow("")
+//       .label("value"),
+//   }),
+//   status: Joi.string()
+//     .trim()
+//     .required()
+//     .label("status"),
+//   min: Joi.when("mainTitle", {
+//     is: "price_range",
+//     then: Joi.string()
+//       .required()
+//       .label("min"),
+//     otherwise: Joi.forbidden(),
+//   }),
+//   max: Joi.when("mainTitle", {
+//     is: "price_range",
+//     then: Joi.string()
+//       .optional()
+//       .label("max"),
+//     otherwise: Joi.forbidden(),
+//   }),
+// });
 
 
 

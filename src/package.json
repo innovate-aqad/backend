@@ -13,6 +13,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.572.0",
+    "@aws-sdk/lib-dynamodb": "^3.572.0",
     "@aws/dynamodb-data-mapper": "^0.7.3",
     "aws-sdk": "^2.1589.0",
     "axios": "^1.6.5",

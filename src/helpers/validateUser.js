@@ -16,6 +16,16 @@ export const registerSchema = Joi.object({
       return value;
     })
     .label("slide"),
+    trade_license_number: Joi.when("user_type", {
+      is: "vendor",
+      then: Joi.when("slide", {
+        is: "2",
+        then: Joi.string().required().label("Trade License Number"),
+        otherwise: Joi.string().trim().allow("")
+      }),
+      otherwise: Joi.string().trim().allow("")
+    }),
+  
   // name: Joi.string().min(3).max(55).trim().required().label("Full Name"),
   // email: Joi.string()
   //   .trim()

@@ -38,6 +38,9 @@ UserRoutes.post("/register",  upload.fields([
 
 
 
+
+
+
 UserRoutes.post("/login", UserControllerObj.login);
 
 UserRoutes.put("/forgot_password", UserControllerObj.forgotPassword);
