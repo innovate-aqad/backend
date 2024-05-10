@@ -54,7 +54,7 @@ class UserController {
               success: false,
             });
           } else {
-            uploadImageToS3(name, req.files?.vat_certificate[0]?.path)
+            uploadImageToS3(name, req.files?.vat_certificate[0]?.path);
           }
         } else {
           if (!req.body.doc_id) {
@@ -80,7 +80,7 @@ class UserController {
               success: false,
             });
           } else {
-            uploadImageToS3(name, req.files?.trade_license[0]?.path)
+            uploadImageToS3(name, req.files?.trade_license[0]?.path);
           }
         } else {
           return res.status(400).json({
@@ -107,7 +107,7 @@ class UserController {
             success: false,
           });
         } else {
-          uploadImageToS3(name, req.files?.profile_photo[0]?.path)
+          uploadImageToS3(name, req.files?.profile_photo[0]?.path);
         }
       } else if (
         req.files &&
@@ -137,8 +137,9 @@ class UserController {
             statusCode: 400,
             success: false,
           });
-        } {
-          uploadImageToS3(name, req.files?.residence_visa[0]?.path)
+        }
+        {
+          uploadImageToS3(name, req.files?.residence_visa[0]?.path);
         }
       } else if (
         req.files &&
@@ -169,7 +170,7 @@ class UserController {
             success: false,
           });
         } else {
-          uploadImageToS3(name, req.files?.passport[0]?.path)
+          uploadImageToS3(name, req.files?.passport[0]?.path);
         }
       } else if (
         req.files &&
@@ -183,6 +184,66 @@ class UserController {
           success: false,
         });
       }
+      //=======================================================slide 4 and user_type == logistic
+      // driver_images
+      //
+      if (
+        req.files &&
+        req.files?.driver_images?.length &&
+        user_type == "logistic" &&
+        slide == 4
+      ) {
+        for (let el of req.files.driver_images) {
+          let get = await ImageFileCheck(el?.filename, user_type, el?.size);
+          if (get == "invalid file") {
+            return res.status(400).json({
+              message:
+                "Image must be png or jpeg or webp file and size must be less than 500 kb",
+              statusCode: 400,
+              success: false,
+            });
+          }
+          {
+            uploadImageToS3(el?.filename, el?.path);
+          }
+        }
+      } else {
+        return res.status(400).json({
+          message: "Driver image is mandatory",
+          statusCode: 400,
+          success: false,
+        });
+      }
+      if (
+        req.files &&
+        req.files?.driving_license?.length &&
+        user_type == "logistic" &&
+        slide == 4
+      ) {
+        for (let el of req.files?.driving_license) {
+          let name = el?.filename;
+          let size = el?.size;
+          let get = await ImageFileCheck(name, user_type, size);
+          if (get == "invalid file") {
+            return res.status(400).json({
+              message:
+                "Image must be png or jpeg or webp file and size must be less than 500 kb",
+              statusCode: 400,
+              success: false,
+            });
+          }
+          {
+            uploadImageToS3(name, req.files?.residence_visa[0]?.path);
+          }
+        }
+      } else {
+        return res.status(400).json({
+          message: "Driving license is mandatory",
+          statusCode: 400,
+          success: false,
+        });
+      }
+
       await UserServicesObj.createUser(req, res);
     } catch (err) {
       return res
@@ -334,7 +395,7 @@ class UserController {
     }
   }
 
-  async logoutUser(req, res) { }
+  async logoutUser(req, res) {}
 
   async updateUserInfo(req, res) {
     try {

@@ -16,24 +16,15 @@ export const registerSchema = Joi.object({
       return value;
     })
     .label("slide"),
-    trade_license_number: Joi.when("user_type", {
-      is: "vendor",
-      then: Joi.when("slide", {
-        is: "2",
-        then: Joi.string().required().label("Trade License Number"),
-        otherwise: Joi.string().trim().allow("")
-      }),
-      otherwise: Joi.string().trim().allow("")
+  trade_license_number: Joi.when("user_type", {
+    is: "vendor",
+    then: Joi.when("slide", {
+      is: "2",
+      then: Joi.string().required().label("Trade License Number"),
+      otherwise: Joi.string().trim().allow(""),
     }),
-  
-  // name: Joi.string().min(3).max(55).trim().required().label("Full Name"),
-  // email: Joi.string()
-  //   .trim()
-  //   .required()
-  //   .email({ tlds: { allow: false } })
-  //   .label("Email"),
-
-    
+    otherwise: Joi.string().trim().allow(""),
+  }),
   name: Joi.when("slide", {
     is: "1",
     then: Joi.string().min(3).max(55).trim().required(),
@@ -41,19 +32,27 @@ export const registerSchema = Joi.object({
   }).label("Full Name"),
   email: Joi.when("slide", {
     is: "1",
-    then: Joi.string().trim().required().email({ tlds: { allow: false } }),
-    otherwise: Joi.string().trim().allow("").email({ tlds: { allow: false } }),
+    then: Joi.string()
+      .trim()
+      .required()
+      .email({ tlds: { allow: false } }),
+    otherwise: Joi.string()
+      .trim()
+      .allow("")
+      .email({ tlds: { allow: false } }),
   }).label("Email"),
 
-    phone: Joi.when("slide", {
-      is: "1",
-      then: Joi.string().trim().required().regex(phonePattern).messages({
-        "string.pattern.base": "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
-      }),
-      otherwise: Joi.string().trim().allow("").regex(phonePattern).messages({
-        "string.pattern.base": "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
-      }),
-    }).label("Phone Number"),
+  phone: Joi.when("slide", {
+    is: "1",
+    then: Joi.string().trim().required().regex(phonePattern).messages({
+      "string.pattern.base":
+        "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
+    }),
+    otherwise: Joi.string().trim().allow("").regex(phonePattern).messages({
+      "string.pattern.base":
+        "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
+    }),
+  }).label("Phone Number"),
 
   // phone: Joi.string()
   //   .trim()
@@ -106,14 +105,26 @@ export const registerSchema = Joi.object({
   //     otherwise: Joi.string().trim().allow(""),
   //   }),
   //   otherwise: Joi.string().trim().allow(""),
-  // }), 
+  // }),
   doc_id: Joi.when("slide", {
     is: Joi.valid("2", "3"),
     then: Joi.string().required().label("Document ID"),
     otherwise: Joi.string().trim().allow(""),
-  })
+  }),
+  drive_name: Joi.when(["slide", "user_type"], {
+    is: Joi.object({
+      slide: "4",
+      user_type: "vendor",
+    }),
+    then: Joi.array()
+      .items(Joi.string())
+      .min(1)
+      .max(10)
+      .required()
+      .label("Drive Name"),
+    otherwise: Joi.array().items(Joi.string()).optional(),
+  }),
 });
-
 
 export const registerAdminSchema = Joi.object({
   name: Joi.string().min(3).max(25).trim().required().label("Full Name"),
