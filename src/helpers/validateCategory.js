@@ -16,7 +16,7 @@ export const CategorySchema = Joi.object({
 
 });
 export const deleteCategorySchema = Joi.object({
-  id: Joi.string().required().label("id"),
+  id: Joi.string().max(40).required().label("id"),
 });
 
 // export const CategorySchema = Joi.object({

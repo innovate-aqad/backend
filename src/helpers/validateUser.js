@@ -111,19 +111,26 @@ export const registerSchema = Joi.object({
     then: Joi.string().required().label("Document ID"),
     otherwise: Joi.string().trim().allow(""),
   }),
-  drive_name: Joi.when(["slide", "user_type"], {
-    is: Joi.object({
-      slide: "4",
-      user_type: "vendor",
-    }),
-    then: Joi.array()
-      .items(Joi.string())
-      .min(1)
-      .max(10)
-      .required()
-      .label("Drive Name"),
-    otherwise: Joi.array().items(Joi.string()).optional(),
-  }),
+  // driver_name: Joi.when(
+  //   Joi.object({
+  //     slide: Joi.string().valid("4"), // Assuming slide is a string and should be "4"
+  //     user_type: Joi.string().valid("vendor"), // Assuming user_type is a string and should be "vendor"
+  //   }).unknown(true), // Allow additional keys in the object
+  //   {
+  //     is: Joi.object({
+  //       slide: Joi.string().valid("4"),
+  //       user_type: Joi.string().valid("vendor"),
+  //     }),
+  //     then: Joi.array()
+  //       .items(Joi.string())
+  //       .min(1)
+  //       .max(10)
+  //       .required()
+  //       .label("Drive Name"),
+  //     otherwise: Joi.array().items(Joi.string()).optional(),
+  //   }
+  // ),
+  
 });
 
 export const registerAdminSchema = Joi.object({

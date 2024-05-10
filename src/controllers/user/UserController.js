@@ -207,7 +207,10 @@ class UserController {
             uploadImageToS3(el?.filename, el?.path);
           }
         }
-      } else {
+      } 
+      else if ( !req.files?.driver_images?.length &&
+        user_type == "logistic" &&
+        slide == 4){
         return res.status(400).json({
           message: "Driver image is mandatory",
           statusCode: 400,
@@ -236,7 +239,11 @@ class UserController {
             uploadImageToS3(name, req.files?.residence_visa[0]?.path);
           }
         }
-      } else {
+      } else if(
+        !req.files?.driving_license?.length &&
+        user_type == "logistic" &&
+        slide == 4
+      ) {
         return res.status(400).json({
           message: "Driving license is mandatory",
           statusCode: 400,

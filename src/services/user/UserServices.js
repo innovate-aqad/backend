@@ -429,7 +429,7 @@ class UserServices {
       // }
       return res
         .status(201)
-        .json({ message: "user register", statusCode: 201, success: true });
+        .json({ message: "user register", statusCode: 201,data:userData, success: true });
     } catch (err) {
       console.log(err, "errorororro");
       return res
