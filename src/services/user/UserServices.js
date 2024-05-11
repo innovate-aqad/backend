@@ -19,8 +19,9 @@ import {
   UpdateItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
-
+import AWS from 'aws-sdk'
 import formidable from "formidable";
+import { pinePointServices, sendEmailOtp } from "../../helpers/aswSesServices.js";
 
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
 const dynamoDBClient = new DynamoDBClient({
@@ -30,6 +31,13 @@ const dynamoDBClient = new DynamoDBClient({
     secretAccessKey: process.env.Aws_secretAccessKey,
   },
 });
+
+
+AWS.config.update({
+  region: 'us-east-1' //process.env.Aws_region //'us-east-1'  // Change to your region
+});
+
+
 
 async function getNextSequenceValue(sequenceName) {
   console.log(sequenceName, "sequence nameee");
@@ -74,6 +82,7 @@ async function insertItem(table) {
 let salt = environmentVars.salt;
 
 class UserServices {
+
   async createUser(req, res) {
     try {
       let {
@@ -429,7 +438,7 @@ class UserServices {
       // }
       return res
         .status(201)
-        .json({ message: "user register", statusCode: 201,data:userData, success: true });
+        .json({ message: "user register", statusCode: 201, data: userData, success: true });
     } catch (err) {
       console.log(err, "errorororro");
       return res
@@ -437,6 +446,67 @@ class UserServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
+
+
+  async getUserByEmail(req, res) {
+    try {
+
+      const find = await dynamoDBClient.send(
+        new ScanCommand({
+          TableName: "users",
+          FilterExpression: "email = :email",
+          ExpressionAttributeValues: {
+            ":email": { S: req.query.email },
+          },
+        })
+      );
+
+      const simplifyDynamoDBResponse = (data) => {
+        const simpleData = {};
+        for (const key in data) {
+          if (data[key].S !== undefined) {
+            simpleData[key] = data[key].S;
+          } else if (data[key].N !== undefined) {
+            simpleData[key] = Number(data[key].N);
+          } else if (data[key].BOOL !== undefined) {
+            simpleData[key] = data[key].BOOL;
+          } else if (data[key].NULL !== undefined) {
+            simpleData[key] = null;
+          }
+          // Add more types as needed
+        }
+        return simpleData;
+      };
+
+      let rawData = simplifyDynamoDBResponse(find?.Items[0])
+      delete rawData?.password
+      return res.status(200).json({ message: "Get data", data: rawData, statusCode: 200, success: true })
+
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+    }
+  }
+
+  async sendVerifyEmail(req, res) {
+    try {
+      let get = await pinePointServices(req)
+      console.log(get, "GEt")
+
+      return res.status(200).json({ message: "get", data: get })
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+    }
+  }
+
+
+
+
+
+  
+
+
+
 
   async loginUser(req, res) {
     try {

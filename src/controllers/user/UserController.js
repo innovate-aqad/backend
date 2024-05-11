@@ -5,6 +5,7 @@ import {
   updateUserSchema,
   loginSchema,
   otpSchema,
+  getDataByEmailSchema,
 } from "../../helpers/validateUser.js";
 import bcrypt from "bcrypt";
 import UserServicesObj from "../../services/user/UserServices.js";
@@ -258,6 +259,48 @@ class UserController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+  async getByEmail(req, res) {
+    try {
+      let { error } = getDataByEmailSchema.validate(req.query, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+
+      await UserServicesObj.getUserByEmail(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+  async sendVerfiedEmailData(req, res) {
+    try {
+      let { error } = getDataByEmailSchema.validate(req.query, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+
+      await UserServicesObj.sendVerifyEmail(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+
+
+
+
+
 
   async login(req, res) {
     try {

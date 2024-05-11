@@ -44,6 +44,8 @@ UserRoutes.post("/register",  upload.fields([
 
 
 
+UserRoutes.get("/get_by_email", UserControllerObj.getByEmail);
+UserRoutes.get("/sendVerfiedEmail", UserControllerObj.sendVerfiedEmailData);
 
 
 

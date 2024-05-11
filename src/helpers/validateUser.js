@@ -132,7 +132,13 @@ export const registerSchema = Joi.object({
   // ),
   
 });
+export const getDataByEmailSchema = Joi.object({
+  email:  Joi.string()
+      .trim()
+      .required()
+      .email({ tlds: { allow: false } }).label("Email"),
 
+});
 export const registerAdminSchema = Joi.object({
   name: Joi.string().min(3).max(25).trim().required().label("Full Name"),
   email: Joi.string()
