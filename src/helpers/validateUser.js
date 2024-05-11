@@ -130,15 +130,31 @@ export const registerSchema = Joi.object({
   //     otherwise: Joi.array().items(Joi.string()).optional(),
   //   }
   // ),
-  
-});
-export const getDataByEmailSchema = Joi.object({
-  email:  Joi.string()
-      .trim()
-      .required()
-      .email({ tlds: { allow: false } }).label("Email"),
 
 });
+export const getDataByEmailSchema = Joi.object({
+  email: Joi.string()
+    .trim()
+    .required()
+    .email({ tlds: { allow: false } }).label("Email"),
+
+});
+export const VerifyEmailWithOtpSchema = Joi.object({
+  email: Joi.string()
+    .trim()
+    .required()
+    .email({ tlds: { allow: false } }).label("Email"),
+  otp: Joi.number().positive()
+    .required()
+    .label("otp"),
+
+});
+
+
+
+
+
+
 export const registerAdminSchema = Joi.object({
   name: Joi.string().min(3).max(25).trim().required().label("Full Name"),
   email: Joi.string()
@@ -204,8 +220,8 @@ export const loginWithOtpSchema = Joi.object({
     .email({ tlds: { allow: false } })
     .required()
     .label("Email"),
-  otp_code: Joi.number()
-    .min(6)
+  otp: Joi.number()
+    .min(4)
     // .regex(/^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[a-z])(?=.*[A-Z]).{6,}$/)
     .required()
     .label("Otp"),

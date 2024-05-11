@@ -45,13 +45,15 @@ UserRoutes.post("/register",  upload.fields([
 
 
 UserRoutes.get("/get_by_email", UserControllerObj.getByEmail);
-UserRoutes.get("/sendVerfiedEmail", UserControllerObj.sendVerfiedEmailData);
-
-
-
-
+UserRoutes.get("/send_otp_to_email", UserControllerObj.sendOtpOnEmailData);
+UserRoutes.get("/verfy_otp_with_email", UserControllerObj.verifyEmailWithOtp);
 
 UserRoutes.post("/login", UserControllerObj.login);
+UserRoutes.post("/login_with_otp", UserControllerObj.login_with_otp);
+
+
+
+
 
 UserRoutes.put("/forgot_password", UserControllerObj.forgotPassword);
 UserRoutes.put("/verify_otp", UserControllerObj.verify_otp);

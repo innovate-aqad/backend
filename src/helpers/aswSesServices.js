@@ -1,4 +1,5 @@
 import AWS from "aws-sdk";
+
 //phone => me-central-1
 
 const SES_COMMING = {
@@ -8,36 +9,114 @@ const SES_COMMING = {
 };
 const AWS_SES = new AWS.SES(SES_COMMING);
 const sns = new AWS.SNS(SES_COMMING);
-export const pinePointServices = async () => {
-  const params = {
-    Destination: {
-      ToAddresses: ["rathorejee074@gmail.com"], // Replace with recipient email address/es
-    },
-    Message: {
-      Body: {
-        Text: {
+export const pinePointServices = async (email, otp) => {
+  try {
+
+    const params = {
+      Destination: {
+        ToAddresses: [email], // Replace with recipient email address/es
+      },
+      Message: {
+        Body: {
+          Text: {
+            Charset: "UTF-8",
+            Data: `Email verification otp is ${otp}.`, // Replace with your message body
+          },
+        },
+        Subject: {
           Charset: "UTF-8",
-          Data: "This is the message body in text format.", // Replace with your message body
+          Data: "Email Verification", // Replace with your email subject
         },
       },
-      Subject: {
-        Charset: "UTF-8",
-        Data: "Test email", // Replace with your email subject
-      },
-    },
-    Source: "aqadinnovate@gmail.com", // Replace with your sender email address
-  };
-console.log(params,"paramsssssssssssssssss")
-  // Send email
-  AWS_SES.sendEmail(params, function (err, data) {
-    if (err) {
-      console.error("Error sending email:", err);
-    } else {
-      console.log("Email sent successfully:", data);
-    }
-  });
-  return true
+      Source: "aqadinnovate@gmail.com", // Replace with your sender email address
+    };
+    // Send email
+    let get = await AWS_SES.sendEmail(params, (err, data) => {
+      if (data) {
+        console.log("success data", data)
+      } else {
+        console.log("error ", err)
+
+      }
+    })
+    return true
+  } catch (error) {
+    return false
+  }
 };
+
+export const sendPasswordViaEmail = async (obj) => {
+  try {
+
+    const params = {
+      Destination: {
+        ToAddresses: [obj?.email], // Replace with recipient email address/es
+      },
+      Message: {
+        Body: {
+          Text: {
+            Charset: "UTF-8",
+            Data: `Login password is ${obj?.randomPassword}.`, // Replace with your message body
+          },
+        },
+        Subject: {
+          Charset: "UTF-8",
+          Data: "Login Password", // Replace with your email subject
+        },
+      },
+      Source: "aqadinnovate@gmail.com", // Replace with your sender email address
+    };
+    // Send email
+    let get = await AWS_SES.sendEmail(params, (err, data) => {
+      if (data) {
+        console.log("success data", data)
+      } else {
+        console.log("error ", err)
+
+      }
+    })
+    return true
+  } catch (error) {
+    return false
+  }
+};
+
+export const sendOtpForLogin = async (email, otp) => {
+  try {
+    const params = {
+      Destination: {
+        ToAddresses: [email], // Replace with recipient email address/es
+      },
+      Message: {
+        Body: {
+          Text: {
+            Charset: "UTF-8",
+            Data: `otp is ${otp}.`, // Replace with your message body
+          },
+        },
+        Subject: {
+          Charset: "UTF-8",
+          Data: "Login Otp", // Replace with your email subject
+        },
+      },
+      Source: "aqadinnovate@gmail.com", // Replace with your sender email address
+    };
+    // Send email
+    let get = await AWS_SES.sendEmail(params, (err, data) => {
+      if (data) {
+        console.log("success data", data)
+      } else {
+        console.log("error ", err)
+
+      }
+    })
+    return true
+  } catch (error) {
+    return false
+  }
+};
+
+
 
 export const sendEmailOtp = async (email, otp) => {
   const params = {

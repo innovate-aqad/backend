@@ -6,6 +6,8 @@ import {
   loginSchema,
   otpSchema,
   getDataByEmailSchema,
+  VerifyEmailWithOtpSchema,
+  loginWithOtpSchema,
 } from "../../helpers/validateUser.js";
 import bcrypt from "bcrypt";
 import UserServicesObj from "../../services/user/UserServices.js";
@@ -277,7 +279,7 @@ class UserController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-  async sendVerfiedEmailData(req, res) {
+  async sendOtpOnEmailData(req, res) {
     try {
       let { error } = getDataByEmailSchema.validate(req.query, options);
       if (error) {
@@ -288,7 +290,25 @@ class UserController {
         });
       }
 
-      await UserServicesObj.sendVerifyEmail(req, res);
+      await UserServicesObj.sendOtpEmail(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+  async verifyEmailWithOtp(req, res) {
+    try {
+      let { error } = VerifyEmailWithOtpSchema.validate(req.query, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+
+      await UserServicesObj.verifyEmailWithOtpCheck(req, res);
     } catch (err) {
       return res
         .status(500)
@@ -312,6 +332,24 @@ class UserController {
           .json({ message: error.details[0]?.message, success: false });
       }
       UserServicesObj.loginUser(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+
+  async login_with_otp(req, res) {
+    try {
+      let { error } = loginWithOtpSchema.validate(req?.body, options);
+
+      if (error) {
+        return res
+          .status(400)
+          .json({ message: error.details[0]?.message, success: false });
+      }
+      UserServicesObj.loginWithOtp(req, res);
     } catch (err) {
       return res
         .status(500)
