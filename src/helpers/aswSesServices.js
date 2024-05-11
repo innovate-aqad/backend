@@ -45,7 +45,7 @@ export const pinePointServices = async (email, otp) => {
   }
 };
 
-export const sendPasswordViaEmail = async (obj) => {
+export const sendPasswordViaEmailOf = async (obj) => {
   try {
 
     const params = {

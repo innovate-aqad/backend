@@ -93,6 +93,29 @@ class UserController {
           });
         }
       }
+
+      if (
+        req.files &&
+        req.files?.profile_photo?.length &&
+        (user_type == "vendor"||user_type == "logistic"||user_type=="seller") &&
+        slide == 1
+      ) {
+        let name = req.files?.profile_photo[0]?.filename;
+        let size = req.files?.profile_photo[0].size;
+        let get = await ImageFileCheck(name, user_type, size);
+        if (get == "invalid file") {
+          return res.status(400).json({
+            message:
+              "Image must be png or jpeg or webp file and size must be less than 500 kb",
+            statusCode: 400,
+            success: false,
+          });
+        } else {
+          console.log("aaaaaaaaaaaaaaa   ",req.files?.profile_photo[0]?.path)
+          uploadImageToS3(name, req.files?.profile_photo[0]?.path);
+        }
+      }
+
       if (
         req.files &&
         req.files?.profile_photo?.length &&
@@ -140,8 +163,7 @@ class UserController {
             statusCode: 400,
             success: false,
           });
-        }
-        {
+        }else        {
           uploadImageToS3(name, req.files?.residence_visa[0]?.path);
         }
       } else if (
@@ -205,7 +227,7 @@ class UserController {
               statusCode: 400,
               success: false,
             });
-          }
+          }else
           {
             uploadImageToS3(el?.filename, el?.path);
           }
@@ -237,8 +259,7 @@ class UserController {
               statusCode: 400,
               success: false,
             });
-          }
-          {
+          }else {
             uploadImageToS3(name, req.files?.residence_visa[0]?.path);
           }
         }
@@ -252,7 +273,7 @@ class UserController {
           statusCode: 400,
           success: false,
         });
-      }
+      } 
 
       await UserServicesObj.createUser(req, res);
     } catch (err) {
@@ -261,6 +282,7 @@ class UserController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
   async getByEmail(req, res) {
     try {
       let { error } = getDataByEmailSchema.validate(req.query, options);
@@ -280,6 +302,7 @@ console.log(req.query,"eeeeeeeeeeeeee")
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
   async sendOtpOnEmailData(req, res) {
     try {
       let { error } = getDataByEmailSchema.validate(req.query, options);
@@ -298,6 +321,7 @@ console.log(req.query,"eeeeeeeeeeeeee")
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
   async verifyEmailWithOtp(req, res) {
     try {
       let { error } = VerifyEmailWithOtpSchema.validate(req.query, options);
