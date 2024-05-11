@@ -34,11 +34,11 @@ UserRoutes.post("/register",  upload.fields([
   },
   {
     name: "driver_images",
-    maxCount: 10,
+    maxCount: 5,
   },
   {
     name: "driving_license",
-    maxCount: 10,
+    maxCount: 5,
   }
 ]), UserControllerObj.register);
 
