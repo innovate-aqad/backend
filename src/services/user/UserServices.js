@@ -457,10 +457,12 @@ class UserServices {
       };
 
       let rawData = simplifyDynamoDBResponse(find?.Items[0])
+      console.log(rawData,"rawDataaaaaaaaaaaaa")
       delete rawData?.password
       return res.status(200).json({ message: "Get data", data: rawData, statusCode: 200, success: true })
 
     } catch (err) {
+      console.error(err,"erroror")
       return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
     }
   }

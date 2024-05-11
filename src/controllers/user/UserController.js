@@ -271,9 +271,10 @@ class UserController {
           statusCode: 400,
         });
       }
-
+console.log(req.query,"eeeeeeeeeeeeee")
       await UserServicesObj.getUserByEmail(req, res);
     } catch (err) {
+      console.error(err,"Eeeeee")
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
