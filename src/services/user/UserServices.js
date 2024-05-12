@@ -792,7 +792,7 @@ class UserServices {
         }
         let currentTime = Date.now();
         currentTime = currentTime?.toString()
-        console.log("ddddddddddddd")
+        // console.log("ddddddddddddd")
         let get = await sendOtpForLogin(email, otp)
         if (get == false) {
           return res.status(400).json({ message: "internal server error", statusCode: 400, success: false })
@@ -913,7 +913,7 @@ class UserServices {
             },
           })
         );
-        console.log(find, "Asdad", find?.Items[0])
+        // console.log(find, "Asdad", find?.Items[0])
         if (find && find?.Count > 0) {
           let otpDb = find?.Items[0]?.otp?.S
           let creationTime = parseInt(find?.Items[0]?.creationTime?.S, 10)
@@ -929,7 +929,10 @@ class UserServices {
           return res.status(400).json({ message: "No data found", statusCode: 400, success: false })
         }
         let obj = {
-          name: findData?.Items[0]?.name?.S, email: findData?.Items[0]?.email?.S, user_type: findData?.Items[0]?.user_type?.S
+          name: findData?.Items[0]?.name?.S,
+           email: findData?.Items[0]?.email?.S, 
+          user_type: findData?.Items[0]?.user_type?.S,
+          id:findData?.Items[0]?.id?.S
         }
         let token = generateAccessToken(obj);
         let expiryDate = new Date();
