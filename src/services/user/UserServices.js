@@ -506,7 +506,7 @@ class UserServices {
       // }
       return res
         .status(201)
-        .json({ message: "user register", statusCode: 201, success: true });
+        .json({ message: "User register successfully", statusCode: 201, success: true });
     } catch (err) {
       try {
         if (req.files) {
