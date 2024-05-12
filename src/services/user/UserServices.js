@@ -87,6 +87,9 @@ class UserServices {
       console.log(req.body, "aaaaaaaaaa!@#!@#aa req.body")
       email = email?.trim();
       let findData;
+      if (slide == 2 || slide == 3 || slide == 4 && !doc_id) {
+        return res.status(400).json({ message: "Doc_id is mandatory", statusCode: 400, success: false })
+      }
       if (slide == 2 || slide == 3 || doc_id) {
         findData = await dynamoDBClient.send(
           new ScanCommand({
