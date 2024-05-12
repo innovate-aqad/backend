@@ -74,14 +74,14 @@ export async function ImageFileCheckForUI(name, res, size) {
 
 export async function removefIle(name, data) {
   let filePath = `./uploads/${name}`;
-  if (data == "category") {
-    filePath = `./uploads/filterProduct/category/${name}`;
-  } else if (data == "bestSeller") {
-    filePath = `./uploads/bestSeller/${name}`;
-  } else if (data == "gender") {
-    filePath = `./uploads/filterProduct/gender/${name}`;
-  } else if (data == "educationInfo") {
-    filePath = `./uploads/educationCertificate/${name}`;
+  if (data == "employee") {
+    filePath = `./uploads/employee/${name}`;
+  } else if (data == "logistic") {
+    filePath = `./uploads/logistic/${name}`;
+  } else if (data == "seller") {
+    filePath = `./uploads/seller/${name}`;
+  } else if (data == "vendor") {
+    filePath = `./uploads/vendor/${name}`;
   }
   await fs.unlinkSync(filePath);
 }

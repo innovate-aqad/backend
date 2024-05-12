@@ -39,6 +39,10 @@ UserRoutes.post("/register",  upload.fields([
   {
     name: "driving_license",
     maxCount: 5,
+  },
+  {
+    name: "emirate_id_pic",
+    maxCount: 1,
   }
 ]), UserControllerObj.register);
 

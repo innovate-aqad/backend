@@ -24,6 +24,7 @@ import formidable from "formidable";
 import { pinePointServices, sendEmailOtp, sendOtpForLogin, sendPasswordViaEmailOf } from "../../helpers/aswSesServices.js";
 import { generateOTP } from "../../helpers/generateOtp.js";
 import { deleteImageFromS3 } from "../../helpers/s3.js";
+import { removefIle } from "../../helpers/validateImageFile.js";
 
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
 const dynamoDBClient = new DynamoDBClient({
@@ -81,14 +82,15 @@ class UserServices {
         iban,
         vehicle_details_array,
         driver_name_array,
-        driver_license_number_array,
+        driver_license_number_array, db_driver_details_array
       } = req.body;
-      console.log(req.body, "aaaaaaaaaaaaaaaaa!@#!@#aa")
+      console.log(req.body, "aaaaaaaaaa!@#!@#aa req.body")
       email = email?.trim();
       let findData;
       if (slide == 2 || slide == 3 || doc_id) {
         findData = await dynamoDBClient.send(
           new ScanCommand({
+            // new QueryCommand({
             TableName: "users",
             FilterExpression: "id = :id",
             ExpressionAttributeValues: {
@@ -97,11 +99,11 @@ class UserServices {
           })
         );
       }
-      console.log(
-        findData?.Items[0]?.profile_photo?.S,
-        "findDatafindData22",
-        findData?.Items[0]
-      );
+      // console.log(
+      //   findData?.Items[0]?.profile_photo?.S,
+      //   "findDatafindData22",
+      //   findData
+      // );
       // return
       if (findData?.Count > 0 && slide == 1) {
         let profile_photo = findData?.Items[0]?.profile_photo?.S;
@@ -109,6 +111,8 @@ class UserServices {
           profile_photo = req.files?.profile_photo[0]?.filename;
           if (findData?.Items[0]?.profile_photo?.S) {
             await deleteImageFromS3(findData?.Items[0]?.profile_photo?.S)
+
+            await removefIle(req.files?.profile_photo[0]?.filename, user_type)
           }
         }
         const params = {
@@ -127,6 +131,7 @@ class UserServices {
             ":dob": { S: dob || findData?.Items[0]?.dob?.S },
           },
         };
+
         await dynamoDBClient.send(new UpdateItemCommand(params));
         return res.status(200).json({
           message: "User data updated successfully",
@@ -144,7 +149,7 @@ class UserServices {
             if (!warehouse_addresses || warehouse_addresses?.length == 0) {
               return res.status(400).json({ message: "Atleast one warehouse is mandatory", statusCode: 400, success: false })
             }
-          } else if (slide == 2 && user_type == 'logistic') {
+          } else if (slide == 2 && user_type == 'seller') {
             if (!outlet_addresses || outlet_addresses?.length == 0) {
               return res.status(400).json({ message: "Atleast one outlet_addresses is mandatory", statusCode: 400, success: false })
             }
@@ -218,18 +223,20 @@ class UserServices {
             success: true,
           });
         } else if (user_type == "employee" && slide == 2) {
-          console.log(req.files, "req.filesssss employee");
-          let passport = req.files.passport[0]?.filename;
-          let residence_visa = req.files.residence_visa[0]?.filename;
+          // console.log(req.files, "req.filesssss employee");
+          let passport = req?.files?.passport[0]?.filename;
+          let residence_visa = req?.files.residence_visa[0]?.filename;
+          let emirate_id_pic = req?.files?.emirate_id_pic[0]?.filename
           const params = {
             TableName: "users",
             Key: { id: { S: doc_id } },
             UpdateExpression:
-              "SET #emirates_id = :emirates_id, #passport = :passport, #residence_visa = :residence_visa",
+              "SET #emirates_id = :emirates_id, #passport = :passport, #residence_visa = :residence_visa,#emirate_id_pic = :emirate_id_pic",
             ExpressionAttributeNames: {
               "#emirates_id": "emirates_id",
               "#passport": "passport",
               "#residence_visa": "residence_visa",
+              "#emirate_id_pic": "emirate_id_pic",
             },
             ExpressionAttributeValues: {
               ":emirates_id": {
@@ -242,9 +249,13 @@ class UserServices {
                 S:
                   residence_visa || findData?.Items[0]?.residence_visa?.S || "",
               },
+              ":emirate_id_pic": {
+                S:
+                  emirate_id_pic || findData?.Items[0]?.emirate_id_pic?.S || "",
+              },
             },
           };
-          console.log(params, "paramsnasdas");
+          // console.log(params, "paramsnasdas");
           await dynamoDBClient.send(new UpdateItemCommand(params));
           return res.status(200).json({
             message: "User data updated successfully",
@@ -265,16 +276,20 @@ class UserServices {
         let trade_license = req?.files?.trade_license?.length
           ? req?.files?.trade_license[0]?.filename
           : findData?.Items[0]?.trade_license?.S || "";
-        console.log(trade_license, "trade_license trade_license ")
+        // console.log(trade_license, "trade_license trade_license ")
         if (findData?.Items[0]?.trade_license?.S && req?.files?.trade_license?.length) {
           console.log("first")
           await deleteImageFromS3(findData?.Items[0]?.trade_license?.S)
+
+          await removefIle(req?.files?.profile_photo[0]?.filename, user_type)
         }
         let cheque_scan = req.files?.cheque_scan?.length
           ? req.files?.cheque_scan[0]?.filename
           : findData?.Items[0]?.cheque_scan?.S || "";
         if (findData?.Items[0]?.cheque_scan?.S && req.files?.cheque_scan?.length) {
           await deleteImageFromS3(findData?.Items[0]?.cheque_scan?.S)
+
+          await removefIle(req?.files?.profile_photo[0]?.filename, user_type)
         }
 
         let vat_certificate = req.files?.vat_certificate?.length
@@ -282,6 +297,9 @@ class UserServices {
           : findData?.Items[0]?.vat_certificate?.S || "";
         if (findData?.Items[0]?.vat_certificate?.S && req.files?.vat_certificate?.length) {
           await deleteImageFromS3(findData?.Items[0]?.vat_certificate?.S)
+
+          await removefIle(req?.files?.profile_photo[0]?.filename, user_type)
+
         }
 
         let residence_visa = req.files?.residence_visa?.length
@@ -289,6 +307,17 @@ class UserServices {
           : findData?.Items[0]?.residence_visa?.S || "";
         if (req.files?.residence_visa?.length && findData?.Items[0]?.residence_visa?.S) {
           await deleteImageFromS3(findData?.Items[0]?.residence_visa?.S)
+
+          await removefIle(req?.files?.profile_photo[0]?.filename, user_type)
+
+        }
+        let emirate_id_pic = req.files?.emirate_id_pic?.length
+          ? req.files?.emirate_id_pic[0]?.filename
+          : findData?.Items[0]?.emirate_id_pic?.S || "";
+        if (req.files?.emirate_id_pic?.length && findData?.Items[0]?.emirate_id_pic?.S) {
+          await deleteImageFromS3(findData?.Items[0]?.emirate_id_pic?.S)
+          await removefIle(req?.files?.profile_photo[0]?.filename, user_type)
+
         }
 
         if (
@@ -299,7 +328,7 @@ class UserServices {
             TableName: "users",
             Key: { id: { S: doc_id } },
             UpdateExpression:
-              "SET #trade_license = :trade_license, #cheque_scan = :cheque_scan, #vat_certificate = :vat_certificate, #residence_visa = :residence_visa , #emirates_id = :emirates_id, #iban = :iban",
+              "SET #trade_license = :trade_license, #cheque_scan = :cheque_scan, #vat_certificate = :vat_certificate, #residence_visa = :residence_visa , #emirates_id = :emirates_id, #iban = :iban , #emirate_id_pic= :emirate_id_pic",
             ExpressionAttributeNames: {
               "#trade_license": "trade_license",
               "#cheque_scan": "cheque_scan",
@@ -307,6 +336,7 @@ class UserServices {
               "#residence_visa": "residence_visa",
               "#emirates_id": "emirates_id",
               "#iban": "iban",
+              "#emirate_id_pic": "emirate_id_pic"
             },
             ExpressionAttributeValues: {
               ":trade_license": { S: trade_license },
@@ -315,6 +345,7 @@ class UserServices {
               ":residence_visa": { S: residence_visa },
               ":emirates_id": { S: emirates_id || "" },
               ":iban": { S: iban || "" },
+              ":emirate_id_pic": { S: emirate_id_pic || "" },
             },
           };
           console.log(params, "apramnsnssnsm")
@@ -333,21 +364,23 @@ class UserServices {
         }
       }
       if (findData?.Count > 0 && slide == 4 && user_type == "logistic") {
-        if (driver_name_array?.length==0 || req.files?.driver_image?.length == 0 || req.files?.driving_license?.length == 0) {
+        if (!db_driver_details_array && (driver_name_array?.length == 0 || req.files?.driver_image?.length == 0 || req.files?.driving_license?.length == 0)) {
           return res.status(400).json({ message: "Atleast one driver_details required", statusCode: 400, success: false })
         }
+        console.log(vehicle_details_array, "vehicle_details_array", JSON.stringify(vehicle_details_array))
+
         if (vehicle_details_array?.length == 0) {
           return res.status(400).json({ message: "Atleast one vehicle details required", statusCode: 400, success: false })
         }
-        let driver_details_array = [];
-        let driver_images_arr = req.files?.driver_images;
+        let driver_details_array = db_driver_details_array?.length ? [...db_driver_details_array] : [];
+        let driver_images_arr = req?.files?.driver_images;
         let driving_license_arr = req.files?.driving_license;
-        console.log("first",findData?.Items[0],"aaaaaaaaaaaaaaaaaaaaa")
+        // console.log("first", "findData?.Items[0]", "aaaaaaaaaaaaaaaaaaaaa")
         for (let i = 0; i < driver_name_array?.length; i++) {
           let obj = {
             name: driver_name_array[i],
-            drive_image: driver_images_arr[i]?.filename,
-            driving_license: driving_license_arr[i]?.filename,
+            drive_image: driver_images_arr[i]?.filename || "",
+            driving_license: driving_license_arr[i]?.filename || "",
             driving_license_number: driver_license_number_array[i],
           };
           driver_details_array.push(obj);
@@ -366,7 +399,7 @@ class UserServices {
           ExpressionAttributeValues: {
             ":vehicle_details_array": {
               L:
-                vehicle_details_array?.map(el => ({ M: { "vehicle_brand": { S: el?.vehicle_brand }, "vehicle_number": { S: el?.vehicle_number } } })) ||
+                vehicle_details_array?.map(el => ({ M: { "brand": { S: el?.brand || "" }, "number": { S: el?.number || "" } } })) ||
                 findData?.Items[0]?.vehicle_details_array?.L ||
                 [],
             },
@@ -378,7 +411,7 @@ class UserServices {
             },
           },
         };
-        console.log(params,"apransnsnsn  params")
+        console.log(params, "apransnsnsn params", slide, '1!@!@!@@ sl l ideeeeeee')
         await dynamoDBClient.send(new UpdateItemCommand(params));
         return res.status(200).json({
           message: "User data updated successfully",
@@ -386,8 +419,10 @@ class UserServices {
           success: true,
         });
       }
+      // console.log("before email check ")
       const findEmailExist = await dynamoDBClient.send(
         new ScanCommand({
+          // new QueryCommand({
           TableName: "users",
           FilterExpression: "email = :email",
           ExpressionAttributeValues: {
@@ -395,7 +430,12 @@ class UserServices {
           },
         })
       );
+      // console.log(" email check ")
       if (findEmailExist.Count > 0) {
+        if (req.files && req.files?.profile_photo?.length) {
+          await deleteImageFromS3(req.files?.profile_photo[0]?.filename)
+          await removefIle(req.files?.profile_photo[0]?.filename, user_type)
+        }
         return res.status(400).json({
           success: false,
           message: "Email already exist!",
@@ -403,6 +443,10 @@ class UserServices {
         });
       }
       if (phone) {
+        if (req.files && req.files?.profile_photo?.length) {
+          await deleteImageFromS3(req.files?.profile_photo[0]?.filename)
+          await removefIle(req.files?.profile_photo[0]?.filename, user_type)
+        }
         const findPhoneExist = await dynamoDBClient.send(
           new ScanCommand({
             TableName: "users",
@@ -451,16 +495,7 @@ class UserServices {
       };
 
       console.log("docClient", "docccleint", params);
-      let userData;
-      userData = await dynamoDBClient.send(new PutItemCommand(params));
-      // docClient.put(params, (err, data) => {
-      //   if (err) {
-      //     console.error("Error inserting item:", err);
-      //   } else {
-      //     console.log("Successfully inserted item:", data);
-      //   }
-      // });
-      // const userData = await UserModel.create(params, { raw: true });
+      let userData = await dynamoDBClient.send(new PutItemCommand(params));
       let obj = {
         email, randomPassword, name,
       }
@@ -471,8 +506,21 @@ class UserServices {
       // }
       return res
         .status(201)
-        .json({ message: "user register", statusCode: 201, data: userData, success: true });
+        .json({ message: "user register", statusCode: 201, success: true });
     } catch (err) {
+      try {
+        if (req.files) {
+          for (let el in req?.files) {
+            for (let ele of req?.files[el]) {
+              // console.log(ele, "eleleellel")
+              await deleteImageFromS3(ele?.filename)
+              await removefIle(ele?.filename, req.body.user_type)
+            }
+          }
+        }
+      } catch (err) {
+        console.error(err, "eee")
+      }
       console.log(err, "errorororro");
       return res
         .status(500)

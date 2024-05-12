@@ -30,14 +30,17 @@ const options = {
 class UserController {
   async register(req, res) {
     try {
-      const { slide, user_type } = req.body;
-      let { error } = registerSchema.validate(req.body, options);
-      if (error) {
-        return res.status(400).json({
-          message: error.details[0]?.message,
-          success: false,
-          statusCode: 400,
-        });
+      const { slide, user_type,doc_id ,db_driver_details_array} = req.body;
+      if(slide==1&&doc_id&&doc_id?.length>0){
+      }else{
+        let { error } = registerSchema.validate(req.body, options);
+        if (error) {
+          return res.status(400).json({
+            message: error.details[0]?.message,
+            success: false,
+            statusCode: 400,
+          });
+        }
       }
       //v a t _ c e r t i f i c a t e
       if (
@@ -60,9 +63,10 @@ class UserController {
             uploadImageToS3(name, req.files?.vat_certificate[0]?.path);
           }
         } else {
-          if (!req.body.doc_id) {
+          console.log(req.body,"req.bodyyyyyyyyyyy",req.files,"asas req.files")
+          if (req.body.doc_id&&!req.body.db_vat_certificate) {
             return res.status(400).json({
-              message: "Vat certificate is required",
+              message: "Vat certificate is required...",
               statusCode: 400,
               success: false,
             });
@@ -90,7 +94,7 @@ class UserController {
             uploadImageToS3(name, req.files?.trade_license[0]?.path);
           }
         } else {
-          if (user_type == "logistic" && slide == 3) {
+          if (user_type == "logistic" && slide == 3&&!  req.body.db_trade_license) {
             return res.status(400).json({
               message: "trade_license is required",
               statusCode: 400,
@@ -120,14 +124,36 @@ class UserController {
             uploadImageToS3(name, req.files?.cheque_scan[0]?.path);
           }
         } else {
-          if (user_type == "logistic" && slide == 3) {
+          // if (user_type == "logistic" && slide == 3) {
+          //   return res.status(400).json({
+          //     message: "cheque_scan is required",
+          //     statusCode: 400,
+          //     success: false,
+          //   });
+          // }
+        }
+      }
+      // emirate_id_pic
+      if (
+        (user_type == "vendor" && slide == 3) ||
+        (user_type == "seller" && slide == 3) ||
+        (user_type == "logistic" && slide == 3)||(user_type == "employee" && slide == 2)
+      ) {
+        if (req.files && req.files?.emirate_id_pic?.length) {
+          let name = req.files?.emirate_id_pic[0]?.filename;
+          let size = req.files?.emirate_id_pic[0].size;
+          let get = await ImageFileCheck(name, user_type, size);
+          if (get == "invalid file") {
             return res.status(400).json({
-              message: "cheque_scan is required",
+              message:
+                "Image must be png or jpeg or webp file and size must be less than 500 kb",
               statusCode: 400,
               success: false,
             });
+          } else {
+            uploadImageToS3(name, req.files?.emirate_id_pic[0]?.path);
           }
-        }
+        } 
       }
       if (
         req.files &&
@@ -149,7 +175,7 @@ class UserController {
           uploadImageToS3(name, req.files?.profile_photo[0]?.path);
         }
       } else {
-        if (user_type == "vendor" && slide == 1) {
+        if (user_type == "employee" && slide == 1) {
           return res.status(400).json({ message: "Profile_picture is required", statusCode: 400, success: false })
         }
       }
@@ -272,7 +298,7 @@ class UserController {
           }
         }
       }
-      else if (!req.files?.driver_images?.length &&
+      else if ( !db_driver_details_array?.length&&  !req.files?.driver_images?.length &&
         user_type == "logistic" &&
         slide == 4) {
         return res.status(400).json({
@@ -302,7 +328,7 @@ class UserController {
             uploadImageToS3(name, el?.path);
           }
         }
-      } else if (
+      } else if (!db_driver_details_array?.length&&
         !req.files?.driving_license?.length &&
         user_type == "logistic" &&
         slide == 4
