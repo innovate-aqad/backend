@@ -806,7 +806,7 @@ class UserServices {
             },
           })
         );
-        console.log(find, "Asdad", find?.Items[0])
+        console.log(find, "Asdad", find)
         if (find && find?.Count > 0) {
           const params = {
             TableName: "userOtp",
@@ -831,7 +831,7 @@ class UserServices {
           const params = {
             TableName: 'userOtp',
             Item: {
-              email: { S: req.query.email },
+              email: { S: req.body.email },
               otp: { S: otp },
               creationTime: { N: currentTime },
               createdAt: { N: currentTime },
