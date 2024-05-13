@@ -36,19 +36,19 @@ const allowedOrigins = [
 ];
 
 // Use the cors middleware with specific options
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["POST", "GET", "PUT", "REQUEST", "DELETE"],
-    credentials: true,
-  })
-);
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       if (!origin || allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("Not allowed by CORS"));
+//       }
+//     },
+//     methods: ["POST", "GET", "PUT", "REQUEST", "DELETE"],
+//     credentials: true,
+//   })
+// );
 app.get("/", async (req, res) => {
   console.log("Hello World ! aqad" + Date.now())
   return res.status(200).send("Hello World ! aqad" + Date.now());
