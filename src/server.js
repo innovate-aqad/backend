@@ -50,7 +50,7 @@ app.use(
   })
 );
 app.get("/", async (req, res) => {
-  return res.status(200).send("Hello World? aqad" + Date.now());
+  return res.status(200).send("Hello World ! aqad" + Date.now());
 });
 app.get("/aqad", async (req, res) => {
   return res.status(200).json({ msg: "Hello World? aqad", data: Date.now() });
