@@ -19,8 +19,10 @@ const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
+    console.log(req.body,"req.bodyyyyyyyyy")
+
     const { user_type } = req.body;
-    // console.log(req.files,"imnulterrrrrrrrrrrrr")
+    console.log(req.files,"imnulterrrrrrrrrrrrr")
     let destination = "./uploads/";
     if (user_type == "vendor") {
       destination += "vendor/";
