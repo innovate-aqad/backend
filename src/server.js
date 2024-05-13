@@ -50,7 +50,7 @@ app.use(
   })
 );
 app.get("/", async (req, res) => {
-  return res.status(200).send("Hello World");
+  return res.status(200).send("Hello World? aqad");
 });
 console.log("hello wordl");
 //routes here like this =>     app.use('/user',userRoutes);
