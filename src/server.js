@@ -38,7 +38,7 @@ const allowedOrigins = [
 // Use the cors middleware with specific options
 app.use(
   cors({
-    origin: function(origin, callback) {
+    origin: function (origin, callback) {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -50,20 +50,23 @@ app.use(
   })
 );
 app.get("/", async (req, res) => {
-  return res.status(200).send("Hello World? aqad"+Date.now());
+  return res.status(200).send("Hello World? aqad" + Date.now());
+});
+app.get("/aqad", async (req, res) => {
+  return res.status(200).json({ msg: "Hello World? aqad", data: Date.now() });
 });
 console.log("hello wordl");
 //routes here like this =>     app.use('/user',userRoutes);
 app.use("/api/user", UserRoutes);
 
 app.use("/api/category", CategoryRoutes);
- 
+
 
 // app.use("/")
 // app.use("/api/user/ui",);
 
 //admin routes
- 
+
 // app.use("/api/admin/permission", PermissionMOduleReviewRoutes);
 // app.use("/api/admin/role", AdminRoleRoutes);
 // app.use("/api/admin/api_endpoint", ApiEndpointRoutes);
