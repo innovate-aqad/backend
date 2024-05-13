@@ -16,12 +16,18 @@ import {
   DynamoDBClient,
   PutItemCommand,
   ScanCommand,
-  UpdateItemCommand, QueryCommand
+  UpdateItemCommand,
+  QueryCommand,
 } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
-import AWS from 'aws-sdk'
+import AWS from "aws-sdk";
 import formidable from "formidable";
-import { pinePointServices, sendEmailOtp, sendOtpForLogin, sendPasswordViaEmailOf } from "../../helpers/aswSesServices.js";
+import {
+  pinePointServices,
+  sendEmailOtp,
+  sendOtpForLogin,
+  sendPasswordViaEmailOf,
+} from "../../helpers/aswSesServices.js";
 import { generateOTP } from "../../helpers/generateOtp.js";
 import { deleteImageFromS3 } from "../../helpers/s3.js";
 import { removefIle } from "../../helpers/validateImageFile.js";
@@ -36,7 +42,7 @@ const dynamoDBClient = new DynamoDBClient({
 });
 
 AWS.config.update({
-  region: 'us-east-1' //process.env.Aws_region //'us-east-1'  // Change to your region
+  region: "us-east-1", //process.env.Aws_region //'us-east-1'  // Change to your region
 });
 
 async function getNextSequenceValue(sequenceName) {
@@ -82,13 +88,20 @@ class UserServices {
         iban,
         vehicle_details_array,
         driver_name_array,
-        driver_license_number_array, db_driver_details_array
+        driver_license_number_array,
+        db_driver_details_array,
       } = req.body;
-      console.log(req.body, "aaaaaaaaaa!@#!@#aa req.body")
+      console.log(req.body, "aaaaaaaaaa!@#!@#aa req.body");
       email = email?.trim();
       let findData;
-      if (slide == 2 || slide == 3 || slide == 4 && !doc_id) {
-        return res.status(400).json({ message: "Doc_id is mandatory", statusCode: 400, success: false })
+      if ((slide == 2 || slide == 3 || slide == 4) && doc_id == "") {
+        return res
+          .status(400)
+          .json({
+            message: "Doc_id is mandatory",
+            statusCode: 400,
+            success: false,
+          });
       }
       if (slide == 2 || slide == 3 || doc_id) {
         findData = await dynamoDBClient.send(
@@ -113,9 +126,9 @@ class UserServices {
         if (req.files && req.files?.profile_photo?.length) {
           profile_photo = req.files?.profile_photo[0]?.filename;
           if (findData?.Items[0]?.profile_photo?.S) {
-            await deleteImageFromS3(findData?.Items[0]?.profile_photo?.S)
+            await deleteImageFromS3(findData?.Items[0]?.profile_photo?.S);
 
-            await removefIle(req.files?.profile_photo[0]?.filename, user_type)
+            await removefIle(req.files?.profile_photo[0]?.filename, user_type);
           }
         }
         const params = {
@@ -148,13 +161,25 @@ class UserServices {
           ["vendor", "seller", "logistic"].includes(user_type?.toLowerCase()) &&
           slide == 2
         ) {
-          if (slide == 2 && user_type == 'vendor') {
+          if (slide == 2 && user_type == "vendor") {
             if (!warehouse_addresses || warehouse_addresses?.length == 0) {
-              return res.status(400).json({ message: "Atleast one warehouse is mandatory", statusCode: 400, success: false })
+              return res
+                .status(400)
+                .json({
+                  message: "Atleast one warehouse is mandatory",
+                  statusCode: 400,
+                  success: false,
+                });
             }
-          } else if (slide == 2 && user_type == 'seller') {
+          } else if (slide == 2 && user_type == "seller") {
             if (!outlet_addresses || outlet_addresses?.length == 0) {
-              return res.status(400).json({ message: "Atleast one outlet_addresses is mandatory", statusCode: 400, success: false })
+              return res
+                .status(400)
+                .json({
+                  message: "Atleast one outlet_addresses is mandatory",
+                  statusCode: 400,
+                  success: false,
+                });
             }
           }
           const params = {
@@ -171,7 +196,7 @@ class UserServices {
               "#country": "country",
               "#po_box": "po_box",
               "#warehouse_addresses": "warehouse_addresses",
-              "#outlet_addresses": "outlet_addresses"
+              "#outlet_addresses": "outlet_addresses",
             },
             ExpressionAttributeValues: {
               ":company_name": {
@@ -204,15 +229,23 @@ class UserServices {
               ":po_box": { S: po_box || findData?.Items[0]?.po_box?.S || "" },
               ":warehouse_addresses": {
                 L:
-                  warehouse_addresses?.map(address => ({ M: { "address": { S: address.address }, "po_box": { S: address.po_box } } }))
-                  ||
+                  warehouse_addresses?.map((address) => ({
+                    M: {
+                      address: { S: address.address },
+                      po_box: { S: address.po_box },
+                    },
+                  })) ||
                   findData?.Items[0]?.warehouse_addresses?.L ||
                   [],
               },
               ":outlet_addresses": {
                 L:
-                  outlet_addresses?.map(address => ({ M: { "address": { S: address.address }, "po_box": { S: address.po_box } } }))
-                  ||
+                  outlet_addresses?.map((address) => ({
+                    M: {
+                      address: { S: address.address },
+                      po_box: { S: address.po_box },
+                    },
+                  })) ||
                   findData?.Items[0]?.outlet_addresses?.L ||
                   [],
               },
@@ -229,7 +262,7 @@ class UserServices {
           // console.log(req.files, "req.filesssss employee");
           let passport = req?.files?.passport[0]?.filename;
           let residence_visa = req?.files.residence_visa[0]?.filename;
-          let emirate_id_pic = req?.files?.emirate_id_pic[0]?.filename
+          let emirate_id_pic = req?.files?.emirate_id_pic[0]?.filename;
           const params = {
             TableName: "users",
             Key: { id: { S: doc_id } },
@@ -280,49 +313,54 @@ class UserServices {
           ? req?.files?.trade_license[0]?.filename
           : findData?.Items[0]?.trade_license?.S || "";
         // console.log(trade_license, "trade_license trade_license ")
-        if (findData?.Items[0]?.trade_license?.S && req?.files?.trade_license?.length) {
-          console.log("first")
-          await deleteImageFromS3(findData?.Items[0]?.trade_license?.S)
-
-          await removefIle(req?.files?.profile_photo[0]?.filename, user_type)
+        if (
+          findData?.Items[0]?.trade_license?.S &&
+          req?.files?.trade_license?.length
+        ) {
+          console.log("first");
+          await deleteImageFromS3(findData?.Items[0]?.trade_license?.S);
+          await removefIle(req?.files?.profile_photo[0]?.filename, user_type);
         }
         let cheque_scan = req.files?.cheque_scan?.length
           ? req.files?.cheque_scan[0]?.filename
           : findData?.Items[0]?.cheque_scan?.S || "";
-        if (findData?.Items[0]?.cheque_scan?.S && req.files?.cheque_scan?.length) {
-          await deleteImageFromS3(findData?.Items[0]?.cheque_scan?.S)
-
-          await removefIle(req?.files?.profile_photo[0]?.filename, user_type)
+        if (
+          findData?.Items[0]?.cheque_scan?.S &&
+          req.files?.cheque_scan?.length
+        ) {
+          await deleteImageFromS3(findData?.Items[0]?.cheque_scan?.S);
+          await removefIle(req?.files?.profile_photo[0]?.filename, user_type);
         }
-
         let vat_certificate = req.files?.vat_certificate?.length
           ? req.files?.vat_certificate[0]?.filename
           : findData?.Items[0]?.vat_certificate?.S || "";
-        if (findData?.Items[0]?.vat_certificate?.S && req.files?.vat_certificate?.length) {
-          await deleteImageFromS3(findData?.Items[0]?.vat_certificate?.S)
-
-          await removefIle(req?.files?.profile_photo[0]?.filename, user_type)
-
+        if (
+          findData?.Items[0]?.vat_certificate?.S &&
+          req.files?.vat_certificate?.length
+        ) {
+          await deleteImageFromS3(findData?.Items[0]?.vat_certificate?.S);
+          await removefIle(req?.files?.profile_photo[0]?.filename, user_type);
         }
-
         let residence_visa = req.files?.residence_visa?.length
           ? req.files?.residence_visa[0]?.filename
           : findData?.Items[0]?.residence_visa?.S || "";
-        if (req.files?.residence_visa?.length && findData?.Items[0]?.residence_visa?.S) {
-          await deleteImageFromS3(findData?.Items[0]?.residence_visa?.S)
-
-          await removefIle(req?.files?.profile_photo[0]?.filename, user_type)
-
+        if (
+          req.files?.residence_visa?.length &&
+          findData?.Items[0]?.residence_visa?.S
+        ) {
+          await deleteImageFromS3(findData?.Items[0]?.residence_visa?.S);
+          await removefIle(req?.files?.profile_photo[0]?.filename, user_type);
         }
         let emirate_id_pic = req.files?.emirate_id_pic?.length
           ? req.files?.emirate_id_pic[0]?.filename
           : findData?.Items[0]?.emirate_id_pic?.S || "";
-        if (req.files?.emirate_id_pic?.length && findData?.Items[0]?.emirate_id_pic?.S) {
-          await deleteImageFromS3(findData?.Items[0]?.emirate_id_pic?.S)
-          await removefIle(req?.files?.profile_photo[0]?.filename, user_type)
-
+        if (
+          req.files?.emirate_id_pic?.length &&
+          findData?.Items[0]?.emirate_id_pic?.S
+        ) {
+          await deleteImageFromS3(findData?.Items[0]?.emirate_id_pic?.S);
+          await removefIle(req?.files?.profile_photo[0]?.filename, user_type);
         }
-
         if (
           ["vendor", "seller", "logistic"].includes(user_type?.toLowerCase()) &&
           slide == 3
@@ -339,7 +377,7 @@ class UserServices {
               "#residence_visa": "residence_visa",
               "#emirates_id": "emirates_id",
               "#iban": "iban",
-              "#emirate_id_pic": "emirate_id_pic"
+              "#emirate_id_pic": "emirate_id_pic",
             },
             ExpressionAttributeValues: {
               ":trade_license": { S: trade_license },
@@ -351,7 +389,7 @@ class UserServices {
               ":emirate_id_pic": { S: emirate_id_pic || "" },
             },
           };
-          console.log(params, "apramnsnssnsm")
+          console.log(params, "apramnsnssnsm");
           await dynamoDBClient.send(new UpdateItemCommand(params));
           return res.status(200).json({
             message: "User data updated successfully",
@@ -367,15 +405,38 @@ class UserServices {
         }
       }
       if (findData?.Count > 0 && slide == 4 && user_type == "logistic") {
-        if (!db_driver_details_array && (driver_name_array?.length == 0 || req.files?.driver_image?.length == 0 || req.files?.driving_license?.length == 0)) {
-          return res.status(400).json({ message: "Atleast one driver_details required", statusCode: 400, success: false })
+        if (
+          !db_driver_details_array &&
+          (driver_name_array?.length == 0 ||
+            req.files?.driver_image?.length == 0 ||
+            req.files?.driving_license?.length == 0)
+        ) {
+          return res
+            .status(400)
+            .json({
+              message: "Atleast one driver_details required",
+              statusCode: 400,
+              success: false,
+            });
         }
-        console.log(vehicle_details_array, "vehicle_details_array", JSON.stringify(vehicle_details_array))
+        console.log(
+          vehicle_details_array,
+          "vehicle_details_array",
+          JSON.stringify(vehicle_details_array)
+        );
 
         if (vehicle_details_array?.length == 0) {
-          return res.status(400).json({ message: "Atleast one vehicle details required", statusCode: 400, success: false })
+          return res
+            .status(400)
+            .json({
+              message: "Atleast one vehicle details required",
+              statusCode: 400,
+              success: false,
+            });
         }
-        let driver_details_array = db_driver_details_array?.length ? [...db_driver_details_array] : [];
+        let driver_details_array = db_driver_details_array?.length
+          ? [...db_driver_details_array]
+          : [];
         let driver_images_arr = req?.files?.driver_images;
         let driving_license_arr = req.files?.driving_license;
         // console.log("first", "findData?.Items[0]", "aaaaaaaaaaaaaaaaaaaaa")
@@ -388,7 +449,7 @@ class UserServices {
           };
           driver_details_array.push(obj);
         }
-        console.log(driver_details_array, "req.filesssssssssssssss")
+        console.log(driver_details_array, "req.filesssssssssssssss");
 
         const params = {
           TableName: "users",
@@ -402,19 +463,36 @@ class UserServices {
           ExpressionAttributeValues: {
             ":vehicle_details_array": {
               L:
-                vehicle_details_array?.map(el => ({ M: { "brand": { S: el?.brand || "" }, "number": { S: el?.number || "" } } })) ||
+                vehicle_details_array?.map((el) => ({
+                  M: {
+                    brand: { S: el?.brand || "" },
+                    number: { S: el?.number || "" },
+                  },
+                })) ||
                 findData?.Items[0]?.vehicle_details_array?.L ||
                 [],
             },
             ":driver_details_array": {
               L:
-                driver_details_array?.map(el => ({ M: { "name": { S: el?.name }, "drive_image": { S: el?.drive_image }, "driving_license": { S: el?.driving_license }, "driving_license_number": { S: el?.driving_license_number } } })) ||
+                driver_details_array?.map((el) => ({
+                  M: {
+                    name: { S: el?.name },
+                    drive_image: { S: el?.drive_image },
+                    driving_license: { S: el?.driving_license },
+                    driving_license_number: { S: el?.driving_license_number },
+                  },
+                })) ||
                 findData?.Items[0]?.driver_details_array?.L ||
                 [],
             },
           },
         };
-        console.log(params, "apransnsnsn params", slide, '1!@!@!@@ sl l ideeeeeee')
+        console.log(
+          params,
+          "apransnsnsn params",
+          slide,
+          "1!@!@!@@ sl l ideeeeeee"
+        );
         await dynamoDBClient.send(new UpdateItemCommand(params));
         return res.status(200).json({
           message: "User data updated successfully",
@@ -436,8 +514,8 @@ class UserServices {
       // console.log(" email check ")
       if (findEmailExist.Count > 0) {
         if (req.files && req.files?.profile_photo?.length) {
-          await deleteImageFromS3(req.files?.profile_photo[0]?.filename)
-          await removefIle(req.files?.profile_photo[0]?.filename, user_type)
+          await deleteImageFromS3(req.files?.profile_photo[0]?.filename);
+          await removefIle(req.files?.profile_photo[0]?.filename, user_type);
         }
         return res.status(400).json({
           success: false,
@@ -447,8 +525,8 @@ class UserServices {
       }
       if (phone) {
         if (req.files && req.files?.profile_photo?.length) {
-          await deleteImageFromS3(req.files?.profile_photo[0]?.filename)
-          await removefIle(req.files?.profile_photo[0]?.filename, user_type)
+          await deleteImageFromS3(req.files?.profile_photo[0]?.filename);
+          await removefIle(req.files?.profile_photo[0]?.filename, user_type);
         }
         const findPhoneExist = await dynamoDBClient.send(
           new ScanCommand({
@@ -471,7 +549,7 @@ class UserServices {
       let randomPassword = encryptStringWithKey(
         req.body.email.toLowerCase()?.slice(0, 6)
       );
-      console.log(randomPassword, "randomPasswordrandomPassword")
+      console.log(randomPassword, "randomPasswordrandomPassword");
       let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
 
       let id = uuidv4();
@@ -500,29 +578,35 @@ class UserServices {
       console.log("docClient", "docccleint", params);
       let userData = await dynamoDBClient.send(new PutItemCommand(params));
       let obj = {
-        email, randomPassword, name,
-      }
-      sendPasswordViaEmailOf(obj)
+        email,
+        randomPassword,
+        name,
+      };
+      sendPasswordViaEmailOf(obj);
       // console.log("userData:12", userData);
       // if (userData) {
       // await sendPasswordViaEmail(res, data);
       // }
       return res
         .status(201)
-        .json({ message: "User register successfully", statusCode: 201, success: true });
+        .json({
+          message: "User register successfully",
+          statusCode: 201,
+          success: true,
+        });
     } catch (err) {
       try {
         if (req.files) {
           for (let el in req?.files) {
             for (let ele of req?.files[el]) {
               // console.log(ele, "eleleellel")
-              await deleteImageFromS3(ele?.filename)
-              await removefIle(ele?.filename, req.body.user_type)
+              await deleteImageFromS3(ele?.filename);
+              await removefIle(ele?.filename, req.body.user_type);
             }
           }
         }
       } catch (err) {
-        console.error(err, "eee")
+        console.error(err, "eee");
       }
       console.log(err, "errorororro");
       return res
@@ -533,7 +617,6 @@ class UserServices {
 
   async getUserByEmail(req, res) {
     try {
-
       const find = await dynamoDBClient.send(
         new ScanCommand({
           TableName: "users",
@@ -573,9 +656,9 @@ class UserServices {
           } else if (value.NULL !== undefined) {
             return null;
           } else if (value.L !== undefined) {
-            return value.L.map(simplifyAttribute);  // Recursively simplify each item in the list
+            return value.L.map(simplifyAttribute); // Recursively simplify each item in the list
           } else if (value.M !== undefined) {
-            return simplifyDynamoDBResponse(value.M);  // Recursively simplify map
+            return simplifyDynamoDBResponse(value.M); // Recursively simplify map
           }
           throw new Error("Unrecognized or unsupported DynamoDB data type");
         };
@@ -588,14 +671,22 @@ class UserServices {
         return simpleData;
       };
 
-      let rawData = simplifyDynamoDBResponse(find?.Items[0])
+      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
       // console.log(rawData, "rawDataaaaaaaaaaaaa")
-      delete rawData?.password
-      return res.status(200).json({ message: "Get data", data: rawData, statusCode: 200, success: true })
-
+      delete rawData?.password;
+      return res
+        .status(200)
+        .json({
+          message: "Get data",
+          data: rawData,
+          statusCode: 200,
+          success: true,
+        });
     } catch (err) {
-      console.error(err, "erroror")
-      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+      console.error(err, "erroror");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
 
@@ -611,15 +702,15 @@ class UserServices {
       // }
       let otp = await generateOTP();
       if (otp.length == 3) {
-        otp = otp + "0"
+        otp = otp + "0";
       } else if (otp.length == 2) {
-        otp = otp + "00"
+        otp = otp + "00";
       } else if (otp.length == 1) {
-        otp = otp + "000"
+        otp = otp + "000";
       }
       let currentTime = Date.now();
-      currentTime = currentTime?.toString()
-      let get = await pinePointServices(req.query.email, otp)
+      currentTime = currentTime?.toString();
+      let get = await pinePointServices(req.query.email, otp);
       if (get) {
         const find = await dynamoDBClient.send(
           new ScanCommand({
@@ -653,35 +744,50 @@ class UserServices {
         } else {
           let id = uuidv4()?.replace(/-/g, "");
           const params = {
-            TableName: 'userOtp',
+            TableName: "userOtp",
             Item: {
               email: { S: req.query.email },
               otp: { S: otp },
               creationTime: { N: currentTime },
               createdAt: { N: currentTime },
-              updatedAt: { N: currentTime }, id: { S: id }
-            }
+              updatedAt: { N: currentTime },
+              id: { S: id },
+            },
           };
-          console.log(params, "parasnsns")
+          console.log(params, "parasnsns");
           let Data = await dynamoDBClient.send(new PutItemCommand(params));
-          console.log(Data, "dayayayaya")
+          console.log(Data, "dayayayaya");
         }
 
-        return res.status(200).json({ message: "Otp send to email for verify", statusCode: 200, success: true, })
+        return res
+          .status(200)
+          .json({
+            message: "Otp send to email for verify",
+            statusCode: 200,
+            success: true,
+          });
       } else {
-
-        return res.status(400).json({ message: "not able to send otp on email , kindly do after some time", statusCode: 400, success: false })
+        return res
+          .status(400)
+          .json({
+            message:
+              "not able to send otp on email , kindly do after some time",
+            statusCode: 400,
+            success: false,
+          });
       }
     } catch (err) {
-      console.error(err, "Eeee")
+      console.error(err, "Eeee");
 
-      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
 
   async verifyEmailWithOtpCheck(req, res) {
     try {
-      let { otp, email } = req.query
+      let { otp, email } = req.query;
       const find = await dynamoDBClient.send(
         new ScanCommand({
           TableName: "userOtp",
@@ -691,20 +797,33 @@ class UserServices {
           },
         })
       );
-      console.log(find, "Asdad", find?.Items[0])
+      console.log(find, "Asdad", find?.Items[0]);
       if (find && find?.Count > 0) {
-        let otpDb = find?.Items[0]?.otp?.S
-        let creationTime = parseInt(find?.Items[0]?.creationTime?.S, 10)
-        let nowTime = Date.now()
+        let otpDb = find?.Items[0]?.otp?.S;
+        let creationTime = parseInt(find?.Items[0]?.creationTime?.S, 10);
+        let nowTime = Date.now();
         const timeDifference = nowTime - creationTime; // Difference in milliseconds
         const tenMinutes = 600000; //10 minutes in milliseconds
         if (timeDifference > tenMinutes) {
-          return res.status(400).json({ message: "Otp is expired", statusCode: 400, success: false })
+          return res
+            .status(400)
+            .json({
+              message: "Otp is expired",
+              statusCode: 400,
+              success: false,
+            });
         } else if (otpDb != otp) {
-          return res.status(400).json({ message: "In-valid otp", statusCode: 400, success: false })
+          return res
+            .status(400)
+            .json({ message: "In-valid otp", statusCode: 400, success: false });
         } else {
-          return res.status(200).json({ message: "Email verified successfully", statusCode: 200, success: true, })
-
+          return res
+            .status(200)
+            .json({
+              message: "Email verified successfully",
+              statusCode: 200,
+              success: true,
+            });
         }
         // console.log("otpDb", "as",
         //   creationTime,
@@ -741,31 +860,34 @@ class UserServices {
         //   await dynamoDBClient.send(new UpdateItemCommand(params));
         // }
       } else {
-        return res.status(400).json({ message: "No data found", statusCode: 400, success: false, })
-
+        return res
+          .status(400)
+          .json({ message: "No data found", statusCode: 400, success: false });
       }
     } catch (err) {
-      console.error(err, "Eeee")
+      console.error(err, "Eeee");
 
-      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
-
-
 
   async loginUser(req, res) {
     try {
       let { email, password } = req.body;
-      const findData = await dynamoDBClient.send(new QueryCommand({
-        TableName: "users",
-        IndexName: "email", // replace with your GSI name
-        KeyConditionExpression: "email = :email",
-        ExpressionAttributeValues: {
-          ":email": { S: email },
-        },
-      }));
+      const findData = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          IndexName: "email", // replace with your GSI name
+          KeyConditionExpression: "email = :email",
+          ExpressionAttributeValues: {
+            ":email": { S: email },
+          },
+        })
+      );
 
-      console.log(findData?.Items[0], "dinffdddaa", "findData")
+      console.log(findData?.Items[0], "dinffdddaa", "findData");
       if (findData?.Count > 0 && findData?.Items?.length) {
         let checkpassword = await bcrypt.compare(
           password,
@@ -780,22 +902,26 @@ class UserServices {
           });
         }
         let otp = await generateOTP();
-        console.log(
-          otp, "otptptptp"
-        )
+        console.log(otp, "otptptptp");
         if (otp.length == 3) {
-          otp = otp + "0"
+          otp = otp + "0";
         } else if (otp.length == 2) {
-          otp = otp + "00"
+          otp = otp + "00";
         } else if (otp.length == 1) {
-          otp = otp + "000"
+          otp = otp + "000";
         }
         let currentTime = Date.now();
-        currentTime = currentTime?.toString()
+        currentTime = currentTime?.toString();
         // console.log("ddddddddddddd")
-        let get = await sendOtpForLogin(email, otp)
+        let get = await sendOtpForLogin(email, otp);
         if (get == false) {
-          return res.status(400).json({ message: "internal server error", statusCode: 400, success: false })
+          return res
+            .status(400)
+            .json({
+              message: "internal server error",
+              statusCode: 400,
+              success: false,
+            });
         }
         const find = await dynamoDBClient.send(
           new ScanCommand({
@@ -806,7 +932,7 @@ class UserServices {
             },
           })
         );
-        console.log(find, "Asdad", find)
+        console.log(find, "Asdad", find);
         if (find && find?.Count > 0) {
           const params = {
             TableName: "userOtp",
@@ -829,26 +955,33 @@ class UserServices {
         } else {
           let id = uuidv4()?.replace(/-/g, "");
           const params = {
-            TableName: 'userOtp',
+            TableName: "userOtp",
             Item: {
               email: { S: req.body.email },
               otp: { S: otp },
               creationTime: { N: currentTime },
               createdAt: { N: currentTime },
-              updatedAt: { N: currentTime }, id: { S: id }
-            }
+              updatedAt: { N: currentTime },
+              id: { S: id },
+            },
           };
-          console.log(params, "parasnsns")
+          console.log(params, "parasnsns");
           let Data = await dynamoDBClient.send(new PutItemCommand(params));
-          console.log(Data, "dayayayaya")
+          console.log(Data, "dayayayaya");
         }
-        return res.status(200).json({ message: "Otp sent to registered email", statusCode: 200, success: true })
-
-
+        return res
+          .status(200)
+          .json({
+            message: "Otp sent to registered email",
+            statusCode: 200,
+            success: true,
+          });
 
         let obj = {
-          name: findData?.Items[0]?.name?.S, email: findData?.Items[0]?.email?.S, user_type: findData?.Items[0]?.user_type?.S
-        }
+          name: findData?.Items[0]?.name?.S,
+          email: findData?.Items[0]?.email?.S,
+          user_type: findData?.Items[0]?.user_type?.S,
+        };
         let token = generateAccessToken(obj);
         let expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 days
@@ -867,12 +1000,13 @@ class UserServices {
             message: "Logged in successful",
             statusCode: 200,
           });
-
       } else {
-        console.log("enddddd")
-        return res.status(400).json({ message: "No data found", statusCode: 400, success: false })
+        console.log("enddddd");
+        return res
+          .status(400)
+          .json({ message: "No data found", statusCode: 400, success: false });
       }
-      return
+      return;
       if (emailExistCheck?.is_verified == 0) {
         await UserModel.update(
           { is_verified: true },
@@ -888,20 +1022,21 @@ class UserServices {
     }
   }
 
-
   async loginWithOtp(req, res) {
     try {
       let { email, otp } = req.body;
-      const findData = await dynamoDBClient.send(new QueryCommand({
-        TableName: "users",
-        IndexName: "email", // replace with your GSI name
-        KeyConditionExpression: "email = :email",
-        ExpressionAttributeValues: {
-          ":email": { S: email },
-        },
-      }));
+      const findData = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          IndexName: "email", // replace with your GSI name
+          KeyConditionExpression: "email = :email",
+          ExpressionAttributeValues: {
+            ":email": { S: email },
+          },
+        })
+      );
 
-      console.log(findData?.Items[0], "dinffdddaa", findData)
+      console.log(findData?.Items[0], "dinffdddaa", findData);
 
       if (findData?.Count > 0 && findData?.Items?.length) {
         const find = await dynamoDBClient.send(
@@ -915,25 +1050,43 @@ class UserServices {
         );
         // console.log(find, "Asdad", find?.Items[0])
         if (find && find?.Count > 0) {
-          let otpDb = find?.Items[0]?.otp?.S
-          let creationTime = parseInt(find?.Items[0]?.creationTime?.S, 10)
-          let nowTime = Date.now()
+          let otpDb = find?.Items[0]?.otp?.S;
+          let creationTime = parseInt(find?.Items[0]?.creationTime?.S, 10);
+          let nowTime = Date.now();
           const timeDifference = nowTime - creationTime; // Difference in milliseconds
           const tenMinutes = 600000; //10 minutes in milliseconds
           if (timeDifference > tenMinutes) {
-            return res.status(400).json({ message: "Otp is expired", statusCode: 400, success: false })
+            return res
+              .status(400)
+              .json({
+                message: "Otp is expired",
+                statusCode: 400,
+                success: false,
+              });
           } else if (otpDb != otp) {
-            return res.status(400).json({ message: "In-valid otp", statusCode: 400, success: false })
+            return res
+              .status(400)
+              .json({
+                message: "In-valid otp",
+                statusCode: 400,
+                success: false,
+              });
           }
         } else {
-          return res.status(400).json({ message: "No data found", statusCode: 400, success: false })
+          return res
+            .status(400)
+            .json({
+              message: "No data found",
+              statusCode: 400,
+              success: false,
+            });
         }
         let obj = {
           name: findData?.Items[0]?.name?.S,
-           email: findData?.Items[0]?.email?.S, 
+          email: findData?.Items[0]?.email?.S,
           user_type: findData?.Items[0]?.user_type?.S,
-          id:findData?.Items[0]?.id?.S
-        }
+          id: findData?.Items[0]?.id?.S,
+        };
         let token = generateAccessToken(obj);
         let expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 days
@@ -952,11 +1105,12 @@ class UserServices {
             message: "Logged in successful",
             statusCode: 200,
           });
-
       } else {
-        return res.status(400).json({ message: "No data found", statusCode: 400, success: false })
+        return res
+          .status(400)
+          .json({ message: "No data found", statusCode: 400, success: false });
       }
-      return
+      return;
       if (emailExistCheck?.is_verified == 0) {
         await UserModel.update(
           { is_verified: true },
