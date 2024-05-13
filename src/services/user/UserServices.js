@@ -153,6 +153,7 @@ class UserServices {
           message: "User data updated successfully",
           statusCode: 200,
           success: true,
+          data:{id:doc_id}
         });
       }
 
@@ -257,6 +258,7 @@ class UserServices {
             message: "User data updated successfully",
             statusCode: 200,
             success: true,
+            data:{id:doc_id}
           });
         } else if (user_type == "employee" && slide == 2) {
           // console.log(req.files, "req.filesssss employee");
@@ -297,6 +299,7 @@ class UserServices {
             message: "User data updated successfully",
             statusCode: 200,
             success: true,
+            data:{id:doc_id}
           });
         } else {
           return res.status(400).json({
@@ -395,6 +398,7 @@ class UserServices {
             message: "User data updated successfully",
             statusCode: 200,
             success: true,
+            data:{id:doc_id}
           });
         } else {
           return res.status(400).json({
@@ -449,7 +453,7 @@ class UserServices {
           };
           driver_details_array.push(obj);
         }
-        console.log(driver_details_array, "req.filesssssssssssssss");
+        // console.log(driver_details_array, "req.filesssssssssssssss");
 
         const params = {
           TableName: "users",
@@ -487,17 +491,18 @@ class UserServices {
             },
           },
         };
-        console.log(
-          params,
-          "apransnsnsn params",
-          slide,
-          "1!@!@!@@ sl l ideeeeeee"
-        );
+        // console.log(
+        //   params,
+        //   "apransnsnsn params",
+        //   slide,
+        //   "1!@!@!@@ sl l ideeeeeee"
+        // );
         await dynamoDBClient.send(new UpdateItemCommand(params));
         return res.status(200).json({
           message: "User data updated successfully",
           statusCode: 200,
           success: true,
+          data:{id:doc_id}
         });
       }
       // console.log("before email check ")
@@ -542,7 +547,7 @@ class UserServices {
             success: false,
             message: "Phone number already exists!",
             statusCode: 400,
-          });
+            });
         }
       }
       let salt = environmentVars.salt;
@@ -593,6 +598,7 @@ class UserServices {
           message: "User register successfully",
           statusCode: 201,
           success: true,
+          data:{id}
         });
     } catch (err) {
       try {
