@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import { environmentVars } from "./config/environmentVar.js";
 import CategoryRoutes from "./routes/user/CategoryRoutes.js";
+import SubCategoryRoutes from "./routes/admin/SubCategoryRoutes.js";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const app = express();
@@ -61,6 +62,7 @@ console.log("hello wordl");
 app.use("/api/user", UserRoutes);
 
 app.use("/api/category", CategoryRoutes);
+app.use("/api/sub_category", SubCategoryRoutes);
 
 
 // app.use("/")

@@ -36,8 +36,10 @@ class SubCategoryServices {
   async add(req, res) {
     try {
       let { title, status, category_id, id } = req.body;
-      let categoryExist = await dynamoDBClient.sent(new QueryCommand({
-        TableName: "category", KeyConditionExpression: "id = :id", ExpressionAttributeValues: {
+      let categoryExist = await dynamoDBClient.send(new QueryCommand({
+        TableName: "category", 
+        KeyConditionExpression: "id = :id",
+         ExpressionAttributeValues: {
           ":id": { S: category_id }
         }
       }))

@@ -5,6 +5,8 @@ import docClient from "../../config/dbConfig.js";
 import { ImageFileCheck } from "../../helpers/validateImageFile.js";
 import { CategorySchema, deleteCategorySchema } from "../../helpers/validateCategory.js";
 import CategoryServicesObj from "../../services/admin/CategoryServices.js";
+import { SubCategorySchema, deleteSubCategorySchema } from "../../helpers/validateSubCategory.js";
+import SubCategoryServicesObj from "../../services/admin/SubCategoryServices.js";
 // import axios from "axios";
 
 const options = {
@@ -16,7 +18,8 @@ const options = {
 class SubCategoryController {
   async add_sub_cat(req, res) {
     try {
-      let { error } = CategorySchema.validate(req.body, options);
+      console.log(req.body,"req.bodyyyyyy!@#!@# !@#!@# ")
+      let { error } = SubCategorySchema.validate(req.body, options);
       if (error) {
         return res.status(400).json({
           message: error.details[0]?.message,
@@ -25,7 +28,7 @@ class SubCategoryController {
         });
       }
     
-      await CategoryServicesObj.add(req, res);
+      await SubCategoryServicesObj.add(req, res);
     } catch (err) {
       return res
         .status(500)
@@ -34,7 +37,7 @@ class SubCategoryController {
   }
   async deleteData(req, res) {
     try {
-      let { error } = deleteCategorySchema.validate(req.query, options);
+      let { error } = deleteSubCategorySchema.validate(req.query, options);
       if (error) {
         return res.status(400).json({
           message: error.details[0]?.message,

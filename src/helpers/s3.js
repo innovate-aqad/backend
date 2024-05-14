@@ -23,6 +23,7 @@ const storage = multer.diskStorage({
 
     const { user_type } = req.body;
     console.log(req.files,"imnulterrrrrrrrrrrrr")
+    console.log(req.body,"req bodddddddddy")
     let destination = "./uploads/";
     if (user_type == "vendor") {
       destination += "vendor/";

@@ -34,6 +34,9 @@ export async function ImageFileCheck(name, data, size) {
   } else if (data == "vendor") {
     filePath = `./uploads/vendor/${name}`;
   }
+  else {
+    filePath = `./uploads/other/${name}`;
+  }
   let check = fs.readFileSync(filePath);
   console.log(check,"aaaaaaa cechck ")
   if(check){
