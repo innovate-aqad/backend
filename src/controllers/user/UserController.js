@@ -65,7 +65,7 @@ class UserController {
           }
         } else {
           console.log(req.body,"req.bodyyyyyyyyyyy",req.files,"asas req.files")
-          // if (req.body.doc_id&&!req.body.db_vat_certificate) {
+          // if (req.body.doc_id&&!req.body.db_vat_certificate) {// here need to  uncomment 
           //   return res.status(400).json({
           //     message: "Vat certificate is required...",
           //     statusCode: 400,
