@@ -25,17 +25,17 @@ const storage = multer.diskStorage({
     console.log(req.files,"imnulterrrrrrrrrrrrr")
     console.log(req.body,"req bodddddddddy")
     let destination = "./uploads/";
-    if (user_type == "vendor") {
+    // if (user_type == "vendor") {
       destination += "vendor/";
-    } else if (user_type == "seller" ) {
-      destination += "seller/";
-    } else if (user_type == "logistic") {
-      destination += "logistic/";
-    } else if (user_type == "employee") {
-      destination += "employee/";
-    } else {
-      destination += "other/";
-    }
+    // } else if (user_type == "seller" ) {
+    //   destination += "seller/";
+    // } else if (user_type == "logistic") {
+    //   destination += "logistic/";
+    // } else if (user_type == "employee") {
+    //   destination += "employee/";
+    // } else {
+    //   destination += "other/";
+    // }
     cb(null, destination);
   },
   filename: function (req, file, cb) {
