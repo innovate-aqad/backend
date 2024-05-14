@@ -92,6 +92,8 @@ class UserServices {
         db_driver_details_array,
       } = req.body;
       console.log(req.body, "aaaaaaaaaa!@#!@#aa req.body");
+      console.log(req.files,"req.filesssss")
+
       email = email?.trim();
       let findData;
       if ((slide == 2 || slide == 3 || slide == 4) && doc_id == "") {
@@ -125,11 +127,10 @@ class UserServices {
         let profile_photo = findData?.Items[0]?.profile_photo?.S;
         if (req.files && req.files?.profile_photo?.length) {
           profile_photo = req.files?.profile_photo[0]?.filename;
-          if (findData?.Items[0]?.profile_photo?.S) {
-            await deleteImageFromS3(findData?.Items[0]?.profile_photo?.S);
-
-            await removefIle(req.files?.profile_photo[0]?.filename, user_type);
-          }
+          // if (findData?.Items[0]?.profile_photo?.S&&req.files?.profile_photo&&req.files?.profile_photo?.length) {
+          //   await deleteImageFromS3(findData?.Items[0]?.profile_photo?.S);
+          //   await removefIle(findData?.Items[0]?.profile_photo?.S, user_type);
+          // }
         }
         const params = {
           TableName: "users",
@@ -316,54 +317,54 @@ class UserServices {
           ? req?.files?.trade_license[0]?.filename
           : findData?.Items[0]?.trade_license?.S || "";
         // console.log(trade_license, "trade_license trade_license ")
-        if (
-          findData?.Items[0]?.trade_license?.S &&
-          req?.files?.trade_license?.length
-        ) {
-          console.log("first");
-          await deleteImageFromS3(findData?.Items[0]?.trade_license?.S);
-          await removefIle(req?.files?.profile_photo[0]?.filename, user_type);
-        }
+        // if (
+        //   findData?.Items[0]?.trade_license?.S &&
+        //   req?.files?.trade_license?.length&&req?.files?.trade_license?.length>0
+        // ) {
+        //   console.log("first");
+        //   await deleteImageFromS3(findData?.Items[0]?.trade_license?.S);
+        //   await removefIle(findData?.Items[0]?.trade_license?.S, user_type);
+        // }
         let cheque_scan = req.files?.cheque_scan?.length
           ? req.files?.cheque_scan[0]?.filename
           : findData?.Items[0]?.cheque_scan?.S || "";
-        if (
-          findData?.Items[0]?.cheque_scan?.S &&
-          req.files?.cheque_scan?.length
-        ) {
-          await deleteImageFromS3(findData?.Items[0]?.cheque_scan?.S);
-          await removefIle(req?.files?.profile_photo[0]?.filename, user_type);
-        }
+        // if (
+        //   findData?.Items[0]?.cheque_scan?.S &&
+        //   req.files?.cheque_scan?.length&&req.files?.cheque_scan?.length>0
+        // ) {
+        //   await deleteImageFromS3(findData?.Items[0]?.cheque_scan?.S);
+        //   await removefIle(findData?.Items[0]?.cheque_scan?.S, user_type);
+        // }
         let vat_certificate = req.files?.vat_certificate?.length
           ? req.files?.vat_certificate[0]?.filename
           : findData?.Items[0]?.vat_certificate?.S || "";
-        if (
-          findData?.Items[0]?.vat_certificate?.S &&
-          req.files?.vat_certificate?.length
-        ) {
-          await deleteImageFromS3(findData?.Items[0]?.vat_certificate?.S);
-          await removefIle(req?.files?.profile_photo[0]?.filename, user_type);
-        }
+        // if (
+        //   findData?.Items[0]?.vat_certificate?.S &&
+        //   req.files?.vat_certificate?.length&&req.files?.vat_certificate?.length>0
+        // ) {
+        //   await deleteImageFromS3(findData?.Items[0]?.vat_certificate?.S);
+        //   await removefIle(findData?.Items[0]?.vat_certificate?.S, user_type);
+        // }
         let residence_visa = req.files?.residence_visa?.length
           ? req.files?.residence_visa[0]?.filename
           : findData?.Items[0]?.residence_visa?.S || "";
-        if (
-          req.files?.residence_visa?.length &&
-          findData?.Items[0]?.residence_visa?.S
-        ) {
-          await deleteImageFromS3(findData?.Items[0]?.residence_visa?.S);
-          await removefIle(req?.files?.profile_photo[0]?.filename, user_type);
-        }
+        // if (
+        //   req.files?.residence_visa?.length &&req.files?.residence_visa?.length>0 &&
+        //   findData?.Items[0]?.residence_visa?.S
+        // ) {
+        //   await deleteImageFromS3(findData?.Items[0]?.residence_visa?.S);
+        //   await removefIle(findData?.Items[0]?.residence_visa?.S, user_type);
+        // }
         let emirate_id_pic = req.files?.emirate_id_pic?.length
           ? req.files?.emirate_id_pic[0]?.filename
           : findData?.Items[0]?.emirate_id_pic?.S || "";
-        if (
-          req.files?.emirate_id_pic?.length &&
-          findData?.Items[0]?.emirate_id_pic?.S
-        ) {
-          await deleteImageFromS3(findData?.Items[0]?.emirate_id_pic?.S);
-          await removefIle(req?.files?.profile_photo[0]?.filename, user_type);
-        }
+        // if (
+        //   req.files?.emirate_id_pic?.length &&req.files?.emirate_id_pic?.length>0 &&
+        //   findData?.Items[0]?.emirate_id_pic?.S
+        // ) {
+        //   await deleteImageFromS3(findData?.Items[0]?.emirate_id_pic?.S);
+        //   await removefIle(findData?.Items[0]?.emirate_id_pic?.S, user_type);
+        // }
         if (
           ["vendor", "seller", "logistic"].includes(user_type?.toLowerCase()) &&
           slide == 3
@@ -518,10 +519,10 @@ class UserServices {
       );
       // console.log(" email check ")
       if (findEmailExist.Count > 0) {
-        if (req.files && req.files?.profile_photo?.length) {
-          await deleteImageFromS3(req.files?.profile_photo[0]?.filename);
-          await removefIle(req.files?.profile_photo[0]?.filename, user_type);
-        }
+        // if (req.files && req.files?.profile_photo?.length&&req.files?.profile_photo?.length>0) {
+        //   await deleteImageFromS3(req.files?.profile_photo[0]?.filename);
+        //   await removefIle(req.files?.profile_photo[0]?.filename, user_type);
+        // }
         return res.status(400).json({
           success: false,
           message: "Email already exist!",
@@ -529,10 +530,10 @@ class UserServices {
         });
       }
       if (phone) {
-        if (req.files && req.files?.profile_photo?.length) {
-          await deleteImageFromS3(req.files?.profile_photo[0]?.filename);
-          await removefIle(req.files?.profile_photo[0]?.filename, user_type);
-        }
+        // if (req.files && req.files?.profile_photo?.length&& req.files?.profile_photo?.length>0) {
+        //   await deleteImageFromS3(req.files?.profile_photo[0]?.filename);
+        //   await removefIle(req.files?.profile_photo[0]?.filename, user_type);
+        // }
         const findPhoneExist = await dynamoDBClient.send(
           new ScanCommand({
             TableName: "users",

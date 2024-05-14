@@ -34,6 +34,7 @@ export async function ImageFileCheck(name, data, size) {
   }
   let check = fs.readFileSync(filePath);
   const filetype = checkFileSignature(check);
+  
   if (filetype == "PNG" || filetype == "JPEG" || filetype == "WEBP") {
     if (size > maxSize) {
       // console.log(size,maxSize,"sssssssssss")
