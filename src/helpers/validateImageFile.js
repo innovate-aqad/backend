@@ -23,6 +23,7 @@ function checkFileSignature(buffer) {
 }
 const maxSize = 500 * 1024;
 export async function ImageFileCheck(name, data, size) {
+  console.log(name,"name",data,"aaData",size,"sizeee")
   let filePath = `./uploads/${name}`;
   if (data == "employee") {
     filePath = `./uploads/employee/${name}`;
@@ -34,6 +35,7 @@ export async function ImageFileCheck(name, data, size) {
     filePath = `./uploads/vendor/${name}`;
   }
   let check = fs.readFileSync(filePath);
+  console.log(check,"aaaaaaa cechck ")
   if(check){
     const filetype = checkFileSignature(check);
   
