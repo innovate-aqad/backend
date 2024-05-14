@@ -6,6 +6,7 @@ function checkFileSignature(buffer) {
     FFD8FFE0: "JPEG",
     FFD8FF: "JPG",
     "52494646": "WEBP",
+    "25504446": "PDF",
     // Add more file signatures as needed
   };
   const hexSignature = buffer
