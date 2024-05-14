@@ -31,7 +31,7 @@ class UserController {
   async register(req, res) {
     try {
       const { slide, user_type,doc_id ,db_driver_details_array} = req.body;
-      // console.log(req.body,"req.bodyyyyyyyyyyyyyyyyyyyyyyy");
+      console.log(req.body,"req.  bodyyyyyyyy before schema =====yyyyyyyyyyyyyyy");
       if(slide==1&&doc_id&&doc_id?.length>0){
       }else{
         let { error } = registerSchema.validate(req.body, options);
@@ -65,13 +65,13 @@ class UserController {
           }
         } else {
           console.log(req.body,"req.bodyyyyyyyyyyy",req.files,"asas req.files")
-          if (req.body.doc_id&&!req.body.db_vat_certificate) {
-            return res.status(400).json({
-              message: "Vat certificate is required...",
-              statusCode: 400,
-              success: false,
-            });
-          }
+          // if (req.body.doc_id&&!req.body.db_vat_certificate) {
+          //   return res.status(400).json({
+          //     message: "Vat certificate is required...",
+          //     statusCode: 400,
+          //     success: false,
+          //   });
+          // }
         }
       }
       // trade license 
