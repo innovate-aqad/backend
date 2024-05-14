@@ -34,7 +34,8 @@ export async function ImageFileCheck(name, data, size) {
     filePath = `./uploads/vendor/${name}`;
   }
   let check = fs.readFileSync(filePath);
-  const filetype = checkFileSignature(check);
+  if(check){
+    const filetype = checkFileSignature(check);
   
   if (filetype == "PNG" || filetype == "JPEG" || filetype == "WEBP") {
     if (size > maxSize) {
@@ -47,7 +48,7 @@ export async function ImageFileCheck(name, data, size) {
   } else if (filetype == null) {
     await fs.unlinkSync(filePath);
     return "invalid file";
-  }
+  }}
 }
 
 export async function ImageFileCheckForUI(name, res, size) {

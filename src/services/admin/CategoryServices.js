@@ -15,7 +15,8 @@ import Sequence from "../../models/SequenceModel.js";
 import {
   DynamoDBClient,
   PutItemCommand,
-  ScanCommand, UpdateItemCommand,DeleteItemCommand
+  ScanCommand, UpdateItemCommand, DeleteItemCommand,
+  QueryCommand
 } from "@aws-sdk/client-dynamodb";
 
 import { v4 as uuidv4 } from "uuid";
@@ -38,16 +39,16 @@ class CategoryServices {
       let findData;
       if (id) {
         findData = await dynamoDBClient.send(
-          new ScanCommand({
+          new QueryCommand({
             TableName: "category",
-            FilterExpression: "id = :id",
+            KeyConditionExpression: "id = :id",
             ExpressionAttributeValues: {
               ":id": { S: id },
             },
           })
         );
       }
-      console.log("findDatafindData22", findData?.Items[0])
+      // console.log("findDatafindData22", findData?.Items[0])
       if (findData) {
         const params = {
           TableName: "category",
@@ -63,15 +64,18 @@ class CategoryServices {
           },
         };
         const findExist = await dynamoDBClient.send(
-          new ScanCommand({
+          new QueryCommand({
             TableName: "category",
-            FilterExpression: "title = :title AND id <> :id", // Exclude the current item by its ID
+            IndexName: "title", // Use the correct GSI name
+            KeyConditionExpression: "title = :title",
+            FilterExpression: "id <> :id",
             ExpressionAttributeValues: {
               ":title": { S: title },
-              ":id": { S: id } // Assuming 'id' is the ID of the item being updated
+              ":id": { S: id },
             },
           })
         );
+
         if (findExist?.Count > 0) {
           return res.status(400).json({ message: "Title already exist", statusCode: 400, success: false });
         } else {
@@ -80,13 +84,15 @@ class CategoryServices {
         }
       } else {
         const findEmailExist = await dynamoDBClient.send(
-          new ScanCommand({
+          new QueryCommand({
             TableName: "category",
-            FilterExpression: "title = :title",
+            IndexName: "title", // replace with your GSI name
+            KeyConditionExpression: "title = :title",
             ExpressionAttributeValues: {
               ":title": { S: title },
             },
           })
+
         );
         if (findEmailExist.Count > 0) {
           return res.status(400).json({
@@ -123,7 +129,6 @@ class CategoryServices {
   async delete(req, res) {
     try {
       let id = req.query.id
-
       const params = {
         TableName: 'category',
         Key: {
@@ -131,8 +136,8 @@ class CategoryServices {
         }
       };
       let result = await dynamoDBClient.send(new DeleteItemCommand(params));
-      console.log(result , "checkkkk")
-      return res.status(200).json({ message: "Delete successfully", statusCode: 200, success: true, data: result  })
+      console.log(result, "checkkkk")
+      return res.status(200).json({ message: "Delete successfully", statusCode: 200, success: true, data: result })
     } catch (err) {
       console.error(err)
       return res.status(500).json({ message: err?.message, statusCode: 500, success: false })

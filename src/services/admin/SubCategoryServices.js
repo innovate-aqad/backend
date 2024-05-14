@@ -15,7 +15,8 @@ import Sequence from "../../models/SequenceModel.js";
 import {
   DynamoDBClient,
   PutItemCommand,
-  ScanCommand, UpdateItemCommand, DeleteItemCommand
+  ScanCommand, UpdateItemCommand, DeleteItemCommand,
+  QueryCommand
 } from "@aws-sdk/client-dynamodb";
 
 import { v4 as uuidv4 } from "uuid";
@@ -34,45 +35,62 @@ const dynamoDBClient = new DynamoDBClient({
 class SubCategoryServices {
   async add(req, res) {
     try {
-      let { title, status, id, category_id } = req.body;
+      let { title, status, category_id, id } = req.body;
+      let categoryExist = await dynamoDBClient.sent(new QueryCommand({
+        TableName: "category", KeyConditionExpression: "id = :id", ExpressionAttributeValues: {
+          ":id": { S: category_id }
+        }
+      }))
+      if (categoryExist?.Count == 0) {
+        return res.status(400).json({ message: "Category not found", statusCode: 400, success: false })
+      }
       let findData;
       if (id) {
-        findData = await dynamoDBClient.send(
-          new ScanCommand({
+      let  findData = await dynamoDBClient.send(
+          new QueryCommand({
             TableName: "sub_category",
-            FilterExpression: "id = :id",
+            KeyConditionExpression: "id = :id",
             ExpressionAttributeValues: {
               ":id": { S: id },
             },
           })
         );
-      }
-      console.log("findDatafindData22", findData?.Items[0])
-      if (findData) {
+        if (findData && findData?.Count == 0) {
+          return res.status(400).json({ message: "Sub-category document not found", statusCode: 400, success: false })
+        }
+        // console.log("findDatafindData22", findData?.Items[0])
         const params = {
           TableName: "sub_category",
           Key: { id: { S: id } },
-          UpdateExpression: "SET #title = :title, #status = :status, #category_id= :category_id",
+          UpdateExpression: "SET #title = :title, #status = :status, #category_id =:category_id, #created_at = :created_at , #updated_at= :updated_at ",
           ExpressionAttributeNames: {
             "#title": "title",
-            "#status": "status", "#category_id": "category_id"
+            "#status": "status",
+            "#category_id":"category_id",
+            "#created_at":"created_at",
+            "#updated_at":"updated_at"
           },
           ExpressionAttributeValues: {
             ":title": { S: title || findData?.Items[0]?.title?.S || "" },
             ":status": { S: status ? "active" : "inactive" || findData?.Items[0]?.status?.S || 'active' },
-            ":category_id": { S: category_id ||findData?.Items[0]?.category_id || '' },
+            ":category_id": { S: category_id  || findData?.Items[0]?.category_id?.S || '' },
+            ":created_at": { S: created_at|| findData?.Items[0]?.created_at?.S || '' },
+            ":updated_at": { S: updated_at|| findData?.Items[0]?.updated_at?.S || '' },
           },
         };
         const findExist = await dynamoDBClient.send(
-          new ScanCommand({
-            TableName: "category",
-            FilterExpression: "title = :title AND id <> :id", // Exclude the current item by its ID
+          new QueryCommand({
+            TableName: "sub_category",
+            IndexName: "title", // Use the correct GSI name
+            KeyConditionExpression: "title = :title",
+            FilterExpression: "id <> :id",
             ExpressionAttributeValues: {
               ":title": { S: title },
-              ":id": { S: id } // Assuming 'id' is the ID of the item being updated
+              ":id": { S: id },
             },
           })
         );
+
         if (findExist?.Count > 0) {
           return res.status(400).json({ message: "Title already exist", statusCode: 400, success: false });
         } else {
@@ -81,36 +99,41 @@ class SubCategoryServices {
         }
       } else {
         const findEmailExist = await dynamoDBClient.send(
-          new ScanCommand({
-            TableName: "category",
-            FilterExpression: "title = :title",
+          new QueryCommand({
+            TableName: "sub_category",
+            IndexName: "title", // replace with your GSI name
+            KeyConditionExpression: "title = :title",
             ExpressionAttributeValues: {
               ":title": { S: title },
             },
           })
+
         );
         if (findEmailExist.Count > 0) {
           return res.status(400).json({
             success: false,
-            message: "Category name already exist!",
+            message: "Sub-Category name already exist!",
             statusCode: 400,
           });
         }
         id = uuidv4();
         id = id?.replace(/-/g, "");
         const params = {
-          TableName: "category",
+          TableName: "sub_category",
           Item: {
             id: { S: id },
             title: { S: title },
             status: { S: status ? "active" : "inactive" },
+            category_id: { S: category_id },
+            created_at: { S: created_at},
+            updated_at: { S: updated_at},
           },
         };
         // console.log("docClient", "docccleint", params);
         let Data = await dynamoDBClient.send(new PutItemCommand(params));
         return res
           .status(201)
-          .json({ message: "Category add successfully", statusCode: 201, success: true });
+          .json({ message: "Sub-Category add successfully", statusCode: 201, success: true });
       }
     }
     catch (err) {
@@ -124,7 +147,6 @@ class SubCategoryServices {
   async delete(req, res) {
     try {
       let id = req.query.id
-
       const params = {
         TableName: 'category',
         Key: {
