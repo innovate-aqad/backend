@@ -32,8 +32,7 @@ class UserController {
     try {
       const { slide, user_type,doc_id ,db_driver_details_array} = req.body;
       console.log(req.body,"req.  bodyyyyyyyy before schema =====yyyyyyyyyyyyyyy");
-      if(slide==1&&doc_id&&doc_id?.length>0){
-      }else{
+      if(slide==1&&!doc_id&&!doc_id?.length>0){
         let { error } = registerSchema.validate(req.body, options);
         if (error) {
           return res.status(400).json({
