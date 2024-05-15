@@ -43,10 +43,12 @@ class SubCategoryServices {
           ":id": { S: category_id }
         }
       }))
+      // console.log(categoryExist,"categoryExistcategoryExist",categoryExist?.Items[0]?.status?.S)
       if (categoryExist?.Count == 0) {
         return res.status(400).json({ message: "Category not found", statusCode: 400, success: false })
+      }else if(categoryExist?.Items[0]?.status?.S!='active'){
+        return res.status(400).json({ message: "Category is not active", statusCode: 400, success: false })
       }
-      let findData;
       if (id) {
       let  findData = await dynamoDBClient.send(
           new QueryCommand({
@@ -118,22 +120,24 @@ class SubCategoryServices {
             statusCode: 400,
           });
         }
-        id = uuidv4();
-        id = id?.replace(/-/g, "");
-        const params = {
-          TableName: "sub_category",
-          Item: {
-            id: { S: id },
-            title: { S: title },
-            status: { S: status ? "active" : "inactive" },
-            category_id: { S: category_id },
-            created_at: { S: created_at},
-            updated_at: { S: updated_at},
-          },
-        };
-        // console.log("docClient", "docccleint", params);
-        let Data = await dynamoDBClient.send(new PutItemCommand(params));
-        return res
+        const timestamp = new Date().toISOString(); // Format timestamp as ISO string
+
+        let id = uuidv4();
+          id = id?.replace(/-/g, "");
+          const params = {
+            TableName: "sub_category",
+            Item: {
+              id: { S: id },
+              title: { S: title },
+              status: { S: status ? "active" : "inactive" },
+              category_id: { S: category_id },
+              created_at: { S: timestamp},
+              updated_at: { S: timestamp},
+            },
+          };
+          // console.log("docClient", "docccleint", params);
+          let Data = await dynamoDBClient.send(new PutItemCommand(params));
+          return res
           .status(201)
           .json({ message: "Sub-Category add successfully", statusCode: 201, success: true });
       }

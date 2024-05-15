@@ -8,6 +8,7 @@ export const SubCategorySchema = Joi.object({
   }),
   id: Joi.string().optional(),
   category_id: Joi.string().max(100).required().label("category_id"),
+  // category_id: Joi.string().max(20).required().label("status"),
 
 });
 export const deleteSubCategorySchema = Joi.object({

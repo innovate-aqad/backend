@@ -54,6 +54,7 @@ UserRoutes.get("/verfy_otp_with_email", UserControllerObj.verifyEmailWithOtp);
 
 UserRoutes.post("/login", UserControllerObj.login);
 UserRoutes.post("/login_with_otp", UserControllerObj.login_with_otp);
+UserRoutes.get("/get_data", authorize ,UserControllerObj.get_data);
 
 
 
