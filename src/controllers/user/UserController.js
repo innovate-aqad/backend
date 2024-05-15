@@ -30,9 +30,9 @@ const options = {
 class UserController {
   async register(req, res) {
     try {
-      const { slide, user_type,doc_id ,db_driver_details_array} = req.body;
-      console.log(req.body,"req.  bodyyyyyyyy before schema =====yyyyyyyyyyyyyyy");
-      if(slide==1&&!doc_id&&!doc_id?.length>0){
+      const { slide, user_type, doc_id, db_driver_details_array } = req.body;
+      console.log(req.body, "req.  bodyyyyyyyy before schema =====yyyyyyyyyyyyyyy");
+      if (slide == 1 && !doc_id && !doc_id?.length > 0) {
         let { error } = registerSchema.validate(req.body, options);
         if (error) {
           return res.status(400).json({
@@ -41,7 +41,7 @@ class UserController {
             statusCode: 400,
           });
         }
-      }
+      }//changes
       //v a t _ c e r t i f i c a t e
       if (
         (user_type == "vendor" && slide == 3) ||
@@ -63,8 +63,8 @@ class UserController {
             uploadImageToS3(name, req.files?.vat_certificate[0]?.path);
           }
         } else {
-          console.log(req.body,"req.bodyyyyyyyyyyy",req.files,"asas req.files")
-          if (req.body.doc_id&&!req.body.db_vat_certificate) {// here need to  uncomment 
+          console.log(req.body, "req.bodyyyyyyyyyyy", req.files, "asas req.files")
+          if (req.body.doc_id && !req.body.db_vat_certificate) {// here need to  uncomment 
             return res.status(400).json({
               message: "Vat certificate is required...",
               statusCode: 400,
@@ -94,7 +94,7 @@ class UserController {
             uploadImageToS3(name, req.files?.trade_license[0]?.path);
           }
         } else {
-          if (user_type == "logistic" && slide == 3&&!  req.body.db_trade_license) {
+          if (user_type == "logistic" && slide == 3 && !req.body.db_trade_license) {
             return res.status(400).json({
               message: "trade_license is required",
               statusCode: 400,
@@ -137,7 +137,7 @@ class UserController {
       if (
         (user_type == "vendor" && slide == 3) ||
         (user_type == "seller" && slide == 3) ||
-        (user_type == "logistic" && slide == 3)||(user_type == "employee" && slide == 2)
+        (user_type == "logistic" && slide == 3) || (user_type == "employee" && slide == 2)
       ) {
         if (req.files && req.files?.emirate_id_pic?.length) {
           let name = req.files?.emirate_id_pic[0]?.filename;
@@ -153,7 +153,7 @@ class UserController {
           } else {
             uploadImageToS3(name, req.files?.emirate_id_pic[0]?.path);
           }
-        } 
+        }
       }
       if (
         req.files &&
@@ -298,7 +298,7 @@ class UserController {
           }
         }
       }
-      else if ( !db_driver_details_array?.length&&  !req.files?.driver_images?.length &&
+      else if (!db_driver_details_array?.length && !req.files?.driver_images?.length &&
         user_type == "logistic" &&
         slide == 4) {
         return res.status(400).json({
@@ -328,7 +328,7 @@ class UserController {
             uploadImageToS3(name, el?.path);
           }
         }
-      } else if (!db_driver_details_array?.length&&
+      } else if (!db_driver_details_array?.length &&
         !req.files?.driving_license?.length &&
         user_type == "logistic" &&
         slide == 4
