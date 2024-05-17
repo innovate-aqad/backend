@@ -142,14 +142,15 @@ class UserServices {
             "#profile_photo": "profile_photo",
             "#name": "name",
             "#dob": "dob",
+            "#updated_at":"updated_at"
           },
           ExpressionAttributeValues: {
             ":profile_photo": { S: profile_photo },
             ":name": { S: name || findData?.Items[0]?.name?.S },
             ":dob": { S: dob || findData?.Items[0]?.dob?.S },
+            ":updated_at": { S: new Date().toISOString() }
           },
         };
-
         await dynamoDBClient.send(new UpdateItemCommand(params));
         return res.status(200).json({
           message: "User data updated successfully",
@@ -189,7 +190,7 @@ class UserServices {
             TableName: "users",
             Key: { id: { S: doc_id } },
             UpdateExpression:
-              "SET #company_name = :company_name, #company_address = :company_address,#company_address_line_2 = :company_address_line_2, #designation = :designation, #trade_license_number = :trade_license_number, #country = :country, #po_box= :po_box, #warehouse_addresses = :warehouse_addresses, #outlet_addresses = :outlet_addresses",
+              "SET #company_name = :company_name, #company_address = :company_address,#company_address_line_2 = :company_address_line_2, #designation = :designation, #trade_license_number = :trade_license_number, #country = :country, #po_box= :po_box, #warehouse_addresses = :warehouse_addresses, #outlet_addresses = :outlet_addresses, #updated_at = :updated_at ",
             ExpressionAttributeNames: {
               "#company_name": "company_name",
               "#company_address": "company_address",
@@ -200,6 +201,7 @@ class UserServices {
               "#po_box": "po_box",
               "#warehouse_addresses": "warehouse_addresses",
               "#outlet_addresses": "outlet_addresses",
+              "#updated_at": "updated_at"
             },
             ExpressionAttributeValues: {
               ":company_name": {
@@ -252,6 +254,7 @@ class UserServices {
                   findData?.Items[0]?.outlet_addresses?.L ||
                   [],
               },
+              ":updated_at": { S: new Date().toISOString() }
             },
           };
           // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_addresses",outlet_addresses)
@@ -371,7 +374,7 @@ class UserServices {
             TableName: "users",
             Key: { id: { S: doc_id } },
             UpdateExpression:
-              "SET #trade_license = :trade_license, #cheque_scan = :cheque_scan, #vat_certificate = :vat_certificate, #residence_visa = :residence_visa , #emirates_id = :emirates_id, #iban = :iban , #emirate_id_pic= :emirate_id_pic",
+              "SET #trade_license = :trade_license, #cheque_scan = :cheque_scan, #vat_certificate = :vat_certificate, #residence_visa = :residence_visa , #emirates_id = :emirates_id, #iban = :iban , #emirate_id_pic= :emirate_id_pic, #updated_at:updated_at",
             ExpressionAttributeNames: {
               "#trade_license": "trade_license",
               "#cheque_scan": "cheque_scan",
@@ -380,6 +383,7 @@ class UserServices {
               "#emirates_id": "emirates_id",
               "#iban": "iban",
               "#emirate_id_pic": "emirate_id_pic",
+              "#updated_at":"updated_at"
             },
             ExpressionAttributeValues: {
               ":trade_license": { S: trade_license },
@@ -389,6 +393,7 @@ class UserServices {
               ":emirates_id": { S: emirates_id || "" },
               ":iban": { S: iban || "" },
               ":emirate_id_pic": { S: emirate_id_pic || "" },
+              ":updated_at": { S: new Date().toISOString() }
             },
           };
           console.log(params, "apramnsnssnsm");
@@ -457,10 +462,11 @@ class UserServices {
           TableName: "users",
           Key: { id: { S: doc_id } },
           UpdateExpression:
-            "SET #vehicle_details_array = :vehicle_details_array, #driver_details_array = :driver_details_array",
+            "SET #vehicle_details_array = :vehicle_details_array, #driver_details_array = :driver_details_array , #updated_at=:updated_at",
           ExpressionAttributeNames: {
             "#vehicle_details_array": "vehicle_details_array",
             "#driver_details_array": "driver_details_array",
+            "#updated_at":"updated_at"
           },
           ExpressionAttributeValues: {
             ":vehicle_details_array": {
@@ -487,6 +493,7 @@ class UserServices {
                 findData?.Items[0]?.driver_details_array?.L ||
                 [],
             },
+            "updated_at": { S: new Date().toISOString() }
           },
         };
         // console.log(
@@ -575,6 +582,8 @@ class UserServices {
           role: { S: role || "" },
           country: { S: country || "" },
           password: { S: hashPassword },
+          created_at: { S: new Date().toISOString() },
+          updated_at: { S: new Date().toISOString() }
         },
       };
 
@@ -752,11 +761,10 @@ class UserServices {
               id: { S: id },
             },
           };
-          console.log(params, "parasnsns");
+          // console.log(params, "parasnsns");
           let Data = await dynamoDBClient.send(new PutItemCommand(params));
-          console.log(Data, "dayayayaya");
+          // console.log(Data, "dayayayaya");
         }
-
         return res
           .status(200)
           .json({
@@ -1158,18 +1166,20 @@ class UserServices {
           TableName: "users",
           Key: { id: { S: doc_id } },
           UpdateExpression:
-            "SET #name = :name, #phone = :phone, #role =:role, #country= :country",
+            "SET #name = :name, #phone = :phone, #role =:role, #country= :country , #updated_at=:updated_at",
           ExpressionAttributeNames: {
             "#name": "name",
             "#phone": "phone",
             "#role": "role",
-            "#country": "country"
+            "#country": "country",
+            "#updated_at": "updated_at"
           },
           ExpressionAttributeValues: {
             ":name": { S: name || findEmailExist?.Items[0]?.name?.S },
             ":phone": { S: phone || findEmailExist?.Items[0]?.phone?.S || "" },
             ":role": { S: role || findEmailExist?.Items[0]?.role?.S || "" },
             ":country": { S: country || findEmailExist?.Items[0]?.country?.S || "" },
+            ":updated_at": { S: Date.now() }
           },
         };
         console.log(params, "apramnsnssnsm");
@@ -1242,7 +1252,9 @@ class UserServices {
           country: { S: country || "" },
           password: { S: hashPassword },
           created_by: { S: req.userData?.id },
-          role: { S: role || "" }
+          role: { S: role || "" },
+          created_at: { S: new Date().toISOString() },
+          updated_at: { S: new Date().toISOString() }
         },
       };
 
@@ -1281,8 +1293,6 @@ class UserServices {
         Count: true, // Get the count of matching items
       };
 
-
-
       if (offset > 0) {
         // If offset is greater than 0, set ExclusiveStartKey to start from the correct position
         queryParams.ExclusiveStartKey = req.query.lastEvaluatedKey;
@@ -1318,7 +1328,7 @@ class UserServices {
       const totalCount = countResponse?.Count || 0; // Get the count of matching items
 
 
-      res.status(200).json({ message: "Fetch User data", statusCode: 200, success: true, data: arr, nextPageToken: nextToken,totalCount })
+      res.status(200).json({ message: "Fetch User data", statusCode: 200, success: true, data: arr, nextPageToken: nextToken, totalCount })
       return
     } catch (err) {
       console.error(err, "error ")
