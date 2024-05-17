@@ -139,6 +139,7 @@ export const getDataByEmailSchema = Joi.object({
     .email({ tlds: { allow: false } }).label("Email"),
 
 });
+
 export const VerifyEmailWithOtpSchema = Joi.object({
   email: Joi.string()
     .trim()
@@ -149,6 +150,33 @@ export const VerifyEmailWithOtpSchema = Joi.object({
     .label("otp"),
 
 });
+
+
+export const AddSubUserSchema = Joi.object({
+  email: Joi.string()
+    .trim()
+    .required()
+    .email({ tlds: { allow: false } }).label("Email"),
+  name: Joi.string()
+    .trim().min(3).max(40)
+    .required()
+    .label("name"),
+  phone: Joi.string().trim().required().regex(phonePattern).messages({
+    "string.pattern.base":
+      "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
+  }).label("phone"),
+});
+
+
+export const GetSubUserSchema = Joi.object({
+  page: Joi.number().positive()
+    .label("phone"),
+  limit: Joi.number().positive()
+    .label("limit"),
+});
+
+
+
 
 
 

@@ -72,7 +72,6 @@ export const sendPasswordViaEmailOf = async (obj) => {
         console.log("success data", data)
       } else {
         console.log("error ", err)
-
       }
     })
     return true

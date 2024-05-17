@@ -18,6 +18,7 @@ import {
   ScanCommand,
   UpdateItemCommand,
   QueryCommand,
+  DeleteItemCommand
 } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 import AWS from "aws-sdk";
@@ -31,6 +32,7 @@ import {
 import { generateOTP } from "../../helpers/generateOtp.js";
 import { deleteImageFromS3 } from "../../helpers/s3.js";
 import { removefIle } from "../../helpers/validateImageFile.js";
+import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
 
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
 const dynamoDBClient = new DynamoDBClient({
@@ -92,8 +94,7 @@ class UserServices {
         db_driver_details_array,
       } = req.body;
       console.log(req.body, "aaaaaaaaaa!@#!@#aa req.body");
-      console.log(req.files,"req.filesssss")
-
+      console.log(req.files, "req.filesssss")
       email = email?.trim();
       let findData;
       if ((slide == 2 || slide == 3 || slide == 4) && doc_id == "") {
@@ -154,7 +155,7 @@ class UserServices {
           message: "User data updated successfully",
           statusCode: 200,
           success: true,
-          data:{id:doc_id}
+          data: { id: doc_id }
         });
       }
 
@@ -259,7 +260,7 @@ class UserServices {
             message: "User data updated successfully",
             statusCode: 200,
             success: true,
-            data:{id:doc_id}
+            data: { id: doc_id }
           });
         } else if (user_type == "employee" && slide == 2) {
           // console.log(req.files, "req.filesssss employee");
@@ -300,7 +301,7 @@ class UserServices {
             message: "User data updated successfully",
             statusCode: 200,
             success: true,
-            data:{id:doc_id}
+            data: { id: doc_id }
           });
         } else {
           return res.status(400).json({
@@ -312,16 +313,13 @@ class UserServices {
       }
 
       if (findData?.Count > 0 && slide == 3) {
-        // console.log(req.files, "req.filesssssssssssssss");
         let trade_license = req?.files?.trade_license?.length
           ? req?.files?.trade_license[0]?.filename
           : findData?.Items[0]?.trade_license?.S || "";
-        // console.log(trade_license, "trade_license trade_license ")
         // if (
         //   findData?.Items[0]?.trade_license?.S &&
         //   req?.files?.trade_license?.length&&req?.files?.trade_license?.length>0
         // ) {
-        //   console.log("first");
         //   await deleteImageFromS3(findData?.Items[0]?.trade_license?.S);
         //   await removefIle(findData?.Items[0]?.trade_license?.S, user_type);
         // }
@@ -399,7 +397,7 @@ class UserServices {
             message: "User data updated successfully",
             statusCode: 200,
             success: true,
-            data:{id:doc_id}
+            data: { id: doc_id }
           });
         } else {
           return res.status(400).json({
@@ -424,11 +422,11 @@ class UserServices {
               success: false,
             });
         }
-        console.log(
-          vehicle_details_array,
-          "vehicle_details_array",
-          JSON.stringify(vehicle_details_array)
-        );
+        // console.log(
+        //   vehicle_details_array,
+        //   "vehicle_details_array",
+        //   JSON.stringify(vehicle_details_array)
+        // );
 
         if (vehicle_details_array?.length == 0) {
           return res
@@ -444,7 +442,6 @@ class UserServices {
           : [];
         let driver_images_arr = req?.files?.driver_images;
         let driving_license_arr = req.files?.driving_license;
-        // console.log("first", "findData?.Items[0]", "aaaaaaaaaaaaaaaaaaaaa")
         for (let i = 0; i < driver_name_array?.length; i++) {
           let obj = {
             name: driver_name_array[i],
@@ -503,7 +500,7 @@ class UserServices {
           message: "User data updated successfully",
           statusCode: 200,
           success: true,
-          data:{id:doc_id}
+          data: { id: doc_id }
         });
       }
       // console.log("before email check ")
@@ -548,14 +545,14 @@ class UserServices {
             success: false,
             message: "Phone number already exists!",
             statusCode: 400,
-            });
+          });
         }
       }
       let salt = environmentVars.salt;
       let randomPassword = encryptStringWithKey(
         req.body.email.toLowerCase()?.slice(0, 6)
       );
-      console.log(randomPassword, "randomPasswordrandomPassword");
+      // console.log(randomPassword, "randomPasswordrandomPassword");
       let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
 
       let id = uuidv4();
@@ -582,7 +579,7 @@ class UserServices {
       };
 
       console.log("docClient", "docccleint", params);
-      let userData = await dynamoDBClient.send(new PutItemCommand(params));
+      await dynamoDBClient.send(new PutItemCommand(params));
       let obj = {
         email,
         randomPassword,
@@ -599,7 +596,7 @@ class UserServices {
           message: "User register successfully",
           statusCode: 201,
           success: true,
-          data:{id}
+          data: { id }
         });
     } catch (err) {
       try {
@@ -624,32 +621,26 @@ class UserServices {
 
   async getUserByEmail(req, res) {
     try {
+      // const find = await dynamoDBClient.send(
+      //   new ScanCommand({
+      //     TableName: "users",
+      //     FilterExpression: "email = :email",
+      //     ExpressionAttributeValues: {
+      //       ":email": { S: req.query.email },
+      //     },
+      //   })
+      // );
       const find = await dynamoDBClient.send(
-        new ScanCommand({
+        new QueryCommand({
           TableName: "users",
-          FilterExpression: "email = :email",
+          IndexName: "email",
+          KeyConditionExpression: "email = :email",
           ExpressionAttributeValues: {
             ":email": { S: req.query.email },
           },
         })
       );
-      // console.log(find, "findfindfind", find?.Items[0], "aaaaaaaaaaaaaaaaaaa")
-      // const simplifyDynamoDBResponse = (data) => {
-      //   const simpleData = {};
-      //   for (const key in data) {
-      //     if (data[key].S !== undefined) {
-      //       simpleData[key] = data[key].S;
-      //     } else if (data[key].N !== undefined) {
-      //       simpleData[key] = Number(data[key].N);
-      //     } else if (data[key].BOOL !== undefined) {
-      //       simpleData[key] = data[key].BOOL;
-      //     } else if (data[key].NULL !== undefined) {
-      //       simpleData[key] = null;
-      //     }
-      //     // Add more types as needed
-      //   }
-      //   return simpleData;
-      // };
+
       const simplifyDynamoDBResponse = (data) => {
         const simpleData = {};
 
@@ -1042,9 +1033,7 @@ class UserServices {
           },
         })
       );
-
-      console.log(findData?.Items[0], "dinffdddaa", findData);
-
+      // console.log(findData?.Items[0], "dinffdddaa", findData);
       if (findData?.Count > 0 && findData?.Items?.length) {
         const find = await dynamoDBClient.send(
           new ScanCommand({
@@ -1098,7 +1087,6 @@ class UserServices {
         let expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 days
         // expiryDate.setTime(expiryDate.getTime() + (60 * 1000)); // Current time + 1 minute
-
         res
           .cookie("_token", token, {
             httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
@@ -1132,6 +1120,277 @@ class UserServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
+  async addSubUser(req, res) {
+    try {
+      let { email, phone, name, country, doc_id, role } = req.body
+      role = 'eeeeeeeeee123123123123'
+      // let findRoleExist = await dynamoDBClient.send(
+      //   new QueryCommand({
+      //     TableName: "role",
+      //     KeyConditionExpression: "id= :id",
+      //     ExpressionAttributeValues: {
+      //       ":id": { S: id},
+      //     },
+      //   })
+      // );
+      // if (findRoleExist && findRoleExist?.Count == 0) {
+      //   return res.status(404).json({ message: "Role not found", statuscode: 404, success: false })
+      // }
+
+      if (doc_id) {
+        const findEmailExist = await dynamoDBClient.send(
+          new QueryCommand({
+            TableName: "users",
+            // IndexName: "email",
+            KeyConditionExpression: "id= :id",
+            // ProjectionExpression: "email, phone, id",
+            ExpressionAttributeValues: {
+              ":id": { S: doc_id },
+            },
+          })
+        );
+        if (findEmailExist && findEmailExist?.Count == 0) {
+          return res.status(404).json({ message: "Data not found", statuscode: 404, success: false })
+        }
+        // console.log(findEmailExist ?.Items[0]?.,"aa")
+        const params = {
+          TableName: "users",
+          Key: { id: { S: doc_id } },
+          UpdateExpression:
+            "SET #name = :name, #phone = :phone, #role =:role, #country= :country",
+          ExpressionAttributeNames: {
+            "#name": "name",
+            "#phone": "phone",
+            "#role": "role",
+            "#country": "country"
+          },
+          ExpressionAttributeValues: {
+            ":name": { S: name || findEmailExist?.Items[0]?.name?.S },
+            ":phone": { S: phone || findEmailExist?.Items[0]?.phone?.S || "" },
+            ":role": { S: role || findEmailExist?.Items[0]?.role?.S || "" },
+            ":country": { S: country || findEmailExist?.Items[0]?.country?.S || "" },
+          },
+        };
+        console.log(params, "apramnsnssnsm");
+        await dynamoDBClient.send(new UpdateItemCommand(params));
+        return res.status(200).json({ message: "User's details update successfully", statusCode: 200, success: true })
+      }
+
+      const findEmailExist = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          IndexName: "email", // Replace with your GSI name for email
+          KeyConditionExpression: "email = :email",
+          ProjectionExpression: "email, phone, id",
+          ExpressionAttributeValues: {
+            ":email": { S: email },
+          },
+        })
+      );
+      if (findEmailExist.Count > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exists!",
+          statusCode: 400,
+        });
+      }
+      const findPhoneExist = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          IndexName: "phone", // Replace with your GSI name for phone like phone-index
+          KeyConditionExpression: "phone = :phone",
+          ProjectionExpression: "email, phone, id",
+          ExpressionAttributeValues: {
+            ":phone": { S: phone },
+          },
+        })
+      );
+      if (findPhoneExist.Count > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Phone number already exists!",
+          statusCode: 400,
+        });
+      }
+      // console.log(req.userData, "aaaaaassssdffgklsdj", "findUserExist", "fnd", "findUserExist?.Items", "asdsd")
+      let user_type = 'vendor_user'
+      if (req.userData?.user_type == 'logistic') {
+        user_type = 'logistic_user'
+      } else if (req.userData?.user_type == 'seller') {
+        user_type = 'seller_user'
+      }
+
+      let salt = environmentVars.salt;
+      let randomPassword = encryptStringWithKey(
+        email.toLowerCase()?.slice(0, 6)
+      );
+      // console.log(randomPassword, "randomPasswordrandomPassword");
+      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+
+      let id = uuidv4();
+      id = id?.replace(/-/g, "");
+
+      const params = {
+        TableName: "users",
+        Item: {
+          id: { S: id },
+          name: { S: name || "" },
+          email: { S: email || "" },
+          phone: { S: phone || "" },
+          user_type: { S: user_type },
+          country: { S: country || "" },
+          password: { S: hashPassword },
+          created_by: { S: req.userData?.id },
+          role: { S: role || "" }
+        },
+      };
+
+      // console.log("user_type", "docccleint", params);
+      let userData = await dynamoDBClient.send(new PutItemCommand(params));
+      let obj = {
+        email,
+        randomPassword,
+        name,
+      };
+      sendPasswordViaEmailOf(obj)
+      res.status(201).json({ message: "User added successfully", statusCode: 200, success: true })
+    } catch (err) {
+      console.error(err, "error ")
+      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+    }
+  }
+
+  async get_all_user(req, res) {
+    try {
+      let { page, limit } = req.query
+      page = parseInt(page) || 1;
+      limit = parseInt(limit) || 10; // Default limit is 10 items per page
+      const offset = (page - 1) * limit;
+
+      const queryParams = {
+        TableName: "users",
+        IndexName: "created_by-index",
+        KeyConditionExpression: "created_by = :created_by",
+        ExpressionAttributeValues: {
+          ":created_by": { S: req.userData?.id },
+        },
+        Limit: limit, // Limit the number of items per page
+        ExclusiveStartKey: req.query.lastEvaluatedKey, // Pass the last evaluated key from the previous page
+        Select: "ALL_ATTRIBUTES", // Retrieve all attributes
+        Count: true, // Get the count of matching items
+      };
+
+
+
+      if (offset > 0) {
+        // If offset is greater than 0, set ExclusiveStartKey to start from the correct position
+        queryParams.ExclusiveStartKey = req.query.lastEvaluatedKey;
+      }
+
+      const data = await dynamoDBClient.send(new QueryCommand(queryParams));
+      let nextToken = null;
+      if (data?.LastEvaluatedKey) {
+        // If LastEvaluatedKey is present, set nextToken for the next page
+        nextToken = data.LastEvaluatedKey;
+      }
+
+      let arr = []
+      for (let el of data?.Items) {
+        let rawData = await simplifyDynamoDBResponse(el);
+        delete rawData.password
+        arr.push(rawData)
+      }
+
+      //fetch total count here 
+      const queryParams2 = {
+        TableName: "users",
+        IndexName: "created_by-index",
+        KeyConditionExpression: "created_by = :created_by",
+        ExpressionAttributeValues: {
+          ":created_by": { S: req.userData?.id },
+        },
+        Select: "COUNT", // Select COUNT to retrieve the count of matching items
+      };
+
+      const countResponse = await dynamoDBClient.send(new QueryCommand(queryParams2));
+
+      const totalCount = countResponse?.Count || 0; // Get the count of matching items
+
+
+      res.status(200).json({ message: "Fetch User data", statusCode: 200, success: true, data: arr, nextPageToken: nextToken,totalCount })
+      return
+    } catch (err) {
+      console.error(err, "error ")
+      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+    }
+  }
+
+
+  async delete_user(req, res) {
+    try {
+      let { id } = req.query
+      const data = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          // IndexName: "created_by-index", // Replace with your GSI name for phone like phone-index
+          KeyConditionExpression: "id = :id",
+          // ProjectionExpression: "email, phone, id",
+          ExpressionAttributeValues: {
+            ":id": { S: id },
+          },
+        })
+      );
+      if (data?.Count == 0) {
+        return res.status(400).json({ message: "User not found or deleted already", statusCode: 400, success: false })
+
+      }
+      if (data?.Items[0]?.created_by?.S != req.userData?.id) {
+        return res.status(400).json({ message: "Not authorise to perform this action", statusCode: 400, success: false })
+      }
+      const params = {
+        TableName: 'users',
+        Key: {
+          id: { S: id }// Replace with your primary key attributes
+        }
+      }
+      const command = new DeleteItemCommand(params);
+      // console.log(command, "command command ")
+      const response = await dynamoDBClient.send(command);
+      // console.log(response, "response response")
+      return res.status(200).json({ message: "User deleted successfully", statusCode: 200, success: true })
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async sendForgotPasswordEmail(req, res) {
     try {
@@ -1178,6 +1437,7 @@ class UserServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
 
   async verify_otp_data(req, res) {
     try {
@@ -1229,6 +1489,7 @@ class UserServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
 
   async resetUserPassword(req, res) {
     try {
@@ -1287,6 +1548,7 @@ class UserServices {
     }
   }
 
+
   async getAllUSerData(req, res) {
     try {
       let fetchArray = await UserModel.findAll();
@@ -1303,6 +1565,7 @@ class UserServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
 
   async updateUserDetails(id, data, res) {
     try {
@@ -1342,6 +1605,9 @@ class UserServices {
   // }
 
   // email send success fully code start
+
+
+
   async sendEmailUserToAnother(req, res) {
     try {
       let email = req.body.email?.trim();
@@ -1398,6 +1664,8 @@ class UserServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
+
 }
 
 const UserServicesObj = new UserServices();

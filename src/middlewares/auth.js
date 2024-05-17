@@ -21,15 +21,47 @@ const dynamoDBClient = new DynamoDBClient({
   },
 });
 
+
+
+export const simplifyDynamoDBResponse = (data) => {
+  const simpleData = {};
+
+  const simplifyAttribute = (value) => {
+    if (value.S !== undefined) {
+      return value.S;
+    } else if (value.N !== undefined) {
+      return Number(value.N);
+    } else if (value.BOOL !== undefined) {
+      return value.BOOL;
+    } else if (value.NULL !== undefined) {
+      return null;
+    } else if (value.L !== undefined) {
+      return value.L.map(simplifyAttribute); // Recursively simplify each item in the list
+    } else if (value.M !== undefined) {
+      return simplifyDynamoDBResponse(value.M); // Recursively simplify map
+    }
+    // throw new Error("Unrecognized or unsupported DynamoDB data type");
+  };
+
+  for (const key in data) {
+    if (data.hasOwnProperty(key)) {
+      simpleData[key] = simplifyAttribute(data[key]);
+    }
+  }
+  return simpleData;
+};
+
+
+
 export const authorize = async (req, res, next) => {
   let _secrate = req?.cookies?._token;
 
-  console.log(_secrate, "_secrate_secrate_secrate_secrate")
+  // console.log(_secrate, "_secrate_secrate_secrate_secrate")
   try {
     const proof = jwt.verify(_secrate, environmentVars.jwtSecret, {
       algorithm: "HS512",
     });
-    console.log(proof, "proof qwerty")
+    // console.log(proof, "proof qwerty")
     // return
     const findDataExist = await dynamoDBClient.send(
       new QueryCommand({
@@ -41,13 +73,14 @@ export const authorize = async (req, res, next) => {
       })
 
     );
-    console.log(findDataExist, "findDataExistfindDataExist")
+    // console.log(findDataExist, "findDataExistfindDataExist")
     if (findDataExist && findDataExist?.Count == 0) {
       return res
         .status(400)
         .json({ message: "User not found", success: false, statusCode: 400 });
     }
-    req.userData = findDataExist?.Items[0];
+    let rawData = simplifyDynamoDBResponse(findDataExist?.Items[0]);
+    req.userData =rawData  ;
     req.id = findDataExist.id;
     return next();
   } catch (err) {

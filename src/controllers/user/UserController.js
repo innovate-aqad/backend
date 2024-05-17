@@ -8,6 +8,8 @@ import {
   getDataByEmailSchema,
   VerifyEmailWithOtpSchema,
   loginWithOtpSchema,
+  AddSubUserSchema,
+  GetSubUserSchema,
 } from "../../helpers/validateUser.js";
 import bcrypt from "bcrypt";
 import UserServicesObj from "../../services/user/UserServices.js";
@@ -406,41 +408,12 @@ class UserController {
     }
   }
 
+  // fetch user logged in details
   async get_data(req, res) {
     try {
-
-
-      const simplifyDynamoDBResponse = (data) => {
-        const simpleData = {};
-
-        const simplifyAttribute = (value) => {
-          if (value.S !== undefined) {
-            return value.S;
-          } else if (value.N !== undefined) {
-            return Number(value.N);
-          } else if (value.BOOL !== undefined) {
-            return value.BOOL;
-          } else if (value.NULL !== undefined) {
-            return null;
-          } else if (value.L !== undefined) {
-            return value.L.map(simplifyAttribute); // Recursively simplify each item in the list
-          } else if (value.M !== undefined) {
-            return simplifyDynamoDBResponse(value.M); // Recursively simplify map
-          }
-          throw new Error("Unrecognized or unsupported DynamoDB data type");
-        };
-
-        for (const key in data) {
-          if (data.hasOwnProperty(key)) {
-            simpleData[key] = simplifyAttribute(data[key]);
-          }
-        }
-        return simpleData;
-      };
-
-      let rawData = simplifyDynamoDBResponse(req.userData);
-delete rawData.password
-      return res.status(200).json({ message: "user details", details: rawData, statusCode: 400, success: true })
+      let data = req.userData
+      delete data.password
+      return res.status(200).json({ message: "user details", details: data, statusCode: 400, success: true })
     } catch (err) {
       return res
         .status(500)
@@ -449,8 +422,57 @@ delete rawData.password
   }
 
 
+  // add sub_user created
+  async add_sub_user(req, res) {
+    try {
+      if(!req.body.doc_id||req.body.doc_id==''){
+        let { error } = AddSubUserSchema.validate(req.body, options);
+        if (error) {
+          return res.status(400).json({
+            message: error.details[0]?.message,
+            success: false,
+            statusCode: 400,
+          });
+        }
+      }
+      await UserServicesObj.addSubUser(req, res);
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
+    }
+  }
+  //for super_admin fetch all user_type 
+  async get_sub_user(req, res) {
+    try {
+        let { error } = GetSubUserSchema.validate(req.body, options);
+        if (error) {
+          return res.status(400).json({
+            message: error.details[0]?.message,
+            success: false,
+            statusCode: 400,
+          });
+        }
+      await UserServicesObj.get_all_user(req, res);
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
+    }
+  }
 
 
+  async delete_sub_user(req, res) {
+    try {
+        // let { error } = GetSubUserSchema.validate(req.body, options);
+        // if (error) {
+        //   return res.status(400).json({
+        //     message: error.details[0]?.message,
+        //     success: false,
+        //     statusCode: 400,
+        //   });
+        // }
+      await UserServicesObj.delete_user(req, res);
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
+    }
+  }
 
 
 
