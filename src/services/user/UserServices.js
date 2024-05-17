@@ -142,7 +142,7 @@ class UserServices {
             "#profile_photo": "profile_photo",
             "#name": "name",
             "#dob": "dob",
-            "#updated_at":"updated_at"
+            "#updated_at": "updated_at"
           },
           ExpressionAttributeValues: {
             ":profile_photo": { S: profile_photo },
@@ -383,7 +383,7 @@ class UserServices {
               "#emirates_id": "emirates_id",
               "#iban": "iban",
               "#emirate_id_pic": "emirate_id_pic",
-              "#updated_at":"updated_at"
+              "#updated_at": "updated_at"
             },
             ExpressionAttributeValues: {
               ":trade_license": { S: trade_license },
@@ -466,7 +466,7 @@ class UserServices {
           ExpressionAttributeNames: {
             "#vehicle_details_array": "vehicle_details_array",
             "#driver_details_array": "driver_details_array",
-            "#updated_at":"updated_at"
+            "#updated_at": "updated_at"
           },
           ExpressionAttributeValues: {
             ":vehicle_details_array": {
@@ -1275,11 +1275,11 @@ class UserServices {
 
   async get_all_user(req, res) {
     try {
-      let { page, limit } = req.query
+      let { page, limit, lastEvaluatedKey,created_at } = req.query
       page = parseInt(page) || 1;
-      limit = parseInt(limit) || 10; // Default limit is 10 items per page
+      limit = parseInt(limit) || 10;
       const offset = (page - 1) * limit;
-
+  
       const queryParams = {
         TableName: "users",
         IndexName: "created_by-index",
@@ -1287,22 +1287,33 @@ class UserServices {
         ExpressionAttributeValues: {
           ":created_by": { S: req.userData?.id },
         },
-        Limit: limit, // Limit the number of items per page
-        ExclusiveStartKey: req.query.lastEvaluatedKey, // Pass the last evaluated key from the previous page
+        Limit: limit,
+        ScanIndexForward: false,
         Select: "ALL_ATTRIBUTES", // Retrieve all attributes
-        Count: true, // Get the count of matching items
+        Count: true,
       };
-
       if (offset > 0) {
         // If offset is greater than 0, set ExclusiveStartKey to start from the correct position
-        queryParams.ExclusiveStartKey = req.query.lastEvaluatedKey;
+        if(lastEvaluatedKey ){
+          queryParams.ExclusiveStartKey = {
+            "id": {
+              "S": lastEvaluatedKey
+            },
+            "created_by": {
+              "S": req.userData.id //"adab625867164c819584ee15e94c887c"
+            },
+            "created_at": {
+              "S": created_at
+            }
+          }
+        }   
       }
-
+      // console.log(queryParams, "asdasdadadsasd")
       const data = await dynamoDBClient.send(new QueryCommand(queryParams));
       let nextToken = null;
       if (data?.LastEvaluatedKey) {
-        // If LastEvaluatedKey is present, set nextToken for the next page
-        nextToken = data.LastEvaluatedKey;
+      let dataFetch= await  simplifyDynamoDBResponse(data.LastEvaluatedKey)
+        nextToken = dataFetch;
       }
 
       let arr = []
@@ -1324,11 +1335,12 @@ class UserServices {
       };
 
       const countResponse = await dynamoDBClient.send(new QueryCommand(queryParams2));
-
       const totalCount = countResponse?.Count || 0; // Get the count of matching items
 
-
-      res.status(200).json({ message: "Fetch User data", statusCode: 200, success: true, data: arr, nextPageToken: nextToken, totalCount })
+      res.status(200).json({
+        message: "Fetch User data", statusCode: 200, success: true, data: arr, nextPageToken: nextToken,
+        pagination: { totalCount, page, limit }
+      })
       return
     } catch (err) {
       console.error(err, "error ")
