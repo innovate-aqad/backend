@@ -6,7 +6,6 @@ import { upload } from "../../helpers/s3.js";
 
 const UserRoutes = express.Router();
 
-
 UserRoutes.post("/register",  upload.fields([
   {
     name: "profile_photo",

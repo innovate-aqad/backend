@@ -21,8 +21,6 @@ const dynamoDBClient = new DynamoDBClient({
   },
 });
 
-
-
 export const simplifyDynamoDBResponse = (data) => {
   const simpleData = {};
 
@@ -51,11 +49,10 @@ export const simplifyDynamoDBResponse = (data) => {
   return simpleData;
 };
 
-
-
+let arr=["/api/category/add"]
 export const authorize = async (req, res, next) => {
+  // console.log(req.originalUrl,"aas ");
   let _secrate = req?.cookies?._token;
-
   // console.log(_secrate, "_secrate_secrate_secrate_secrate")
   try {
     const proof = jwt.verify(_secrate, environmentVars.jwtSecret, {
@@ -71,16 +68,18 @@ export const authorize = async (req, res, next) => {
           ":id": { S: proof?.id },
         },
       })
-
     );
-    // console.log(findDataExist, "findDataExistfindDataExist")
     if (findDataExist && findDataExist?.Count == 0) {
       return res
         .status(400)
         .json({ message: "User not found", success: false, statusCode: 400 });
     }
     let rawData = simplifyDynamoDBResponse(findDataExist?.Items[0]);
-    req.userData =rawData  ;
+    // let checkAuthority
+    // if(rawData&&rawData?.user_type=='super_admin'){
+
+    // }
+    req.userData = rawData;
     req.id = findDataExist.id;
     return next();
   } catch (err) {

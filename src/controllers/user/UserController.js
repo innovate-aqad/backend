@@ -33,7 +33,7 @@ class UserController {
   async register(req, res) {
     try {
       const { slide, user_type, doc_id, db_driver_details_array } = req.body;
-      console.log(req.body, "req.  bodyyyyyyyy before schema =====yyyyyyyyyyyyyyy");
+      console.log(req.body, "req.  bodyyyyyyyy before schema == yyyyy yyy yyyy");
       if (slide == 1 && !doc_id && !doc_id?.length > 0) {
         let { error } = registerSchema.validate(req.body, options);
         if (error) {
@@ -65,7 +65,7 @@ class UserController {
             uploadImageToS3(name, req.files?.vat_certificate[0]?.path);
           }
         } else {
-          console.log(req.body, "req.bodyyyyyyyyyyy", req.files, "asas req.files")
+          // console.log(req.body, "req.bodyyyyyyyyyyy", req.files, "asas req.files")
           if (req.body.doc_id && !req.body.db_vat_certificate) {// here need to  uncomment 
             return res.status(400).json({
               message: "Vat certificate is required...",

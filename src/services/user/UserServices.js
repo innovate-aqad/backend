@@ -1179,7 +1179,7 @@ class UserServices {
             ":phone": { S: phone || findEmailExist?.Items[0]?.phone?.S || "" },
             ":role": { S: role || findEmailExist?.Items[0]?.role?.S || "" },
             ":country": { S: country || findEmailExist?.Items[0]?.country?.S || "" },
-            ":updated_at": { S: Date.now() }
+            ":updated_at": { S: new Date().toISOString()}
           },
         };
         console.log(params, "apramnsnssnsm");

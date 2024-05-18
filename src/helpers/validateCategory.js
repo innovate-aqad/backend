@@ -7,16 +7,28 @@ export const CategorySchema = Joi.object({
   //   .trim()
   //   .required()
   //   .label("category title"),
-  title: Joi.alternatives().conditional('id', {
-    is: Joi.exist(),  // If 'id' exists
-    then: Joi.string().min(2).max(50).trim().optional(),  // Make 'title' optional
-    otherwise: Joi.string().min(2).max(50).trim().required().label("sub_category title")  // Make 'title' required if 'id' does not exist
+  title: Joi.alternatives().conditional("id", {
+    is: Joi.exist(), // If 'id' exists
+    then: Joi.string().min(2).max(50).trim().optional(), // Make 'title' optional
+    otherwise: Joi.string()
+      .min(2)
+      .max(50)
+      .trim()
+      .required()
+      .label("category title"), // Make 'title' required if 'id' does not exist
   }),
   id: Joi.string().optional(),
-
 });
 export const deleteCategorySchema = Joi.object({
   id: Joi.string().max(40).required().label("id"),
+});
+export const changeStatusSchema = Joi.object({
+  id: Joi.string().max(40).required().label("id"),
+  status: Joi.string()
+    .max(10)
+    .valid("active", "inactive")
+    .required()
+    .label("status"),
 });
 
 // export const CategorySchema = Joi.object({
@@ -141,47 +153,20 @@ export const deleteCategorySchema = Joi.object({
 //   }),
 // });
 
-
-
 export const onlyCategorySchema = Joi.object({
-  title: Joi.string()
-    .trim()
-    .required()
-    .label("title"),
-  slug: Joi.string()
-    .trim()
-    .required()
-    .label("slug"),
+  title: Joi.string().trim().required().label("title"),
+  slug: Joi.string().trim().required().label("slug"),
   value: Joi.when("title", {
     is: Joi.not("price_range"),
-    then: Joi.string()
-      .min(3)
-      .max(150)
-      .trim()
-      .required()
-      .label("value"),
-    otherwise: Joi.string()
-      .min(3)
-      .max(150)
-      .trim()
-      .allow("")
-      .label("value"),
+    then: Joi.string().min(3).max(150).trim().required().label("value"),
+    otherwise: Joi.string().min(3).max(150).trim().allow("").label("value"),
   }),
-  status: Joi.string()
-    .trim()
-    .required()
-    .label("status"),
+  status: Joi.string().trim().required().label("status"),
 });
 
 export const onlyGenderSchema = Joi.object({
-  value: Joi.string()
-    .trim()
-    .required()
-    .label("value"),
-  status: Joi.string()
-    .trim()
-    .required()
-    .label("status"),
+  value: Joi.string().trim().required().label("value"),
+  status: Joi.string().trim().required().label("status"),
 });
 
 export const CategoryStatusChangeSchema = Joi.object({
@@ -200,39 +185,29 @@ export const CategoryStatusChangeSchema = Joi.object({
     .trim()
     .label("title"),
 
-  value: Joi.string()
-    .trim()
-    .label("value"),
+  value: Joi.string().trim().label("value"),
 
   status: Joi.string()
     .valid("active", "inactive")
     .trim()
     .required()
     .label("status"),
-  id: Joi.string()
-    .required()
-    .label("id"),
+  id: Joi.string().required().label("id"),
   min: Joi.when("title", {
     is: "price_range",
-    then: Joi.number()
-      .required()
-      .label("min"),
+    then: Joi.number().required().label("min"),
     otherwise: Joi.forbidden(),
   }),
 
   max: Joi.when("title", {
     is: "price_range",
-    then: Joi.number()
-      .required()
-      .label("max"),
+    then: Joi.number().required().label("max"),
     otherwise: Joi.forbidden(),
   }),
 });
 
 export const CategoryEditSchema = Joi.object({
-  id: Joi.string()
-    .required()
-    .label("category id"),
+  id: Joi.string().required().label("category id"),
   title: Joi.string()
     .valid(
       "categories",
@@ -261,9 +236,7 @@ export const CategoryEditSchema = Joi.object({
 });
 
 export const CategoryDeletedSchema = Joi.object({
-  id: Joi.string()
-    .required()
-    .label("id"),
+  id: Joi.string().required().label("id"),
   title: Joi.string()
     .valid(
       "categories",

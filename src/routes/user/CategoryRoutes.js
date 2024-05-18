@@ -6,7 +6,9 @@ import { upload } from "../../helpers/s3.js";
 
 const CategoryRoutes = express.Router();
 
-CategoryRoutes.post("/add", CategoryControllerObj.add_cat);
+CategoryRoutes.post("/add",/*authorize,*/ CategoryControllerObj.add_cat);
+CategoryRoutes.get("/get",/*authorize,*/ CategoryControllerObj.get_cat);
+CategoryRoutes.put("/edit_status",/*authorize,*/ CategoryControllerObj.editStatus);
 CategoryRoutes.delete("/delete", CategoryControllerObj.deleteData);
 
 export default CategoryRoutes ;

@@ -15,10 +15,13 @@ import Sequence from "../../models/SequenceModel.js";
 import {
   DynamoDBClient,
   PutItemCommand,
-  ScanCommand, UpdateItemCommand, DeleteItemCommand,
-  QueryCommand
+  ScanCommand,
+  UpdateItemCommand,
+  DeleteItemCommand,
+  QueryCommand,
 } from "@aws-sdk/client-dynamodb";
 
+import AWS from "aws-sdk";
 import { v4 as uuidv4 } from "uuid";
 
 import formidable from "formidable";
@@ -31,11 +34,15 @@ const dynamoDBClient = new DynamoDBClient({
   },
 });
 
-
 class CategoryServices {
   async add(req, res) {
     try {
       let { title, status, id } = req.body;
+      // if (req.userData?.user_type != "super_admin") {
+      //   return res
+      //     .status(400)
+      //     .json({ message: "Not Authorise", statusCode: 400, success: false });
+      // }
       let findData;
       if (id) {
         findData = await dynamoDBClient.send(
@@ -47,40 +54,59 @@ class CategoryServices {
             },
           })
         );
-      }
-      // console.log("findDatafindData22", findData?.Items[0])
-      if (findData) {
-        const params = {
-          TableName: "category",
-          Key: { id: { S: id } },
-          UpdateExpression: "SET #title = :title, #status = :status",
-          ExpressionAttributeNames: {
-            "#title": "title",
-            "#status": "status",
-          },
-          ExpressionAttributeValues: {
-            ":title": { S: title || findData?.Items[0]?.title?.S || "" },
-            ":status": { S: status ? "active" : "inactive" || findData?.Items[0]?.status?.S || 'active' },
-          },
-        };
-        const findExist = await dynamoDBClient.send(
-          new QueryCommand({
+        // console.log("findDatafindData22", findData?.Items[0]);
+        if (findData && findData?.Count > 0) {
+          const params = {
             TableName: "category",
-            IndexName: "title", // Use the correct GSI name
-            KeyConditionExpression: "title = :title",
-            FilterExpression: "id <> :id",
-            ExpressionAttributeValues: {
-              ":title": { S: title },
-              ":id": { S: id },
+            Key: { id: { S: id } },
+            UpdateExpression:
+              "SET #title = :title, #status = :status, #updated_at = :updated_at",
+            ExpressionAttributeNames: {
+              "#title": "title",
+              "#status": "status",
+              "#updated_at": "updated_at",
             },
-          })
-        );
+            ExpressionAttributeValues: {
+              ":title": { S: title || findData?.Items[0]?.title?.S || "" },
+              ":status": {
+                S: status || findData?.Items[0]?.status?.S || "active",
+              },
+              ":updated_at": { S: new Date().toISOString() },
+            },
+          };
+          const findExist = await dynamoDBClient.send(
+            new QueryCommand({
+              TableName: "category",
+              IndexName: "title", // Use the correct GSI name
+              KeyConditionExpression: "title = :title",
+              FilterExpression: "id <> :id",
+              ExpressionAttributeValues: {
+                ":title": { S: title },
+                ":id": { S: id },
+              },
+            })
+          );
 
-        if (findExist?.Count > 0) {
-          return res.status(400).json({ message: "Title already exist", statusCode: 400, success: false });
+          if (findExist?.Count > 0) {
+            return res.status(400).json({
+              message: "Title already exist",
+              statusCode: 400,
+              success: false,
+            });
+          } else {
+            await dynamoDBClient.send(new UpdateItemCommand(params));
+            return res.status(200).json({
+              message: "Data updated successfully",
+              statusCode: 200,
+              success: true,
+            });
+          }
         } else {
-          await dynamoDBClient.send(new UpdateItemCommand(params));
-          return res.status(200).json({ message: "Data updated successfully", statusCode: 200, success: true });
+          return res.status(400).json({
+            message: "Document Not Found",
+            statusCode: 400,
+            success: false,
+          });
         }
       } else {
         const findEmailExist = await dynamoDBClient.send(
@@ -92,7 +118,6 @@ class CategoryServices {
               ":title": { S: title },
             },
           })
-
         );
         if (findEmailExist.Count > 0) {
           return res.status(400).json({
@@ -108,17 +133,20 @@ class CategoryServices {
           Item: {
             id: { S: id },
             title: { S: title },
-            status: { S: status ? "active" : "inactive" },
+            status: { S: status },
+            created_at: { S: new Date().toISOString() },
+            updated_at: { S: new Date().toISOString() },
           },
         };
         // console.log("docClient", "docccleint", params);
         let Data = await dynamoDBClient.send(new PutItemCommand(params));
-        return res
-          .status(201)
-          .json({ message: "Category add successfully", statusCode: 201, success: true });
+        return res.status(201).json({
+          message: "Category add successfully",
+          statusCode: 201,
+          success: true,
+        });
       }
-    }
-    catch (err) {
+    } catch (err) {
       console.log(err, "errorororro");
       return res
         .status(500)
@@ -126,21 +154,120 @@ class CategoryServices {
     }
   }
 
+  //change status
+  async changeStatus(req, res) {
+    try {
+      let { status, id } = req.body;
+      // if (req.userData?.user_type != "super_admin") {
+      //   return res
+      //     .status(400)
+      //     .json({ message: "Not Authorise", statusCode: 400, success: false });
+      // }
+      let findData = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "category",
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: id },
+          },
+        })
+      );
+      if (findData && findData?.Count > 0) {
+        const params = {
+          TableName: "category",
+          Key: { id: { S: id } },
+          UpdateExpression: "SET #status = :status, #updated_at = :updated_at",
+          ExpressionAttributeNames: {
+            "#status": "status",
+            "#updated_at": "updated_at",
+          },
+          ExpressionAttributeValues: {
+            ":status": {
+              S: status || findData?.Items[0]?.status?.S || "active",
+            },
+            ":updated_at": { S: new Date().toISOString() },
+          },
+        };
+        await dynamoDBClient.send(new UpdateItemCommand(params));
+        return res.status(200).json({
+          message: "Category Data Status updated successfully",
+          statusCode: 200,
+          success: true,
+        });
+      } else {
+        return res.status(400).json({
+          message: "Document Not Found",
+          statusCode: 400,
+          success: false,
+        });
+      }
+    } catch (err) {
+      console.log(err, "errorororro");
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  async get_cat_data(req, res) {
+    try {
+      const dynamoDB = new AWS.DynamoDB.DocumentClient();
+      const params = {
+        TableName: "category",
+      };
+
+      // let get=await dynamoDBClient.scan(params)
+      let get = await dynamoDB.scan(params).promise();
+      // , async (err, data) => {
+      //   if (err) {
+      //     console.error("Error:", err);
+      //   } else {
+      //     if (data?.Items) {
+      //       get = [...data?.Items];
+      //     }
+      //     // Handle data or return response
+      //     console.log("Scan succeeded:", data?.Items);
+      //   }
+      // });
+      console.log(get, "getgegetgetgetge");
+      res.status(200).json({
+        message: "Fetch Data",
+        data: get,
+        statusCode: 200,
+        success: true,
+      });
+      return;
+    } catch (err) {
+      console.error(err, "erroror");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
+
+  // not in use
   async delete(req, res) {
     try {
-      let id = req.query.id
+      let id = req.query.id;
       const params = {
-        TableName: 'category',
+        TableName: "category",
         Key: {
-          'id': id // Replace 'PrimaryKey' and 'Value' with your item's actual primary key and value
-        }
+          id: id, // Replace 'PrimaryKey' and 'Value' with your item's actual primary key and value
+        },
       };
       let result = await dynamoDBClient.send(new DeleteItemCommand(params));
-      console.log(result, "checkkkk")
-      return res.status(200).json({ message: "Delete successfully", statusCode: 200, success: true, data: result })
+      console.log(result, "checkkkk");
+      return res.status(200).json({
+        message: "Delete successfully",
+        statusCode: 200,
+        success: true,
+        data: result,
+      });
     } catch (err) {
-      console.error(err)
-      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+      console.error(err);
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
 }
