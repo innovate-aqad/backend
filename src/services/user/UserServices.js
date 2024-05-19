@@ -137,7 +137,7 @@ class UserServices {
           TableName: "users",
           Key: { id: { S: doc_id } },
           UpdateExpression:
-            "SET #profile_photo = :profile_photo, #name = :name, #dob = :dob",
+            "SET #profile_photo = :profile_photo, #name = :name, #dob = :dob, #updated_at =:updated_at",
           ExpressionAttributeNames: {
             "#profile_photo": "profile_photo",
             "#name": "name",
@@ -374,7 +374,7 @@ class UserServices {
             TableName: "users",
             Key: { id: { S: doc_id } },
             UpdateExpression:
-              "SET #trade_license = :trade_license, #cheque_scan = :cheque_scan, #vat_certificate = :vat_certificate, #residence_visa = :residence_visa , #emirates_id = :emirates_id, #iban = :iban , #emirate_id_pic= :emirate_id_pic, #updated_at:updated_at",
+              "SET #trade_license = :trade_license, #cheque_scan = :cheque_scan, #vat_certificate = :vat_certificate, #residence_visa = :residence_visa , #emirates_id = :emirates_id, #iban = :iban , #emirate_id_pic= :emirate_id_pic, #updated_at=:updated_at",
             ExpressionAttributeNames: {
               "#trade_license": "trade_license",
               "#cheque_scan": "cheque_scan",
@@ -493,7 +493,7 @@ class UserServices {
                 findData?.Items[0]?.driver_details_array?.L ||
                 [],
             },
-            "updated_at": { S: new Date().toISOString() }
+            ":updated_at": { S: new Date().toISOString() }
           },
         };
         // console.log(

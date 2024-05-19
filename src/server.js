@@ -61,6 +61,7 @@ console.log("hello wordl");
 //routes here like this =>     app.use('/user',userRoutes);
 app.use("/api/user", UserRoutes);
 
+//category manage
 app.use("/api/category", CategoryRoutes);
 app.use("/api/sub_category", SubCategoryRoutes);
 

@@ -229,7 +229,7 @@ class CategoryServices {
       //     console.log("Scan succeeded:", data?.Items);
       //   }
       // });
-      console.log(get, "getgegetgetgetge");
+      // console.log(get, "getgegetgetgetge");
       res.status(200).json({
         message: "Fetch Data",
         data: get,
@@ -246,30 +246,63 @@ class CategoryServices {
   }
 
   // not in use
+  // async delete(req, res) {
+  //   try {
+  //     let id = req.query.id;
+  //     const params = {
+  //       TableName: "category",
+  //       Key: {
+  //         id: id, // Replace 'PrimaryKey' and 'Value' with your item's actual primary key and value
+  //       },
+  //     };
+  //     let result = await dynamoDBClient.send(new DeleteItemCommand(params));
+  //     console.log(result, "checkkkk");
+  //     return res.status(200).json({
+  //       message: "Delete successfully",
+  //       statusCode: 200,
+  //       success: true,
+  //       data: result,
+  //     });
+  //   } catch (err) {
+  //     console.error(err);
+  //     return res
+  //       .status(500)
+  //       .json({ message: err?.message, statusCode: 500, success: false });
+  //   }
+  // }
+
   async delete(req, res) {
     try {
-      let id = req.query.id;
+      let { id } = req.query
+      const data = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "category",
+          // IndexName: "created_by-index", // Replace with your GSI name for phone like phone-index
+          KeyConditionExpression: "id = :id",
+          // ProjectionExpression: "email, phone, id",
+          ExpressionAttributeValues: {
+            ":id": { S: id },
+          },
+        })
+      );
+      if (data?.Count == 0) {
+        return res.status(400).json({ message: "Category not found or deleted already", statusCode: 400, success: false })
+      }
       const params = {
-        TableName: "category",
+        TableName: 'category',
         Key: {
-          id: id, // Replace 'PrimaryKey' and 'Value' with your item's actual primary key and value
-        },
-      };
-      let result = await dynamoDBClient.send(new DeleteItemCommand(params));
-      console.log(result, "checkkkk");
-      return res.status(200).json({
-        message: "Delete successfully",
-        statusCode: 200,
-        success: true,
-        data: result,
-      });
+          id: { S: id }// Replace with your primary key attributes
+        }
+      }
+      const command = new DeleteItemCommand(params);
+      await dynamoDBClient.send(command);
+      return res.status(200).json({ message: "Category deleted successfully", statusCode: 200, success: true })
     } catch (err) {
-      console.error(err);
-      return res
-        .status(500)
-        .json({ message: err?.message, statusCode: 500, success: false });
+      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
     }
   }
+
+
 }
 
 const CategoryServicesObj = new CategoryServices();
