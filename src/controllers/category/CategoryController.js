@@ -48,6 +48,7 @@ class CategoryController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+  
   async get_cat(req, res) {
     try {
       // let { error } = CategorySchema.validate(req.body, options);

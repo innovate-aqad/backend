@@ -19,6 +19,7 @@ import {
   QueryCommand
 } from "@aws-sdk/client-dynamodb";
 
+import AWS from "aws-sdk"
 import { v4 as uuidv4 } from "uuid";
 
 import formidable from "formidable";
@@ -192,18 +193,94 @@ class SubCategoryServices {
   }
 
 
+  async get_cat_data(req, res) {
+    try {
+      const dynamoDB = new AWS.DynamoDB.DocumentClient();
+
+      // Fetch all categories
+      const categoryParams = {
+        TableName: "category",
+      };
+      let categories = await dynamoDB.scan(categoryParams).promise();
+      // if (categories.Items.length === 0) {
+      //   return res.status(200).json({
+      //     message: "No categories found",
+      //     data: [],
+      //     statusCode: 200,
+      //     success: true,
+      //   });
+      // }
+
+      // // Create a list of promises to fetch subcategories for each category
+      // const subCategoryPromises = categories.Items.map(category => {
+      //   const subCategoryParams = {
+      //     TableName: "sub_category",
+      //     IndexName: "category_id-index", // Ensure this GSI exists
+      //     KeyConditionExpression: "category_id = :category_id",
+      //     ExpressionAttributeValues: {
+      //       ":category_id": category.id,
+      //     },
+      //   };
+      //   return dynamoDB.query(subCategoryParams).promise();
+      // });
+
+      // // Resolve all promises
+      // const subCategoriesResults = await Promise.all(subCategoryPromises);
+      // let combinedData = [];
+
+      // // Combine each subcategory with the respective category
+      // subCategoriesResults.forEach((result, index) => {
+      //   result.Items.forEach(subCategory => {
+      //     combinedData.push({
+      //       category_id: categories.Items[index].id,
+      //       sub_category: subCategory.id,
+      //       title: subCategory.title,
+      //     });
+      //   });
+      // });
+      //======================================
+
+      const subcategoryParams = {
+        TableName: "sub_category",
+      };
+      let subcategories = await dynamoDB.scan(subcategoryParams).promise();
+
+
+      for (let el of subcategories?.Items) {
+        let checkCat = categories?.Items?.find((elem) => elem?.id == el?.category_id)
+        if (checkCat) {
+          el.categoryObj = checkCat
+        }
+      }
+
+
+      res.status(200).json({
+        message: "Fetch Data",
+        // data: combinedData,
+        statusCode: 200, categories, subcategories,
+        success: true,
+      });
+    } catch (err) {
+      console.error(err, "error");
+      return res.status(500).json({
+        message: err?.message,
+        statusCode: 500,
+        success: false,
+      });
+    }
+  }
   async delete(req, res) {
     try {
       let id = req.query.id
       const params = {
-        TableName: 'category',
+        TableName: 'sub_category',
         Key: {
-          'id': id // Replace 'PrimaryKey' and 'Value' with your item's actual primary key and value
+          'id': { S: id } // Replace 'PrimaryKey' and 'Value' with your item's actual primary key and value
         }
       };
       let result = await dynamoDBClient.send(new DeleteItemCommand(params));
       console.log(result, "checkkkk")
-      return res.status(200).json({ message: "Delete successfully", statusCode: 200, success: true, data: result })
+      return res.status(200).json({ message: "Delete successfully", statusCode: 200, success: true })
     } catch (err) {
       console.error(err)
       return res.status(500).json({ message: err?.message, statusCode: 500, success: false })

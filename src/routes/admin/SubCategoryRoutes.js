@@ -8,10 +8,11 @@ import SubCategoryControllerObj from "../../controllers/admin/SubCategoryControl
 const SubCategoryRoutes = express.Router();
 
 SubCategoryRoutes.post("/add", SubCategoryControllerObj.add_sub_cat);
-SubCategoryRoutes.get("/get", SubCategoryControllerObj.add_sub_cat);
-
 SubCategoryRoutes.put("/edit_status_sub_cat", SubCategoryControllerObj.edit_status_sub_cat);
 
-// SubCategoryRoutes .delete("/delete", SubCategoryControllerObj.deleteData);
+SubCategoryRoutes.get("/get", SubCategoryControllerObj.get_cat);
+
+
+SubCategoryRoutes .delete("/delete", SubCategoryControllerObj.deleteData);
 
 export default SubCategoryRoutes;
