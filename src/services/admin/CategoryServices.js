@@ -18,7 +18,7 @@ import {
   ScanCommand,
   UpdateItemCommand,
   DeleteItemCommand,
-  QueryCommand,
+  QueryCommand, BatchWriteItemCommand
 } from "@aws-sdk/client-dynamodb";
 
 import AWS from "aws-sdk";
@@ -35,6 +35,7 @@ const dynamoDBClient = new DynamoDBClient({
 });
 
 class CategoryServices {
+  //add and edit 
   async add(req, res) {
     try {
       let { title, status, id } = req.body;
@@ -245,32 +246,6 @@ class CategoryServices {
     }
   }
 
-  // not in use
-  // async delete(req, res) {
-  //   try {
-  //     let id = req.query.id;
-  //     const params = {
-  //       TableName: "category",
-  //       Key: {
-  //         id: id, // Replace 'PrimaryKey' and 'Value' with your item's actual primary key and value
-  //       },
-  //     };
-  //     let result = await dynamoDBClient.send(new DeleteItemCommand(params));
-  //     console.log(result, "checkkkk");
-  //     return res.status(200).json({
-  //       message: "Delete successfully",
-  //       statusCode: 200,
-  //       success: true,
-  //       data: result,
-  //     });
-  //   } catch (err) {
-  //     console.error(err);
-  //     return res
-  //       .status(500)
-  //       .json({ message: err?.message, statusCode: 500, success: false });
-  //   }
-  // }
-
   async delete(req, res) {
     try {
       let { id } = req.query
@@ -296,8 +271,43 @@ class CategoryServices {
       }
       const command = new DeleteItemCommand(params);
       await dynamoDBClient.send(command);
-      return res.status(200).json({ message: "Category deleted successfully", statusCode: 200, success: true })
+      // Query all subcategories with the same category_id
+      const subCategoriesData = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "sub_category",
+          IndexName: "category_id-index", // Make sure to create a GSI on category_id
+          KeyConditionExpression: "category_id = :category_id",
+          ExpressionAttributeValues: {
+            ":category_id": { S: id }
+          },
+        })
+      );
+      let batchDeleteParams;
+      let deleteRequests;
+      if (subCategoriesData.Items.length > 0) {
+        console.log(subCategoriesData?.Items[0]?.id, "subCategoriesDatasubCategoriesData")
+        deleteRequests = subCategoriesData.Items.map(item => ({
+          DeleteRequest: {
+            Key: {
+              id: item?.id // Assuming `id` is the primary key of the sub_category table
+            }
+          }
+        }));
+        console.log(deleteRequests, "deleterequerst", JSON.stringify)
+        batchDeleteParams = {
+          RequestItems: {
+            "sub_category": deleteRequests
+          }
+        };
+
+        await dynamoDBClient.send(new BatchWriteItemCommand(batchDeleteParams));
+      }
+      // category_id-index	
+      return res.status(200).json({
+        message: "Category deleted successfully", statusCode: 200, success: true,
+      })
     } catch (err) {
+      console.log(err, "Errorro")
       return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
     }
   }

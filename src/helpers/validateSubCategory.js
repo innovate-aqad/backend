@@ -9,7 +9,12 @@ export const SubCategorySchema = Joi.object({
   id: Joi.string().optional(),
   category_id: Joi.string().max(100).required().label("category_id"),
   // category_id: Joi.string().max(20).required().label("status"),
+});
 
+
+export const SubCategoryStatusSchema = Joi.object({
+  id: Joi.string().optional(),
+  status: Joi.string().valid('active','inactive').required().label("status"),
 });
 export const deleteSubCategorySchema = Joi.object({
   id: Joi.string().max(40).required().label("id"),

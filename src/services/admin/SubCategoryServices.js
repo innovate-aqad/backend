@@ -37,20 +37,22 @@ class SubCategoryServices {
     try {
       let { title, status, category_id, id } = req.body;
       let categoryExist = await dynamoDBClient.send(new QueryCommand({
-        TableName: "category", 
+        TableName: "category",
         KeyConditionExpression: "id = :id",
-         ExpressionAttributeValues: {
+        ExpressionAttributeValues: {
           ":id": { S: category_id }
         }
       }))
       // console.log(categoryExist,"categoryExistcategoryExist",categoryExist?.Items[0]?.status?.S)
       if (categoryExist?.Count == 0) {
         return res.status(400).json({ message: "Category not found", statusCode: 400, success: false })
-      }else if(categoryExist?.Items[0]?.status?.S!='active'){
+      } else if (categoryExist?.Items[0]?.status?.S != 'active') {
         return res.status(400).json({ message: "Category is not active", statusCode: 400, success: false })
       }
+      const timestamp = new Date().toISOString(); // Format timestamp as ISO string
+
       if (id) {
-      let  findData = await dynamoDBClient.send(
+        let findData = await dynamoDBClient.send(
           new QueryCommand({
             TableName: "sub_category",
             KeyConditionExpression: "id = :id",
@@ -66,20 +68,18 @@ class SubCategoryServices {
         const params = {
           TableName: "sub_category",
           Key: { id: { S: id } },
-          UpdateExpression: "SET #title = :title, #status = :status, #category_id =:category_id, #created_at = :created_at , #updated_at= :updated_at ",
+          UpdateExpression: "SET #title = :title, #status = :status, #category_id =:category_id, #updated_at= :updated_at ",
           ExpressionAttributeNames: {
             "#title": "title",
             "#status": "status",
-            "#category_id":"category_id",
-            "#created_at":"created_at",
-            "#updated_at":"updated_at"
+            "#category_id": "category_id",
+            "#updated_at": "updated_at"
           },
           ExpressionAttributeValues: {
             ":title": { S: title || findData?.Items[0]?.title?.S || "" },
-            ":status": { S: status ? "active" : "inactive" || findData?.Items[0]?.status?.S || 'active' },
-            ":category_id": { S: category_id  || findData?.Items[0]?.category_id?.S || '' },
-            ":created_at": { S: created_at|| findData?.Items[0]?.created_at?.S || '' },
-            ":updated_at": { S: updated_at|| findData?.Items[0]?.updated_at?.S || '' },
+            ":status": { S: status || findData?.Items[0]?.status?.S || 'active' },
+            ":category_id": { S: category_id || findData?.Items[0]?.category_id?.S || '' },
+            ":updated_at": { S: timestamp || findData?.Items[0]?.updated_at?.S || '' },
           },
         };
         const findExist = await dynamoDBClient.send(
@@ -120,24 +120,23 @@ class SubCategoryServices {
             statusCode: 400,
           });
         }
-        const timestamp = new Date().toISOString(); // Format timestamp as ISO string
 
         let id = uuidv4();
-          id = id?.replace(/-/g, "");
-          const params = {
-            TableName: "sub_category",
-            Item: {
-              id: { S: id },
-              title: { S: title },
-              status: { S: status ? "active" : "inactive" },
-              category_id: { S: category_id },
-              created_at: { S: timestamp},
-              updated_at: { S: timestamp},
-            },
-          };
-          // console.log("docClient", "docccleint", params);
-          let Data = await dynamoDBClient.send(new PutItemCommand(params));
-          return res
+        id = id?.replace(/-/g, "");
+        const params = {
+          TableName: "sub_category",
+          Item: {
+            id: { S: id },
+            title: { S: title },
+            status: { S: status ? "active" : "inactive" },
+            category_id: { S: category_id },
+            created_at: { S: timestamp },
+            updated_at: { S: timestamp },
+          },
+        };
+        // console.log("docClient", "docccleint", params);
+        let Data = await dynamoDBClient.send(new PutItemCommand(params));
+        return res
           .status(201)
           .json({ message: "Sub-Category add successfully", statusCode: 201, success: true });
       }
@@ -149,6 +148,49 @@ class SubCategoryServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
+  async change_status(req, res) {
+    try {
+      let { status, id } = req.body;
+      const timestamp = new Date().toISOString(); // Format timestamp as ISO string
+
+      let findData = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "sub_category",
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: id },
+          },
+        })
+      );
+      if (findData && findData?.Count == 0) {
+        return res.status(400).json({ message: "Sub-category document not found", statusCode: 400, success: false })
+      }
+      const params = {
+        TableName: "sub_category",
+        Key: { id: { S: id } },
+        UpdateExpression: "SET  #status = :status,  #updated_at= :updated_at ",
+        ExpressionAttributeNames: {
+          "#status": "status",
+          "#updated_at": "updated_at"
+        },
+        ExpressionAttributeValues: {
+          ":status": { S: status || findData?.Items[0]?.status?.S || 'active' },
+          ":updated_at": { S: timestamp || findData?.Items[0]?.updated_at?.S || '' },
+        },
+      };
+
+      await dynamoDBClient.send(new UpdateItemCommand(params));
+      return res.status(200).json({ message: "Sub-category status updated successfully", statusCode: 200, success: true });
+    }
+    catch (err) {
+      console.log(err, "errorororro");
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
 
   async delete(req, res) {
     try {
@@ -167,6 +209,7 @@ class SubCategoryServices {
       return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
     }
   }
+
 }
 
 const SubCategoryServicesObj = new SubCategoryServices();

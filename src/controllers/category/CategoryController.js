@@ -29,13 +29,16 @@ const options = {
 class CategoryController {
   async add_cat(req, res) {
     try {
-      let { error } = CategorySchema.validate(req.body, options);
-      if (error) {
-        return res.status(400).json({
-          message: error.details[0]?.message,
-          success: false,
-          statusCode: 400,
-        });
+      if(!req.body.id){
+
+        let { error } = CategorySchema.validate(req.body, options);
+        if (error) {
+          return res.status(400).json({
+            message: error.details[0]?.message,
+            success: false,
+            statusCode: 400,
+          });
+        }
       }
     
       await CategoryServicesObj.add(req, res);

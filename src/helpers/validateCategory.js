@@ -17,6 +17,10 @@ export const CategorySchema = Joi.object({
       .required()
       .label("category title"), // Make 'title' required if 'id' does not exist
   }),
+  status: Joi.string()
+  .valid("active", "inactive")
+  .required()
+  .label("status"),
   id: Joi.string().optional(),
 });
 export const deleteCategorySchema = Joi.object({
