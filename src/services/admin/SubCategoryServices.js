@@ -112,7 +112,6 @@ class SubCategoryServices {
               ":title": { S: title },
             },
           })
-
         );
         if (findEmailExist.Count > 0) {
           return res.status(400).json({

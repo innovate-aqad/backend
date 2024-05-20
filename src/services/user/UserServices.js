@@ -93,8 +93,8 @@ class UserServices {
         driver_license_number_array,
         db_driver_details_array,
       } = req.body;
-      console.log(req.body, "aaaaaaaaaa!@#!@#aa req.body");
-      console.log(req.files, "req.filesssss")
+      // console.log(req.body, "aaaaaaaaaa!@#!@#aa req.body");
+      // console.log(req.files, "req.filesssss")
       email = email?.trim();
       let findData;
       if ((slide == 2 || slide == 3 || slide == 4) && doc_id == "") {

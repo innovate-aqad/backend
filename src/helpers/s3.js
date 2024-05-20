@@ -22,12 +22,12 @@ const storage = multer.diskStorage({
     // console.log(req.body,"req.bodyyyyyyyyy")
 
     const { user_type } = req.body;
-    console.log(req.files,"imnulterrrrrrrrrrrrr")
-    console.log(req.body,"req bodddddddddy")
+    console.log(req.files, "imnulterrrrrrrrrrrrr")
+    console.log(req.body, "req bodddddddddy")
     let destination = "./uploads/";
     if (user_type == "vendor") {
       destination += "vendor/";
-    } else if (user_type == "seller" ) {
+    } else if (user_type == "seller") {
       destination += "seller/";
     } else if (user_type == "logistic") {
       destination += "logistic/";
@@ -46,6 +46,26 @@ const storage = multer.diskStorage({
 export const upload = multer({
   storage: storage,
 });
+
+
+//product add to upload folder
+const storageProductAdd = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // console.log(er)
+    console.log(req.files,"111111@@@!@#!@#!@#!@#req.filesssss")
+    let destination = "./uploads/vendor/product";
+    cb(null, destination);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+export const uploadProduct = multer({
+  storage: storageProductAdd,
+});
+
+
 
 // Function to upload image to S3
 export const uploadImageToS3 = async (fileName, filePath) => {

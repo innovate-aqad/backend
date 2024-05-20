@@ -2,17 +2,28 @@ import express from "express";
 import CategoryControllerObj from "../../controllers/category/CategoryController.js";
 import { authorize } from "../../middlewares/auth.js";
 import { educationImage, userImage } from "../../helpers/multer.js";
-import { upload } from "../../helpers/s3.js";
-import SubCategoryControllerObj from "../../controllers/admin/SubCategoryController.js";
+import ProductControllerObj from "../../controllers/admin/ProductController.js";
+import { uploadProduct } from "../../helpers/s3.js";
 
-const SubCategoryRoutes = express.Router();
+const ProductRoutes = express.Router();
 
-SubCategoryRoutes.post("/add", SubCategoryControllerObj.add_sub_cat);
-SubCategoryRoutes.put("/edit_status_sub_cat", SubCategoryControllerObj.edit_status_sub_cat);
+ProductRoutes.post("/add", uploadProduct.fields([
+    {
+        name: "product_image",
+        maxCount: 1,
+    },
+    {
+        name: "product_images_arr",
+        maxCount: 5,
+    },
+]), ProductControllerObj.addProduct);
 
-SubCategoryRoutes.get("/get", SubCategoryControllerObj.get_cat);
 
+// ProductRoutes.put("/edit_status_sub_cat", ProductControllerObj.edit_status_sub_cat);
 
-SubCategoryRoutes .delete("/delete", SubCategoryControllerObj.deleteData);
+// ProductRoutes.get("/get", ProductControllerObj.get_cat);
+// 
 
-export default SubCategoryRoutes;
+// ProductRoutes.delete("/delete", ProductControllerObj.deleteData);
+
+export default ProductRoutes;

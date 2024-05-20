@@ -7,13 +7,14 @@ export const addProductchema = Joi.object({
     .max(50)
     .trim()
     .required()
-    .label("Title"),
-  sku: Joi.string()
+    .label("title"),
+  sku: Joi.string().min(3)
+    .max(50)
     .required()
     .label("sku"),
   summary: Joi.string()
     .min(10)
-    .max(500)
+    .max(1000)
     .trim()
     .required()
     .label("Summary"),
@@ -23,83 +24,35 @@ export const addProductchema = Joi.object({
     .trim()
     .required()
     .label("description"),
-  cat_id: Joi.string()
+  category_id: Joi.string()
     .trim()
     .required()
-    .label("category"),
+    .label("category_id"),
+  sub_category_id: Joi.string()
+    .trim()
+    .required()
+    .label("sub_category_id"),
+  minimum_order_quantity: Joi.number().positive()
+    .required()
+    .label("minimum_order_quantity"),
   shape_id: Joi.string()
     .trim()
-    .required()
+    // .required()
     .label("shape"),
   material_id: Joi.string()
     .trim()
-    .required()
+    // .required()
     .label("material_id"),
-  description: Joi.string()
-    .min(10)
-    .max(325)
-    .trim()
-    .required()
-    .label("description"),
   gender: Joi.array()
     .items(Joi.string().trim())
-    .required()
+    // .required()
     .label("Gender"),
   weight_group_id: Joi.string()
-    .trim()
-    .required(),
+    .trim(),
+  // .required(),
   size_id: Joi.string()
-    .trim()
-    .required(),
-  frame_width: Joi.string().custom((value, helpers) => {
-    if (value < 0) {
-      return helpers.message("frame_width cannot be negative");
-    }
-    return value;
-  }),
-  lens_width: Joi.string()
-    .trim()
-    .custom((value, helpers) => {
-      if (value < 0) {
-        return helpers.message("lens_width cannot be negative");
-      }
-      return value;
-    }),
-  lens_height: Joi.string()
-    .trim()
-    .custom((value, helpers) => {
-      if (value < 0) {
-        return helpers.message("lens_height cannot be negative");
-      }
-      return value;
-    }),
-  bridge_width: Joi.string()
-    .trim()
-    .custom((value, helpers) => {
-      if (value < 0) {
-        return helpers.message("bridge_width cannot be negative");
-      }
-      return value;
-    }),
-  temple_length: Joi.string()
-    .trim()
-    .custom((value, helpers) => {
-      if (value < 0) {
-        return helpers.message("temple_length cannot be negative");
-      }
-      return value;
-    }),
-  // variantData: Joi.array()
-  //   .min(1)
-  //   .items(
-  //     Joi.object({
-  //       color_id: Joi.string()
-  //         .trim()
-  //         .required(),
-  //     })
-  //   )
-  //   .required()
-  //   .label("Variant Data"),
+    .trim(),
+  // .required(),
 });
 
 export const editProductchema = Joi.object({

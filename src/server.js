@@ -7,6 +7,7 @@ import path from "path";
 import { environmentVars } from "./config/environmentVar.js";
 import CategoryRoutes from "./routes/user/CategoryRoutes.js";
 import SubCategoryRoutes from "./routes/admin/SubCategoryRoutes.js";
+import ProductRoutes from "./routes/admin/ProductRoutes.js";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const app = express();
@@ -60,6 +61,8 @@ app.get("/aqad", async (req, res) => {
 console.log("hello wordl");
 //routes here like this =>     app.use('/user',userRoutes);
 app.use("/api/user", UserRoutes);
+
+app.use("/api/product", ProductRoutes);
 
 //category manage
 app.use("/api/category", CategoryRoutes);
