@@ -44,6 +44,7 @@ class ProductServices {
       if (category_id) {
         let findData = await dynamoDBClient.send(
           new ScanCommand({
+          // new QueryCommand({
             TableName: "category",
             FilterExpression: "id = :id",
             ExpressionAttributeValues: {
@@ -63,6 +64,7 @@ class ProductServices {
       if (sub_category_id) {
         let findData = await dynamoDBClient.send(
           new ScanCommand({
+          // new QueryCommand({
             TableName: "sub_category",
             FilterExpression: "id = :id",
             ExpressionAttributeValues: {
@@ -83,6 +85,7 @@ class ProductServices {
       if (id) {
         let findProductData = await dynamoDBClient.send(
           new ScanCommand({
+          // new QueryCommand({
             TableName: "products",
             FilterExpression: "id = :id",
             ExpressionAttributeValues: {
@@ -201,7 +204,7 @@ class ProductServices {
                 price: { S: el.price || "" },
                 country: { S: el.country || "" },
               },
-            })) : findProductData.Items[0].variant_arr?.L
+            })) : findProductData.Items[0].variant_arr?.L||[]
           },
           ":size_id": { S: size_id || findProductData.Items[0].size_id?.S || "" },
           ":brand": { S: brand || findProductData.Items[0].brand?.S || "" },
@@ -210,7 +213,7 @@ class ProductServices {
         }
       };
 
-console.log(params,"parmansssssssssssss")
+console.log(params,"parmansssssssssss update ====")
 
         await dynamoDBClient.send(new UpdateItemCommand(params));
         return res.status(200).json({
@@ -264,7 +267,7 @@ console.log(params,"parmansssssssssssss")
             id: { S: id },
             title: { S: title },
             category_id: { S: category_id },
-            sub_category: { S: sub_category_id },
+            sub_category_id: { S: sub_category_id },
             price: { S: price || "" },
             compare_price_at: { S: compare_price_at || "" },
             description: { S: description },
@@ -277,8 +280,8 @@ console.log(params,"parmansssssssssssss")
                   po_box: { S: el?.po_box || "" }
                 }
               })) || []
-            }
-          },
+            },
+          // },
           // size: { S: size },
           brand: { S: brand || "" },
           minimum_order_quantity: { S: minimum_order_quantity },
@@ -301,6 +304,7 @@ console.log(params,"parmansssssssssssss")
           created_at: { S: new Date().toISOString() },
           updated_at: { S: new Date().toISOString() },
         }
+        }
         params.Item.product_images_arr = {
           L: req.files.product_images_arr?.map((el) => ({
             M: {
@@ -309,15 +313,15 @@ console.log(params,"parmansssssssssssss")
           })) || []
         }
         // req.files.product_images_arr?.map((el) => el?.filename)
-        console.log(params, "paramsnsnsnn")
+        console.log(params, "paramsnsnsnn add product ")
         await dynamoDBClient.send(new PutItemCommand(params));
       };
       return res.status(201).json({
         message: "Product add successfully",
         statusCode: 201,
+        data:id,
         success: true,
       });
-
     } catch (err) {
       console.log(err, "errorororro");
       return res
