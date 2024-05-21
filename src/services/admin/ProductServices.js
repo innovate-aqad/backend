@@ -286,14 +286,14 @@ class ProductServices {
 
   async get_dataOf(req, res) {
     try {
-      
+
       const pageSize = req.query?.pageSize || 10;
       const userType = req.userData.user_type;
       const userId = req.userData.id;
-  
+
       const params = {
         TableName: "products",
-        Limit: pageSize, 
+        Limit: pageSize,
       };
       if (userType === 'vendor') {
         params.FilterExpression = "created_by = :created_by";
@@ -384,127 +384,39 @@ class ProductServices {
   async delete(req, res) {
     try {
       let id = req.query.id;
+      let user_type = req.userData?.user_type
+      let userId = req.id
 
+      const data = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "products",
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: id },
+          },
+        })
+      );
+      if (data?.Count == 0) {
+        return res.status(400).json({ message: "Product not found or deleted already", statusCode: 400, success: false })
+      }
+      console.log(data?.Items[0]?.created_by, "dataaaaaaa",userId,"data?.Items[0]?.",data?.Items[0])
+      if (user_type == 'vendor' && data?.Items[0]?.created_by != userId) {
+        return res.status(400).json({ message: "Not authorise to delete another vendor 's product", statusCode: 400, success: false })
+      }
       const params = {
         TableName: "products",
         Key: {
-          id: {S:id}, // Replace 'PrimaryKey' and 'Value' with your item's actual primary key and value
+          id: { S: id },
         },
       };
-      let result = await dynamoDBClient.send(new DeleteItemCommand(params));
-      console.log(result, "checkkkk");
-      
-      // let id = req.query.id
-      // const params = {
-      //   TableName: 'sub_category',
-      //   Key: {
-      //     'id': { S: id } // Replace 'PrimaryKey' and 'Value' with your item's actual primary key and value
-      //   }
-      // };
-      // let result = await dynamoDBClient.send(new DeleteItemCommand(params));
-      // console.log(result, "checkkkk")
-      // return res.status(200).json({ message: "Delete successfully", statusCode: 200, success: true })
+      await dynamoDBClient.send(new DeleteItemCommand(params));
       return res.status(200).json({
-        message: "Delete successfully",
+        message: "Product Delete successfully",
         statusCode: 200,
         success: true,
-        // data: result,
       });
     } catch (err) {
       console.error(err);
-      return res
-        .status(500)
-        .json({ message: err?.message, statusCode: 500, success: false });
-    }
-  }
-
-  async deleteProductImage(req, res) {
-    try {
-      let { id, image } = req.query;
-      let findData = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "product",
-          KeyConditionExpression: "id = :id",
-          ExpressionAttributeValues: {
-            ":id": { S: id },
-          },
-        })
-      );
-      if (findData?.Count == 0) {
-        return res.status(400).json({
-          message: "Product not found",
-          statusCode: 400,
-          success: false,
-        });
-      }
-      let filterData = findData?.Items[0]?.imagesArr?.filter(
-        (el) => el != image
-      );
-      const params = {
-        TableName: "product",
-        Key: { id: { S: id } },
-        UpdateExpression:
-          "SET #imagesArr = :imagesArr, #updated_at = :updated_at",
-        ExpressionAttributeNames: {
-          "#imagesArr": "imagesArr",
-          "#updated_at": "updated_at",
-        },
-        ExpressionAttributeValues: {
-          ":imagesArr": {
-            S: filterData,
-          },
-          ":updated_at": { S: new Date().toISOString() },
-        },
-      };
-      await dynamoDBClient.send(new UpdateItemCommand(params));
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: err?.message, statusCode: 500, success: false });
-    }
-  }
-
-  //single upload image
-  async uploadProductImage(req, res) {
-    try {
-      let { id } = req.query;
-      let findData = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "product",
-          KeyConditionExpression: "id = :id",
-          ExpressionAttributeValues: {
-            ":id": { S: id },
-          },
-        })
-      );
-      if (findData?.Count == 0) {
-        return res.status(400).json({
-          message: "Product not found",
-          statusCode: 400,
-          success: false,
-        });
-      }
-      let filterData = findData?.Items[0]?.imagesArr?.push(
-        req.files?.productImagesArr[0]?.filename
-      );
-      const params = {
-        TableName: "product",
-        Key: { id: { S: id } },
-        UpdateExpression:
-          "SET #imagesArr = :imagesArr, #updated_at = :updated_at",
-        ExpressionAttributeNames: {
-          "#imagesArr": "imagesArr",
-          "#updated_at": "updated_at",
-        },
-        ExpressionAttributeValues: {
-          ":imagesArr": {
-            S: filterData,
-          },
-          ":updated_at": { S: new Date().toISOString() },
-        },
-      };
-      await dynamoDBClient.send(new UpdateItemCommand(params));
-    } catch (err) {
       return res
         .status(500)
         .json({ message: err?.message, statusCode: 500, success: false });
