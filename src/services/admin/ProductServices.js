@@ -10,6 +10,9 @@ import {
 } from "@aws-sdk/client-dynamodb";
 
 import { v4 as uuidv4 } from "uuid";
+import AWS from "aws-sdk"
+
+const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -44,7 +47,7 @@ class ProductServices {
       if (category_id) {
         let findData = await dynamoDBClient.send(
           new ScanCommand({
-          // new QueryCommand({
+            // new QueryCommand({
             TableName: "category",
             FilterExpression: "id = :id",
             ExpressionAttributeValues: {
@@ -64,7 +67,7 @@ class ProductServices {
       if (sub_category_id) {
         let findData = await dynamoDBClient.send(
           new ScanCommand({
-          // new QueryCommand({
+            // new QueryCommand({
             TableName: "sub_category",
             FilterExpression: "id = :id",
             ExpressionAttributeValues: {
@@ -85,7 +88,7 @@ class ProductServices {
       if (id) {
         let findProductData = await dynamoDBClient.send(
           new ScanCommand({
-          // new QueryCommand({
+            // new QueryCommand({
             TableName: "products",
             FilterExpression: "id = :id",
             ExpressionAttributeValues: {
@@ -102,57 +105,10 @@ class ProductServices {
           });
         }
 
-        // const params = {
-        //   TableName: "products",
-        //   Key: { id: { S: id } },
-        //   UpdateExpression:
-        //     "SET #title = :title, #category_id = :category_id, #sub_category_id = :sub_category_id, #price= :price, #compare_price_at= :compare_price_at, #description= :description, #quantity =:quantity, ",
-
-        //   Item: {
-        //     title: { S: title || findProductData?.title },
-        //     category_id: { S: category_id || findProductData?.category_id||"" },
-        //     sub_category: {
-        //       S: sub_category_id || findProductData?.sub_category_id||"",
-        //     },
-        //     price: { S: price || findProductData?.price||"" },
-        //     compare_price_at: {
-        //       S: compare_price_at || findProductData?.compare_price_at||"",
-        //     },
-        //     description: { S: description || findProductData?.description },
-        //     quantity: { S: quantity || findProductData?.quantity },
-        //     // sku: { S: sku || findProductData?.sku },
-        //     warehouse_arr: {
-        //       L: warehouse_arr?.map((el) => ({
-        //         M: {
-        //           address: { S: el?.address || "" },
-        //           po_box: { S: el?.po_box || "" }
-        //         }
-        //       })) || findProductData?.warehouseArr
-        //     },
-        //     variant_arr: {
-        //       L: variant_arr?.map((el) => ({
-        //         M: {
-        //           price: { S: el?.price || "" },
-        //           country: { S: el?.country || "" },
-        //         },
-        //       })) || findProductData?.variation 
-        //     },
-        //     // variation: { L: variation || findProductData?.variation },
-        //     size_id: { S: size_id || findProductData?.size_id||"" },
-        //     brand: { S: brand || findProductData?.brand||"" },
-        //     minimum_order_quantity: {
-        //       S:
-        //         minimum_order_quantity ||
-        //         findProductData?.minimum_order_quantity,
-        //     },
-        //     status: { S: status || findProductData?.status||"active" },
-        //   },
-        // };
-        
-      const params = {
-        TableName: "products",
-        Key: { id: { S: id } },
-        UpdateExpression: `
+        const params = {
+          TableName: "products",
+          Key: { id: { S: id } },
+          UpdateExpression: `
           SET #title = :title,
               #category_id = :category_id,
               #sub_category_id = :sub_category_id,
@@ -167,53 +123,51 @@ class ProductServices {
               #minimum_order_quantity = :minimum_order_quantity,
               #status = :status
         `,
-        ExpressionAttributeNames: {
-          "#title": "title",
-          "#category_id": "category_id",
-          "#sub_category_id": "sub_category_id",
-          "#price": "price",
-          "#compare_price_at": "compare_price_at",
-          "#description": "description",
-          "#quantity": "quantity",
-          "#warehouse_arr": "warehouse_arr",
-          "#variant_arr": "variant_arr",
-          "#size_id": "size_id",
-          "#brand": "brand",
-          "#minimum_order_quantity": "minimum_order_quantity",
-          "#status": "status"
-        },
-        ExpressionAttributeValues: {
-          ":title": { S: title || findProductData.Items[0].title.S },
-          ":category_id": { S: category_id || findProductData.Items[0].category_id.S || "" },
-          ":sub_category_id": { S: sub_category_id || findProductData.Items[0].sub_category_id.S || "" },
-          ":price": { S: price || findProductData.Items[0].price.S || "" },
-          ":compare_price_at": { S: compare_price_at || findProductData.Items[0].compare_price_at.S || "" },
-          ":description": { S: description || findProductData.Items[0].description.S },
-          ":quantity": { S: quantity || findProductData.Items[0].quantity.S },
-          ":warehouse_arr": {
-            L: warehouse_arr ? warehouse_arr.map((el) => ({
-              M: {
-                address: { S: el.address || "" },
-                po_box: { S: el.po_box || "" }
-              }
-            })) : findProductData.Items[0].warehouse_arr.L
+          ExpressionAttributeNames: {
+            "#title": "title",
+            "#category_id": "category_id",
+            "#sub_category_id": "sub_category_id",
+            "#price": "price",
+            "#compare_price_at": "compare_price_at",
+            "#description": "description",
+            "#quantity": "quantity",
+            "#warehouse_arr": "warehouse_arr",
+            "#variant_arr": "variant_arr",
+            "#size_id": "size_id",
+            "#brand": "brand",
+            "#minimum_order_quantity": "minimum_order_quantity",
+            "#status": "status"
           },
-          ":variant_arr": {
-            L: variant_arr ? variant_arr.map((el) => ({
-              M: {
-                price: { S: el.price || "" },
-                country: { S: el.country || "" },
-              },
-            })) : findProductData.Items[0].variant_arr?.L||[]
-          },
-          ":size_id": { S: size_id || findProductData.Items[0].size_id?.S || "" },
-          ":brand": { S: brand || findProductData.Items[0].brand?.S || "" },
-          ":minimum_order_quantity": { S: minimum_order_quantity || findProductData.Items[0].minimum_order_quantity?.S },
-          ":status": { S: status || findProductData.Items[0].status?.S || "active" }
-        }
-      };
-
-console.log(params,"parmansssssssssss update ====")
+          ExpressionAttributeValues: {
+            ":title": { S: title || findProductData.Items[0].title.S },
+            ":category_id": { S: category_id || findProductData.Items[0].category_id.S || "" },
+            ":sub_category_id": { S: sub_category_id || findProductData.Items[0].sub_category_id.S || "" },
+            ":price": { S: price || findProductData.Items[0].price.S || "" },
+            ":compare_price_at": { S: compare_price_at || findProductData.Items[0].compare_price_at.S || "" },
+            ":description": { S: description || findProductData.Items[0].description.S },
+            ":quantity": { S: quantity || findProductData.Items[0].quantity.S },
+            ":warehouse_arr": {
+              L: warehouse_arr ? warehouse_arr.map((el) => ({
+                M: {
+                  address: { S: el.address || "" },
+                  po_box: { S: el.po_box || "" }
+                }
+              })) : findProductData.Items[0].warehouse_arr.L
+            },
+            ":variant_arr": {
+              L: variant_arr ? variant_arr.map((el) => ({
+                M: {
+                  price: { S: el.price || "" },
+                  country: { S: el.country || "" },
+                },
+              })) : findProductData.Items[0].variant_arr?.L || []
+            },
+            ":size_id": { S: size_id || findProductData.Items[0].size_id?.S || "" },
+            ":brand": { S: brand || findProductData.Items[0].brand?.S || "" },
+            ":minimum_order_quantity": { S: minimum_order_quantity || findProductData.Items[0].minimum_order_quantity?.S },
+            ":status": { S: status || findProductData.Items[0].status?.S || "active" }
+          }
+        };
 
         await dynamoDBClient.send(new UpdateItemCommand(params));
         return res.status(200).json({
@@ -258,7 +212,6 @@ console.log(params,"parmansssssssssss update ====")
           });
         }
 
-
         id = uuidv4();
         id = id?.replace(/-/g, "");
         const params = {
@@ -281,29 +234,30 @@ console.log(params,"parmansssssssssss update ====")
                 }
               })) || []
             },
-          // },
-          // size: { S: size },
-          brand: { S: brand || "" },
-          minimum_order_quantity: { S: minimum_order_quantity },
-          status: { S: status || "active" },
-          variant_arr: {
-            L: variant_arr?.map((el) => ({
-              M: {
-                price: { S: el?.price || "" },
-                country: { S: el?.country || "" },
-              },
-            })) || []
-          },
-          summary: { S: summary },
-          shape_id: { S: shape_id || "" },
-          material_id: { S: material_id || "" },
-          gender: { S: gender || "" },
-          weight_group_id: { S: weight_group_id || "" },
-          size_id: { S: size_id || "" },
-          product_image: { S: req.files?.product_image[0]?.filename || "" },
-          created_at: { S: new Date().toISOString() },
-          updated_at: { S: new Date().toISOString() },
-        }
+            // },
+            // size: { S: size },
+            brand: { S: brand || "" },
+            created_by: { S: req.userData?.id || "" },
+            minimum_order_quantity: { S: minimum_order_quantity },
+            status: { S: status || "active" },
+            variant_arr: {
+              L: variant_arr?.map((el) => ({
+                M: {
+                  price: { S: el?.price || "" },
+                  country: { S: el?.country || "" },
+                },
+              })) || []
+            },
+            summary: { S: summary },
+            shape_id: { S: shape_id || "" },
+            material_id: { S: material_id || "" },
+            gender: { S: gender || "" },
+            weight_group_id: { S: weight_group_id || "" },
+            size_id: { S: size_id || "" },
+            product_image: { S: req.files?.product_image[0]?.filename || "" },
+            created_at: { S: new Date().toISOString() },
+            updated_at: { S: new Date().toISOString() },
+          }
         }
         params.Item.product_images_arr = {
           L: req.files.product_images_arr?.map((el) => ({
@@ -319,7 +273,7 @@ console.log(params,"parmansssssssssss update ====")
       return res.status(201).json({
         message: "Product add successfully",
         statusCode: 201,
-        data:id,
+        data: id,
         success: true,
       });
     } catch (err) {
@@ -330,14 +284,23 @@ console.log(params,"parmansssssssssss update ====")
     }
   }
 
-  async get_cat_data(req, res) {
+  async get_dataOf(req, res) {
     try {
-      const dynamoDB = new AWS.DynamoDB.DocumentClient();
+
       const pageSize = req.query?.pageSize || 10;
+      const userType = req.userData.user_type;
+      const userId = req.userData.id;
+
       const params = {
-        TableName: "product",
-        Limit: pageSize, //
+        TableName: "products",
+        Limit: pageSize,
       };
+      if (userType === 'vendor') {
+        params.FilterExpression = "created_by = :created_by";
+        params.ExpressionAttributeValues = {
+          ":created_by": userId,
+        };
+      }
       if (req.query.LastEvaluatedKey) {
         params.ExclusiveStartKey = JSON.parse(req.query.LastEvaluatedKey);
       }
@@ -421,116 +384,39 @@ console.log(params,"parmansssssssssss update ====")
   async delete(req, res) {
     try {
       let id = req.query.id;
+      let user_type = req.userData?.user_type
+      let userId = req.id
 
+      const data = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "products",
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: id },
+          },
+        })
+      );
+      if (data?.Count == 0) {
+        return res.status(400).json({ message: "Product not found or deleted already", statusCode: 400, success: false })
+      }
+      console.log(data?.Items[0]?.created_by, "dataaaaaaa",userId,"data?.Items[0]?.",data?.Items[0])
+      if (user_type == 'vendor' && data?.Items[0]?.created_by != userId) {
+        return res.status(400).json({ message: "Not authorise to delete another vendor 's product", statusCode: 400, success: false })
+      }
       const params = {
-        TableName: "category",
+        TableName: "products",
         Key: {
-          id: id, // Replace 'PrimaryKey' and 'Value' with your item's actual primary key and value
+          id: { S: id },
         },
       };
-      let result = await dynamoDBClient.send(new DeleteItemCommand(params));
-      console.log(result, "checkkkk");
+      await dynamoDBClient.send(new DeleteItemCommand(params));
       return res.status(200).json({
-        message: "Delete successfully",
+        message: "Product Delete successfully",
         statusCode: 200,
         success: true,
-        data: result,
       });
     } catch (err) {
       console.error(err);
-      return res
-        .status(500)
-        .json({ message: err?.message, statusCode: 500, success: false });
-    }
-  }
-
-  async deleteProductImage(req, res) {
-    try {
-      let { id, image } = req.query;
-      let findData = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "product",
-          KeyConditionExpression: "id = :id",
-          ExpressionAttributeValues: {
-            ":id": { S: id },
-          },
-        })
-      );
-      if (findData?.Count == 0) {
-        return res.status(400).json({
-          message: "Product not found",
-          statusCode: 400,
-          success: false,
-        });
-      }
-      let filterData = findData?.Items[0]?.imagesArr?.filter(
-        (el) => el != image
-      );
-      const params = {
-        TableName: "product",
-        Key: { id: { S: id } },
-        UpdateExpression:
-          "SET #imagesArr = :imagesArr, #updated_at = :updated_at",
-        ExpressionAttributeNames: {
-          "#imagesArr": "imagesArr",
-          "#updated_at": "updated_at",
-        },
-        ExpressionAttributeValues: {
-          ":imagesArr": {
-            S: filterData,
-          },
-          ":updated_at": { S: new Date().toISOString() },
-        },
-      };
-      await dynamoDBClient.send(new UpdateItemCommand(params));
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: err?.message, statusCode: 500, success: false });
-    }
-  }
-
-  //single upload image
-  async uploadProductImage(req, res) {
-    try {
-      let { id } = req.query;
-      let findData = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "product",
-          KeyConditionExpression: "id = :id",
-          ExpressionAttributeValues: {
-            ":id": { S: id },
-          },
-        })
-      );
-      if (findData?.Count == 0) {
-        return res.status(400).json({
-          message: "Product not found",
-          statusCode: 400,
-          success: false,
-        });
-      }
-      let filterData = findData?.Items[0]?.imagesArr?.push(
-        req.files?.productImagesArr[0]?.filename
-      );
-      const params = {
-        TableName: "product",
-        Key: { id: { S: id } },
-        UpdateExpression:
-          "SET #imagesArr = :imagesArr, #updated_at = :updated_at",
-        ExpressionAttributeNames: {
-          "#imagesArr": "imagesArr",
-          "#updated_at": "updated_at",
-        },
-        ExpressionAttributeValues: {
-          ":imagesArr": {
-            S: filterData,
-          },
-          ":updated_at": { S: new Date().toISOString() },
-        },
-      };
-      await dynamoDBClient.send(new UpdateItemCommand(params));
-    } catch (err) {
       return res
         .status(500)
         .json({ message: err?.message, statusCode: 500, success: false });
