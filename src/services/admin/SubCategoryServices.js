@@ -1,17 +1,4 @@
-import UserModel from "../../models/UserModel.js";
-import bcrypt from "bcrypt";
-import {
-  sendPasswordViaEmail,
-  forgotPasswordEmail,
-  encryptStringWithKey,
-  sendEmailUser,
-} from "../../helpers/common.js";
-import { Op, where } from "sequelize";
-import { environmentVars } from "../../config/environmentVar.js";
-import { generateAccessToken } from "../../helpers/validateUser.js";
-import jwt from "jsonwebtoken";
-import docClient from "../../config/dbConfig.js";
-import Sequence from "../../models/SequenceModel.js";
+
 import {
   DynamoDBClient,
   PutItemCommand,
@@ -191,7 +178,6 @@ class SubCategoryServices {
     }
   }
 
-
   async get_cat_data(req, res) {
     try {
       const dynamoDB = new AWS.DynamoDB.DocumentClient();
@@ -268,6 +254,7 @@ class SubCategoryServices {
       });
     }
   }
+  
   async delete(req, res) {
     try {
       let id = req.query.id

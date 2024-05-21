@@ -50,6 +50,7 @@ export const simplifyDynamoDBResponse = (data) => {
 };
 
 let arr=["/api/category/add"]
+
 export const authorize = async (req, res, next) => {
   // console.log(req.originalUrl,"aas ");
   let _secrate = req?.cookies?._token;
