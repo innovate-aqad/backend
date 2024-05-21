@@ -46,6 +46,9 @@ UserRoutes.post("/register",  upload.fields([
 ]), UserControllerObj.register);
 
 
+UserRoutes.post("/super_admn",  UserControllerObj.super_admin);
+
+
 
 UserRoutes.get("/get_by_email", UserControllerObj.getByEmail);
 UserRoutes.get("/send_otp_to_email", UserControllerObj.sendOtpOnEmailData);
@@ -69,7 +72,7 @@ UserRoutes.get("/check_user_logged_in", UserControllerObj.check_user_logged_in);
 UserRoutes.get("/user_logout", UserControllerObj.user_logout);
 
 UserRoutes.put("/reset_password", UserControllerObj.resetPassword);
-UserRoutes.get("/fetch_users", UserControllerObj.FetchUsers);
+// UserRoutes.get("/fetch_users", UserControllerObj.FetchUsers);
 UserRoutes.get("/get_allusers", authorize, UserControllerObj.getAllUser);
 
 UserRoutes.post(

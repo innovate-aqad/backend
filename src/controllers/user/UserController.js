@@ -10,6 +10,7 @@ import {
   loginWithOtpSchema,
   AddSubUserSchema,
   GetSubUserSchema,
+  AddSuperUserSchema,
 } from "../../helpers/validateUser.js";
 import bcrypt from "bcrypt";
 import UserServicesObj from "../../services/user/UserServices.js";
@@ -30,6 +31,22 @@ const options = {
 };
 
 class UserController {
+  async super_admin(req, res) {
+    try {
+      console.log(req.body,"req.bodyyyyyyyyyy")
+      let { error } = AddSuperUserSchema.validate(req.body, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+      await UserServicesObj.super_admin(req, res);
+    } catch (er) {
+      return res.status(500).json({ message: er?.message, statusCode: 500, success: false })
+    }
+  }
   async register(req, res) {
     try {
       const { slide, user_type, doc_id, db_driver_details_array } = req.body;
@@ -350,6 +367,8 @@ class UserController {
     }
   }
 
+
+
   async getByEmail(req, res) {
     try {
       let { error } = getDataByEmailSchema.validate(req.query, options);
@@ -425,7 +444,7 @@ class UserController {
   // add sub_user created
   async add_sub_user(req, res) {
     try {
-      if(!req.body.doc_id||req.body.doc_id==''){
+      if (!req.body.doc_id || req.body.doc_id == '') {
         let { error } = AddSubUserSchema.validate(req.body, options);
         if (error) {
           return res.status(400).json({
@@ -443,14 +462,14 @@ class UserController {
   //for super_admin fetch all user_type 
   async get_sub_user(req, res) {
     try {
-        let { error } = GetSubUserSchema.validate(req.body, options);
-        if (error) {
-          return res.status(400).json({
-            message: error.details[0]?.message,
-            success: false,
-            statusCode: 400,
-          });
-        }
+      let { error } = GetSubUserSchema.validate(req.body, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
       await UserServicesObj.get_all_user(req, res);
     } catch (err) {
       return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
@@ -460,14 +479,14 @@ class UserController {
 
   async delete_sub_user(req, res) {
     try {
-        // let { error } = GetSubUserSchema.validate(req.body, options);
-        // if (error) {
-        //   return res.status(400).json({
-        //     message: error.details[0]?.message,
-        //     success: false,
-        //     statusCode: 400,
-        //   });
-        // }
+      // let { error } = GetSubUserSchema.validate(req.body, options);
+      // if (error) {
+      //   return res.status(400).json({
+      //     message: error.details[0]?.message,
+      //     success: false,
+      //     statusCode: 400,
+      //   });
+      // }
       await UserServicesObj.delete_user(req, res);
     } catch (err) {
       return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
@@ -570,9 +589,7 @@ class UserController {
     }
   }
 
-  async FetchUsers(req, res) {
-    // console.log(req.cookies._token);
-  }
+
 
   async getAllUser(req, res) {
     try {
@@ -583,6 +600,7 @@ class UserController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
   async check_user_logged_in(req, res) {
     try {
       let _secrate = req?.cookies?._token;
@@ -623,6 +641,7 @@ class UserController {
       });
     }
   }
+
   async user_logout(req, res) {
     try {
       return (
@@ -640,7 +659,6 @@ class UserController {
     }
   }
 
-  async logoutUser(req, res) { }
 
   async updateUserInfo(req, res) {
     try {

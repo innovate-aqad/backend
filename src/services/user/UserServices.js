@@ -1179,7 +1179,7 @@ class UserServices {
             ":phone": { S: phone || findEmailExist?.Items[0]?.phone?.S || "" },
             ":role": { S: role || findEmailExist?.Items[0]?.role?.S || "" },
             ":country": { S: country || findEmailExist?.Items[0]?.country?.S || "" },
-            ":updated_at": { S: new Date().toISOString()}
+            ":updated_at": { S: new Date().toISOString() }
           },
         };
         console.log(params, "apramnsnssnsm");
@@ -1275,11 +1275,11 @@ class UserServices {
 
   async get_all_user(req, res) {
     try {
-      let { page, limit, lastEvaluatedKey,created_at } = req.query
+      let { page, limit, lastEvaluatedKey, created_at } = req.query
       page = parseInt(page) || 1;
       limit = parseInt(limit) || 10;
       const offset = (page - 1) * limit;
-  
+
       const queryParams = {
         TableName: "users",
         IndexName: "created_by-index",
@@ -1294,7 +1294,7 @@ class UserServices {
       };
       if (offset > 0) {
         // If offset is greater than 0, set ExclusiveStartKey to start from the correct position
-        if(lastEvaluatedKey ){
+        if (lastEvaluatedKey) {
           queryParams.ExclusiveStartKey = {
             "id": {
               "S": lastEvaluatedKey
@@ -1306,13 +1306,13 @@ class UserServices {
               "S": created_at
             }
           }
-        }   
+        }
       }
       // console.log(queryParams, "asdasdadadsasd")
       const data = await dynamoDBClient.send(new QueryCommand(queryParams));
       let nextToken = null;
       if (data?.LastEvaluatedKey) {
-      let dataFetch= await  simplifyDynamoDBResponse(data.LastEvaluatedKey)
+        let dataFetch = await simplifyDynamoDBResponse(data.LastEvaluatedKey)
         nextToken = dataFetch;
       }
 
@@ -1386,7 +1386,90 @@ class UserServices {
     }
   }
 
+  async super_admin(req, res) {
+    try {
+      let { email, phone, name, user_type } = req.body
+      const findEmailExist = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          IndexName: "email", // Replace with your actual email index name
+          KeyConditionExpression: "email = :email",
+          ExpressionAttributeValues: {
+            ":email": { S: email },
+          },
+          Limit: 1,
+        })
+      );
+      if (findEmailExist.Count > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exist!",
+          statusCode: 400,
+        });
+      }
+      if (phone) {
+        const findPhoneExist = await dynamoDBClient.send(
+          new QueryCommand({
+            TableName: "users",
+            IndexName: "phone", // Replace with your actual phone index name
+            KeyConditionExpression: "phone = :phone",
+            ExpressionAttributeValues: {
+              ":phone": { S: phone },
+            },
+            Limit: 1,
+          })
+        );
+        if (findPhoneExist.Count > 0) {
+          return res.status(400).json({
+            success: false,
+            message: "Phone number already exists!",
+            statusCode: 400,
+          });
+        }
+      }
+      let salt = environmentVars.salt;
+      let randomPassword = encryptStringWithKey(
+        req.body.email.toLowerCase()?.slice(0, 6)
+      );
+      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
 
+      let id = uuidv4();
+      id = id?.replace(/-/g, "");
+
+      let profile_photo;
+      if (req.files && req.files?.profile_photo?.length) {
+        profile_photo = req.files?.profile_photo[0]?.filename;
+      }
+      const params = {
+        TableName: "users",
+        Item: {
+          profile_photo: { S: profile_photo || "" },
+          id: { S: id },
+          name: { S: name },
+          email: { S: email },
+          phone: { S: phone || "" },
+          // dob: { S: dob || "" },
+          user_type: { S: user_type },
+          // role: { S: role || "" },
+          // country: { S: country || "" },
+          password: { S: hashPassword },
+          created_at: { S: new Date().toISOString() },
+          updated_at: { S: new Date().toISOString() }
+        },
+      };
+      console.log("docClient", "docccleint", params);
+      await dynamoDBClient.send(new PutItemCommand(params));
+      let obj = {
+        email,
+        randomPassword,
+        name,
+      };
+      sendPasswordViaEmailOf(obj);
+      return res.status(201).json({ message: "User created successfully", statusCode: 201, success: false })
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+    }
+  }
 
 
 
@@ -1606,27 +1689,6 @@ class UserServices {
       return res.status(500).json({ success: false, message: err?.message });
     }
   }
-
-  // async getUserAccountInfo(req, res) {
-  //   try {
-  //     const carts = await CartModel.count({
-  //       where: { user_id: req.userData.id },
-  //     });
-  //     const wishlists = await WishlistModel.count({
-  //       where: { user_id: req.userData.id },
-  //     });
-  //     const coupons = await CouponModel.count();
-  //     return res.status(200).json({
-  //       success: true,
-  //       message: "Data fetched successfully",
-  //       data: { carts, wishlists, coupons },
-  //     });
-  //   } catch (err) {
-  //     return res.status(500).json({ success: false, message: err?.message });
-  //   }
-  // }
-
-  // email send success fully code start
 
 
 
