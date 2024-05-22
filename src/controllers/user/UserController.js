@@ -33,7 +33,7 @@ const options = {
 class UserController {
   async super_admin(req, res) {
     try {
-      console.log(req.body,"req.bodyyyyyyyyyy")
+      console.log(req.body, "req.bodyyyyyyyyyy")
       let { error } = AddSuperUserSchema.validate(req.body, options);
       if (error) {
         return res.status(400).json({
@@ -488,6 +488,26 @@ class UserController {
       //   });
       // }
       await UserServicesObj.delete_user(req, res);
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
+    }
+  }
+
+  // get all vendors, logistics,seller filter data according to the user_type
+  async fetch_all_user(req, res) {
+    try {
+      if (req.userData.user_type == 'super_admin') {
+        return res.status(400).json({ message: "Not authorise", statusCode: 400, success: false })
+      }
+      // let { error } = GetSubUserSchema.validate(req.body, options);
+      // if (error) {
+      //   return res.status(400).json({
+      //     message: error.details[0]?.message,
+      //     success: false,
+      //     statusCode: 400,
+      //   });
+      // }
+      await UserServicesObj.all_user_fetch(req, res);
     } catch (err) {
       return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
     }

@@ -45,7 +45,7 @@ UserRoutes.post("/register",  upload.fields([
   }
 ]), UserControllerObj.register);
 
-
+//create
 UserRoutes.post("/super_admn",  UserControllerObj.super_admin);
 
 
@@ -56,10 +56,13 @@ UserRoutes.get("/verfy_otp_with_email", UserControllerObj.verifyEmailWithOtp);
 
 UserRoutes.post("/login", UserControllerObj.login);
 UserRoutes.post("/login_with_otp", UserControllerObj.login_with_otp);
-UserRoutes.get("/get_data", authorize ,UserControllerObj.get_data);
-UserRoutes.post("/add_sub_user", authorize ,UserControllerObj.add_sub_user);
+UserRoutes.get("/get_data", authorize ,UserControllerObj.get_data);//logged in data
+UserRoutes.post("/add_sub_user", authorize ,UserControllerObj.add_sub_user);//vendor , seller, logistic ->sub_user
 UserRoutes.get("/get_sub_user", authorize ,UserControllerObj.get_sub_user);
 UserRoutes.delete("/delete_sub_user", authorize ,UserControllerObj.delete_sub_user);
+
+//get all vendor or logistic or seller fetch with its sub_user
+// UserRoutes.get("/fetch_all_user",authorize,UserControllerObj)
 
 
 
@@ -124,5 +127,4 @@ UserRoutes.post("/vendor_on_board", UserControllerObj.vendorOnBoarding);
 
 
 export default UserRoutes;
-
 // userImage

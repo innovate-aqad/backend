@@ -1386,6 +1386,41 @@ class UserServices {
     }
   }
 
+  async all_user_fetch(req, res) {
+    try {
+      const data = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          // IndexName: "created_by-index", // Replace with your GSI name for phone like phone-index
+          KeyConditionExpression: "id = :id",
+          // ProjectionExpression: "email, phone, id",
+          ExpressionAttributeValues: {
+            ":id": { S: id },
+          },
+        })
+      );
+      
+      const params = {
+        TableName: 'users',
+        Key: {
+          id: { S: id }// Replace with your primary key attributes
+        }
+      }
+      const command = new DeleteItemCommand(params);
+      // console.log(command, "command command ")
+      const response = await dynamoDBClient.send(command);
+      // console.log(response, "response response")
+      return res.status(200).json({ message: "User deleted successfully", statusCode: 200, success: true })
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+    }
+  }
+
+
+
+
+
+
   async super_admin(req, res) {
     try {
       let { email, phone, name, user_type } = req.body
@@ -1465,7 +1500,7 @@ class UserServices {
         name,
       };
       sendPasswordViaEmailOf(obj);
-      return res.status(201).json({ message: "User created successfully", statusCode: 201, success: false })
+      return res.status(201).json({ message: "Admin register successfully", statusCode: 201, success: false })
     } catch (err) {
       return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
     }
