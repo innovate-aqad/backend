@@ -68,6 +68,7 @@ app.use("/api/product", ProductRoutes);
 app.use("/api/category", CategoryRoutes);
 app.use("/api/sub_category", SubCategoryRoutes);
 
+// app.use("/api/endpoint",)
 
 // app.use("/")
 // app.use("/api/user/ui",);
