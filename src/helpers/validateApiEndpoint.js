@@ -1,10 +1,10 @@
 import Joi from "joi";
 
 export const ApiEndpointSchema = Joi.object({
-  name: Joi.string()
-    .trim()
+  title: Joi.string()
+    .trim().max(100)
     .required()
-    .label("name"),
+    .label("title"),
   type: Joi.string()
     .valid("backend", "frontend")
     .required()
