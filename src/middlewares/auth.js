@@ -80,8 +80,9 @@ export const authorize = async (req, res, next) => {
     // if(rawData&&rawData?.user_type=='super_admin'){
 
     // }
+    // console.log(findDataExist,"findDataExistfindDataExist",rawData)
     req.userData = rawData;
-    req.id = findDataExist.id;
+    req.id = rawData.id;
     return next();
   } catch (err) {
     // console.log(err,"EEEEErrroror")

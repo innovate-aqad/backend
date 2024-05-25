@@ -67,7 +67,7 @@ class SubCategoryServices {
             ":title": { S: title || findData?.Items[0]?.title?.S || "" },
             ":status": { S: status || findData?.Items[0]?.status?.S || 'active' },
             ":category_id": { S: category_id || findData?.Items[0]?.category_id?.S || '' },
-            ":updated_at": { S: timestamp || findData?.Items[0]?.updated_at?.S || '' },
+            ":updated_at": { S: timestamp  },
           },
         };
         const findExist = await dynamoDBClient.send(

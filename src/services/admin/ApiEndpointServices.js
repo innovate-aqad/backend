@@ -11,6 +11,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import AWS from "aws-sdk";
 import { deleteImageFromS3 } from "../../helpers/s3.js";
+import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
 
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -86,6 +87,7 @@ class ApiEndpointServices {
             },
           })
         );
+        console.log(findData, "findata !@#!32")
         if (findData && findData?.Count == 0) {
           return res.status(400).json({ message: "Document not found", statusCode: 400, success: false })
         }
@@ -93,24 +95,24 @@ class ApiEndpointServices {
         const params = {
           TableName: "api_endpoint",
           Key: { id: { S: id } },
-          UpdateExpression: "SET #title = :title, #status = :status, #type =:type, #updated_at= :updated_at ",
+          UpdateExpression: "SET #title = :title, #status = :status, #type =:type, #updated_at= :updated_at",
           ExpressionAttributeNames: {
             "#title": "title",
             "#status": "status",
             "#type": "type",
-            "#updated_at": "updated_at"
+            "#updated_at": "updated_at",
           },
           ExpressionAttributeValues: {
             ":title": { S: title || findData?.Items[0]?.title?.S || "" },
             ":status": { S: status || findData?.Items[0]?.status?.S || 'active' },
             ":type": { S: type || findData?.Items[0]?.type?.S || '' },
-            ":updated_at": { S: timestamp || findData?.Items[0]?.updated_at?.S || '' },
+            ":updated_at": { S: timestamp }
           },
         };
-     
-          await dynamoDBClient.send(new UpdateItemCommand(params));
-          return res.status(200).json({ message: "Data updated successfully", statusCode: 200, success: true });
-        
+        console.log(params, "paramsssss")
+        await dynamoDBClient.send(new UpdateItemCommand(params));
+        return res.status(200).json({ message: "Data updated successfully", statusCode: 200, success: true });
+
       } else {
         const dataExist = await dynamoDBClient.send(
           new QueryCommand({
@@ -147,7 +149,7 @@ class ApiEndpointServices {
         console.log("docClient", "docccleint", params);
         let userData = await dynamoDBClient.send(new PutItemCommand(params));
         return res.status(201).json({
-          data:id,
+          data: id,
           message: "Api endpoint add successfully",
           statusCode: 201,
           success: true,
@@ -195,16 +197,31 @@ class ApiEndpointServices {
       const params = {
         TableName: "api_endpoint",
       };
-
-      let getAll = await dynamoDBClient.scan(params);
-      getAll = getAll?.sort((a, b) => b?.created_at - a?.created_at);
+      if (!(req.userData.user_type === 'super_admin' && req.query.status === 'all')) {
+        params.FilterExpression = "#status = :status";
+        params.ExpressionAttributeNames = {
+          "#status": "status",
+        };
+        params.ExpressionAttributeValues = {
+          ":status": { S: "active" },
+        };
+      }
+      // let getAll = await dynamoDBClient.scan(params);
+      let getAll = await dynamoDBClient.send(new ScanCommand(params));
+      let get = []
+      for (let el of getAll.Items) {
+        let get1 = simplifyDynamoDBResponse(el)
+        get.push(get1)
+      }
+      // getAll = getAll?.sort((a, b) => b?.created_at - a?.created_at);
       return res.status(200).json({
         message: "Fetch data",
-        data: getAll,
+        data: get,
         success: true,
         statusCode: 200,
       });
     } catch (err) {
+      console.error(err, "eror get ");
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });

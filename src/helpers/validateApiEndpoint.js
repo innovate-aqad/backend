@@ -20,3 +20,7 @@ export const ChangeStatusSchema = Joi.object({
     .label("status"),
   id: Joi.number().required(),
 });
+// export const SubCategoryStatusSchema = Joi.object({
+//   id: Joi.string().optional(),
+//   status: Joi.string().valid('active','inactive').required().label("status"),
+// });

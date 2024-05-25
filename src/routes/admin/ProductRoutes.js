@@ -14,7 +14,7 @@ ProductRoutes.post("/add", uploadProduct.fields([
     },
     {
         name: "product_images_arr",
-        maxCount: 5,
+        maxCount: 10,
     },
 ]),authorize, ProductControllerObj.addProduct);
 

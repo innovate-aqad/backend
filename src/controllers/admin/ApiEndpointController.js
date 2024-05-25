@@ -6,7 +6,7 @@ import { ImageFileCheck } from "../../helpers/validateImageFile.js";
 import { CategorySchema, deleteCategorySchema } from "../../helpers/validateCategory.js";
 import { SubCategoryStatusSchema, deleteSubCategorySchema } from "../../helpers/validateSubCategory.js";
 import SubCategoryServicesObj from "../../services/admin/SubCategoryServices.js";
-import { ApiEndpointSchema } from "../../helpers/validateApiEndpoint.js";
+import { ApiEndpointSchema, ChangeStatusSchema } from "../../helpers/validateApiEndpoint.js";
 import ApiEndpointServicesObj from "../../services/admin/ApiEndpointServices.js";
 // import axios from "axios";
 
@@ -34,13 +34,23 @@ class ApiEndpointController {
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
+      }
     }
-  }
-
+    
+    async get_All(req, res) {
+      try {
+        await ApiEndpointServicesObj.getAllData(req, res);
+      } catch (err) {
+        return res
+          .status(500)
+          .json({ message: err?.message, success: false, statusCode: 500 });
+      }
+    }
+    
   async edit_status(req, res) {
     try {
       console.log(req.body, "req.bod yy!@#!@# !# ")
-      let { error } = SubCategoryStatusSchema.validate(req.body, options);
+      let { error } = ChangeStatusSchema.validate(req.body, options);
       if (error) {
         return res.status(400).json({
           message: error.details[0]?.message,
@@ -60,15 +70,6 @@ class ApiEndpointController {
   async get_active(req, res) {
     try {
       await ApiEndpointServicesObj.getActiveData(req, res);
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: err?.message, success: false, statusCode: 500 });
-    }
-  }
-  async get_All(req, res) {
-    try {
-      await ApiEndpointServicesObj.getAllData(req, res);
     } catch (err) {
       return res
         .status(500)
