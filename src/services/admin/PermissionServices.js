@@ -9,7 +9,6 @@ import {
   DeleteItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
-// import AWS from "aws-sdk";
 import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
 
 const dynamoDBClient = new DynamoDBClient({
@@ -20,41 +19,42 @@ const dynamoDBClient = new DynamoDBClient({
   },
 });
 
-class ApiEndpointServices {
+class PermissionServices {
   async addData(req, res) {
     try {
-      let { title, type, status, id, } = req.body;
+      let { title, backend_routes, frontend_routes,status, id, } = req.body;
       title = title?.trim();
       const timestamp = new Date().toISOString();
       if (id) {
         let findData = await dynamoDBClient.send(
           new QueryCommand({
-            TableName: "api_endpoint",
+            TableName: "permission",
             KeyConditionExpression: "id = :id",
             ExpressionAttributeValues: {
               ":id": { S: id },
             },
           })
         );
-        console.log(findData, "findata !@#!32")
+        // console.log(findData, "findata !@#!32")
         if (findData && findData?.Count == 0) {
           return res.status(400).json({ message: "Document not found", statusCode: 400, success: false })
         }
-        // console.log("findDatafindData22", findData?.Items[0])
         const params = {
-          TableName: "api_endpoint",
+          TableName: "permission",
           Key: { id: { S: id } },
-          UpdateExpression: "SET #title = :title, #status = :status, #type =:type, #updated_at= :updated_at",
+          UpdateExpression: "SET #title = :title, #status = :status, #backend_routes =:backend_routes , #frontend_routes =:frontend_routes, #updated_at= :updated_at",
           ExpressionAttributeNames: {
             "#title": "title",
             "#status": "status",
-            "#type": "type",
+            "#backend_routes": "backend_routes",
+            "#frontend_routes": "frontend_routes",
             "#updated_at": "updated_at",
           },
           ExpressionAttributeValues: {
             ":title": { S: title || findData?.Items[0]?.title?.S || "" },
             ":status": { S: status || findData?.Items[0]?.status?.S || 'active' },
-            ":type": { S: type || findData?.Items[0]?.type?.S || '' },
+            backend_routes: { L: backend_routes.map(route => ({ S: route }))  || findData?.Items[0]?.backend_routes?.S || []  },
+            frontend_routes: { L: frontend_routes.map(route => ({ S: route })) || findData?.Items[0]?.frontend_routes?.S || [] },
             ":updated_at": { S: timestamp }
           },
         };
@@ -65,7 +65,7 @@ class ApiEndpointServices {
       } else {
         const dataExist = await dynamoDBClient.send(
           new QueryCommand({
-            TableName: "api_endpoint",
+            TableName: "permission",
             IndexName: "title", // replace with your GSI name
             KeyConditionExpression: "title = :title",
             ExpressionAttributeValues: {
@@ -75,20 +75,20 @@ class ApiEndpointServices {
         );
         if (dataExist?.Count) {
           return res.status(400).json({
-            message: "Api_endoint's title must be unique",
+            message: "Title must be unique",
             statusCode: 400,
             success: false,
           });
         }
         let id = uuidv4();
         id = id?.replace(/-/g, "");
-
         const params = {
-          TableName: "api_endpoint",
+          TableName: "permission",
           Item: {
             id: { S: id },
             title: { S: title },
-            type: { S: type },
+            backend_routes: { L: backend_routes.map(route => ({ S: route })) },
+            frontend_routes: { L: frontend_routes.map(route => ({ S: route })) },
             status: { S: status || "active" },
             created_by: { S: req.userData?.id },
             created_at: { S: timestamp },
@@ -265,5 +265,5 @@ class ApiEndpointServices {
 
 }
 
-const ApiEndpointServicesObj = new ApiEndpointServices();
-export default ApiEndpointServicesObj;
+const PermissionServicesObj = new PermissionServices();
+export default PermissionServicesObj;

@@ -62,7 +62,7 @@ class ProductController {
             success: false,
           });
         } else {
-          // uploadImageToS3(name, req.files?.product_image[0]?.path);
+          uploadImageToS3(name, req.files?.product_image[0]?.path);
         }
       } else {
         if (!id) {
@@ -86,7 +86,7 @@ class ProductController {
               success: false,
             });
           } else {
-            // uploadImageToS3(name, el?.path);/////  needd here 
+            uploadImageToS3(name, el?.path);/////  needd here 
           }
         }
       } else {

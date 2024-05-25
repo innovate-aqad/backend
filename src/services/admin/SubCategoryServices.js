@@ -1,15 +1,17 @@
+// import AWS from "aws-sdk"
+import { v4 as uuidv4 } from "uuid";
 
 import {
   DynamoDBClient,
   PutItemCommand,
-  ScanCommand, UpdateItemCommand, DeleteItemCommand,
-  QueryCommand
+  ScanCommand,
+  UpdateItemCommand,
+  QueryCommand,
+  GetItemCommand,
+  DeleteItemCommand,
 } from "@aws-sdk/client-dynamodb";
-
-import AWS from "aws-sdk"
-import { v4 as uuidv4 } from "uuid";
-
 import formidable from "formidable";
+import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
 
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -67,7 +69,7 @@ class SubCategoryServices {
             ":title": { S: title || findData?.Items[0]?.title?.S || "" },
             ":status": { S: status || findData?.Items[0]?.status?.S || 'active' },
             ":category_id": { S: category_id || findData?.Items[0]?.category_id?.S || '' },
-            ":updated_at": { S: timestamp  },
+            ":updated_at": { S: timestamp },
           },
         };
         const findExist = await dynamoDBClient.send(
@@ -180,69 +182,77 @@ class SubCategoryServices {
 
   async get_cat_data(req, res) {
     try {
-      const dynamoDB = new AWS.DynamoDB.DocumentClient();
-
-      // Fetch all categories
       const categoryParams = {
         TableName: "category",
       };
-      let categories = await dynamoDB.scan(categoryParams).promise();
-      // if (categories.Items.length === 0) {
-      //   return res.status(200).json({
-      //     message: "No categories found",
-      //     data: [],
-      //     statusCode: 200,
-      //     success: true,
-      //   });
-      // }
-
-      // // Create a list of promises to fetch subcategories for each category
-      // const subCategoryPromises = categories.Items.map(category => {
-      //   const subCategoryParams = {
-      //     TableName: "sub_category",
-      //     IndexName: "category_id-index", // Ensure this GSI exists
-      //     KeyConditionExpression: "category_id = :category_id",
-      //     ExpressionAttributeValues: {
-      //       ":category_id": category.id,
-      //     },
-      //   };
-      //   return dynamoDB.query(subCategoryParams).promise();
-      // });
-
-      // // Resolve all promises
-      // const subCategoriesResults = await Promise.all(subCategoryPromises);
-      // let combinedData = [];
-
-      // // Combine each subcategory with the respective category
-      // subCategoriesResults.forEach((result, index) => {
-      //   result.Items.forEach(subCategory => {
-      //     combinedData.push({
-      //       category_id: categories.Items[index].id,
-      //       sub_category: subCategory.id,
-      //       title: subCategory.title,
-      //     });
-      //   });
-      // });
-      //======================================
-
+      const commandCat = new ScanCommand(categoryParams);
+      const categoryData = await dynamoDBClient.send(commandCat);
+      
       const subcategoryParams = {
         TableName: "sub_category",
       };
-      let subcategories = await dynamoDB.scan(subcategoryParams).promise();
-
-
-      for (let el of subcategories?.Items) {
-        let checkCat = categories?.Items?.find((elem) => elem?.id == el?.category_id)
-        if (checkCat) {
-          el.categoryObj = checkCat
+      const commandSub = new ScanCommand(subcategoryParams);
+      const subcategoryData = await dynamoDBClient.send(commandSub);
+      
+      // Map category and subcategory data
+      const simplifiedCategoryData = categoryData.Items.map(el => simplifyDynamoDBResponse(el));
+      const simplifiedSubcategoryData = subcategoryData.Items.map(el => simplifyDynamoDBResponse(el));
+      
+      // Create a map of subcategories by category_id for efficient lookup
+      const subcategoriesByCategoryId = {};
+      simplifiedSubcategoryData.forEach(subcategory => {
+        const categoryId = subcategory.category_id;
+        if (!subcategoriesByCategoryId[categoryId]) {
+          subcategoriesByCategoryId[categoryId] = [];
         }
-      }
+        subcategoriesByCategoryId[categoryId].push(subcategory);
+      });
+      
+      // Combine category data with corresponding subcategories
+      const combinedData = simplifiedCategoryData.map(category => ({
+        ...category,
+        subcategoryArr: subcategoriesByCategoryId[category.id] || []
+      }));
+      
+      res.status(200).json({
+        message: "Fetch Data",
+        data: combinedData,
+        statusCode: 200,
+        success: true,
+      });
+      
+    } catch (err) {
+      console.error(err, "error");
+      return res.status(500).json({
+        message: err?.message,
+        statusCode: 500,
+        success: false,
+      });
+    }
+  }
 
+
+  async get_subcat_by_main_cat_id(req, res) {
+    try {
+      const params = {
+        TableName: "sub_category",
+        FilterExpression: "#category_id = :category_id",
+        ExpressionAttributeNames: {
+          "#category_id": "category_id",
+        },
+        ExpressionAttributeValues: {
+          ":category_id": { S: req.query.category_id },
+        },
+      };
+
+      const command = new ScanCommand(params);
+      const data = await dynamoDBClient.send(command);
+      const simplifiedData = data.Items.map(el => simplifyDynamoDBResponse(el));
 
       res.status(200).json({
         message: "Fetch Data",
-        // data: combinedData,
-        statusCode: 200, categories, subcategories,
+        data: simplifiedData,
+        statusCode: 200,
         success: true,
       });
     } catch (err) {
@@ -254,7 +264,7 @@ class SubCategoryServices {
       });
     }
   }
-  
+
   async delete(req, res) {
     try {
       let id = req.query.id

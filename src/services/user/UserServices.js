@@ -21,7 +21,7 @@ import {
   DeleteItemCommand
 } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
-import AWS from "aws-sdk";
+// import AWS from "aws-sdk";
 import formidable from "formidable";
 import {
   pinePointServices,
@@ -43,9 +43,9 @@ const dynamoDBClient = new DynamoDBClient({
   },
 });
 
-AWS.config.update({
-  region: "us-east-1", //process.env.Aws_region //'us-east-1'  // Change to your region
-});
+// AWS.config.update({
+//   region: "us-east-1", //process.env.Aws_region //'us-east-1'  // Change to your region
+// });
 
 async function getNextSequenceValue(sequenceName) {
   console.log(sequenceName, "sequence nameee");

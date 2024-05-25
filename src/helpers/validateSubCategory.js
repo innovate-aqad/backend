@@ -21,3 +21,6 @@ export const deleteSubCategorySchema = Joi.object({
 });
 
 
+export const SubCatFetchByMainCategoryIdSchema = Joi.object({
+  category_id: Joi.string().max(50).required().label("category_id"),
+});

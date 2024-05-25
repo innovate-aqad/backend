@@ -111,7 +111,7 @@ export const uploadImageToS3 = async (fileName, filePath) => {
         // Execute the PutObjectCommand
         const command = new PutObjectCommand(params);
         const response = await s3.send(command);
-    console.log("File uploaded successfully:", response);
+    console.log("File uploaded successfully:", response.ETag);
     return response;
   } catch (err) {
     console.error("Error uploading file:", err);

@@ -1,30 +1,38 @@
-import UserModel from "../../models/UserModel.js";
-import bcrypt from "bcrypt";
-import {
-  sendPasswordViaEmail,
-  forgotPasswordEmail,
-  encryptStringWithKey,
-  sendEmailUser,
-} from "../../helpers/common.js";
-import { Op, where } from "sequelize";
-import { environmentVars } from "../../config/environmentVar.js";
-import { generateAccessToken } from "../../helpers/validateUser.js";
-import jwt from "jsonwebtoken";
-import docClient from "../../config/dbConfig.js";
-import Sequence from "../../models/SequenceModel.js";
+// import {
+//   DynamoDBClient,
+//   PutItemCommand,
+//   ScanCommand,
+//   UpdateItemCommand,
+//   DeleteItemCommand,
+//   QueryCommand, BatchWriteItemCommand
+// } from "@aws-sdk/client-dynamodb";
+
+// // import AWS from "aws-sdk";
+// import { v4 as uuidv4 } from "uuid";
+
+// import formidable from "formidable";
+
+// const dynamoDBClient = new DynamoDBClient({
+//   region: process.env.Aws_region,
+//   credentials: {
+//     accessKeyId: process.env.Aws_accessKeyId,
+//     secretAccessKey: process.env.Aws_secretAccessKey,
+//   },
+// });
+
+
 import {
   DynamoDBClient,
   PutItemCommand,
   ScanCommand,
   UpdateItemCommand,
+  QueryCommand,
+  GetItemCommand,
   DeleteItemCommand,
-  QueryCommand, BatchWriteItemCommand
 } from "@aws-sdk/client-dynamodb";
-
-import AWS from "aws-sdk";
 import { v4 as uuidv4 } from "uuid";
-
-import formidable from "formidable";
+import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
+// import AWS from "aws-sdk";
 
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -212,28 +220,25 @@ class CategoryServices {
 
   async get_cat_data(req, res) {
     try {
-      const dynamoDB = new AWS.DynamoDB.DocumentClient();
+
       const params = {
         TableName: "category",
+        FilterExpression: "#status = :status",
+        ExpressionAttributeNames: {
+          "#status": "status",
+        },
+        ExpressionAttributeValues: {
+          ":status": { S: "active" }, // Use DynamoDB AttributeValue data type
+        },
       };
 
-      // let get=await dynamoDBClient.scan(params)
-      let get = await dynamoDB.scan(params).promise();
-      // , async (err, data) => {
-      //   if (err) {
-      //     console.error("Error:", err);
-      //   } else {
-      //     if (data?.Items) {
-      //       get = [...data?.Items];
-      //     }
-      //     // Handle data or return response
-      //     console.log("Scan succeeded:", data?.Items);
-      //   }
-      // });
-      // console.log(get, "getgegetgetgetge");
+      const command = new ScanCommand(params);
+      const data = await dynamoDBClient.send(command);
+      const simplifiedData = data.Items.map(el => simplifyDynamoDBResponse(el));
+      // console.log("Scan successful:", data.Items);
       res.status(200).json({
         message: "Fetch Data",
-        data: get,
+        data: simplifiedData,
         statusCode: 200,
         success: true,
       });
