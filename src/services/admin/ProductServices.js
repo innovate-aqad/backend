@@ -171,7 +171,6 @@ class ProductServices {
             ":summary": { S: summary|| findProductData.Items[0].summary?.S || "" }
           }
         };
-
         await dynamoDBClient.send(new UpdateItemCommand(params));
         return res.status(200).json({
           message: "Product details update successfully",
@@ -189,7 +188,7 @@ class ProductServices {
             },
           })
         );
-        console.log(findExist, "findexistttt findexistttt findexistttt ")
+        // console.log(findExist, "findexistttt findexistttt findexistttt ")
         if (findExist.Count > 0) {
           return res.status(400).json({
             success: false,

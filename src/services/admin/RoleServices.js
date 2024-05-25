@@ -291,5 +291,5 @@ class RoleServices {
 
 }
 
-const RoleServicesObj = new RoleServices ();
+const RoleServicesObj = new RoleServices();
 export default RoleServicesObj ;

@@ -63,7 +63,8 @@ export const registerSchema = Joi.object({
   //       "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
   //   })
   //   .label("Phone Number"),
-  country: Joi.string().trim(),
+  country: Joi.string().trim().label("country"),
+  term_and_condition: Joi.string().valid().label("term_and_condition"),
   dob: Joi.when("user_type", {
     is: "employee",
     then: Joi.when("slide", {
@@ -133,7 +134,6 @@ export const registerSchema = Joi.object({
 
 });
 
-
 export const getDataByEmailSchema = Joi.object({
   email: Joi.string()
     .trim()
@@ -152,7 +152,6 @@ export const VerifyEmailWithOtpSchema = Joi.object({
     .label("otp"),
 
 });
-
 
 export const AddSubUserSchema = Joi.object({
   email: Joi.string()
@@ -184,7 +183,6 @@ export const AddSuperUserSchema = Joi.object({
   }).label("phone"),
   
 });
-
 
 export const GetSubUserSchema = Joi.object({
   page: Joi.number().positive()

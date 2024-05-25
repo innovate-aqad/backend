@@ -31,6 +31,7 @@ const options = {
 };
 
 class UserController {
+
   async super_admin(req, res) {
     try {
       console.log(req.body, "req.bodyyyyyyyyyy")
@@ -199,37 +200,6 @@ class UserController {
         }
       }
 
-      // if (
-      //   req.files &&
-      //   req.files?.profile_photo?.length &&
-      //   user_type == "employee" &&
-      //   slide == 1
-      // ) {
-      //   let name = req.files?.profile_photo[0]?.filename;
-      //   let size = req.files?.profile_photo[0].size;
-      //   let get = await ImageFileCheck(name, user_type, size);
-      //   if (get == "invalid file") {
-      //     return res.status(400).json({
-      //       message:
-      //         "Image must be png or jpeg or webp file and size must be less than 500 kb",
-      //       statusCode: 400,
-      //       success: false,
-      //     });
-      //   } else {
-      //     uploadImageToS3(name, req.files?.profile_photo[0]?.path);
-      //   }
-      // } else if (
-      //   req.files &&
-      //   !req.files?.profile_photo?.length &&
-      //   user_type == "employee" &&
-      //   slide == 1
-      // ) {
-      //   return res.status(400).json({
-      //     message: "Profile image is mandatory",
-      //     statusCode: 400,
-      //     success: false,
-      //   });
-      // }
       if (
         req.files &&
         req.files?.residence_visa?.length &&
