@@ -17,8 +17,8 @@ import multer from "multer";
 
 
 // new version 
-import { S3Client } from "@aws-sdk/client-s3";
-import { DynamoDBClient ,PutObjectCommand} from "@aws-sdk/client-dynamodb";
+import { S3Client ,PutObjectCommand} from "@aws-sdk/client-s3";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 // import { fromIni } from "@aws-sdk/credential-provider-ini";
 
 // Create S3 client
