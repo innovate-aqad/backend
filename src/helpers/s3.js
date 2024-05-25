@@ -1,19 +1,19 @@
-// import AWS from "aws-sdk";
+// // import AWS from "aws-sdk";
 import fs from "fs/promises";
 import multer from "multer";
-// //
-// // Configure AWS SDK
-// AWS.config.update({
-//   region: process.env.Aws_region, // Replace with your region
-//   accessKeyId: process.env.Aws_accessKeyId, // Replace with your AWS Access Key ID
-//   secretAccessKey: process.env.Aws_secretAccessKey, // Replace with your AWS Secret Access Key
-// });
+// // //
+// // // Configure AWS SDK
+// // AWS.config.update({
+// //   region: process.env.Aws_region, // Replace with your region
+// //   accessKeyId: process.env.Aws_accessKeyId, // Replace with your AWS Access Key ID
+// //   secretAccessKey: process.env.Aws_secretAccessKey, // Replace with your AWS Secret Access Key
+// // });
 
-// // Create S3 instance
-// // const s3 = new AWS.S3();
+// // // Create S3 instance
+// // // const s3 = new AWS.S3();
 
-// Create DynamoDB instance
-// const dynamodb = new AWS.DynamoDB.DocumentClient();
+// // Create DynamoDB instance
+// // const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 
 // new version 
@@ -104,9 +104,12 @@ export const uploadImageToS3 = async (fileName, filePath) => {
       //   ACL: 'public-read' // Set the access control list for the object
     };
 
-    const data = await s3.upload(params).promise();
-    console.log("File uploaded successfully:", data.Location);
-    return data.Location;
+    // const data = await s3.upload(params).promise();
+        // Execute the PutObjectCommand
+        const command = new PutObjectCommand(params);
+        const response = await s3.send(command);
+    console.log("File uploaded successfully:", response);
+    return response;
   } catch (err) {
     console.error("Error uploading file:", err);
     throw err;
