@@ -1,4 +1,3 @@
-
 import {
   DynamoDBClient,
   PutItemCommand,
@@ -81,21 +80,13 @@ class SubCategoryServices {
           },
           ExpressionAttributeValues: {
             ":title": { S: title || findData?.Items[0]?.title?.S || "" },
-<<<<<<< HEAD
             ":status": {
               S: status || findData?.Items[0]?.status?.S || "active",
             },
             ":category_id": {
               S: category_id || findData?.Items[0]?.category_id?.S || "",
             },
-            ":updated_at": {
-              S: timestamp || findData?.Items[0]?.updated_at?.S || "",
-            },
-=======
-            ":status": { S: status || findData?.Items[0]?.status?.S || 'active' },
-            ":category_id": { S: category_id || findData?.Items[0]?.category_id?.S || '' },
-            ":updated_at": { S: timestamp  },
->>>>>>> 67c45c562073e53cf5cea800d6e6a9bf2e9796ef
+            ":updated_at": { S: timestamp },
           },
         };
         const findExist = await dynamoDBClient.send(
@@ -304,7 +295,7 @@ class SubCategoryServices {
       });
     }
   }
-  
+
   async delete(req, res) {
     try {
       let id = req.query.id;
