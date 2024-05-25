@@ -9,6 +9,7 @@ import CategoryRoutes from "./routes/user/CategoryRoutes.js";
 import SubCategoryRoutes from "./routes/admin/SubCategoryRoutes.js";
 import ProductRoutes from "./routes/admin/ProductRoutes.js";
 import ApiEndpointRoutes from "./routes/admin/ApiendpointRoutes.js";
+import PermissionRoutes from "./routes/admin/PermissionRoutes.js";
 // require('dotenv').config();
 // import dotenv from 'dotenv';
 // dotenv.config();
@@ -85,26 +86,17 @@ app.use("/api/user", UserRoutes);
 
 app.use("/api/product", ProductRoutes);
 
-//category manage
 app.use("/api/category", CategoryRoutes);
 app.use("/api/sub_category", SubCategoryRoutes);
 
 app.use("/api/endpoint",ApiEndpointRoutes)
+app.use("/api/Permission",PermissionRoutes)
 
-// app.use("/")
-// app.use("/api/user/ui",);
-
-//admin routes
-
-// app.use("/api/admin/permission", PermissionMOduleReviewRoutes);
-// app.use("/api/admin/role", AdminRoleRoutes);
-// app.use("/api/admin/api_endpoint", ApiEndpointRoutes);
 // app.use("/api/admin/delivery", AdminDeliveryRoutes);
 // Set up routes and testing route on '/'
 app.get("/", (req, res) => {
   res.send("Hello, World!");
 });
-
 // Start the server
 const PORT = environmentVars.port;
 

@@ -1,20 +1,19 @@
 import Joi from "joi";
 
 export const addPermissionModuleSchema = Joi.object({
-  name: Joi.string()
+  title: Joi.string()
     .min(3)
     .trim()
-    .label("name")
-    .required(),
+    .label("title")
+    .required().label('title'),
   backend_routes: Joi.array()
-    // .min(1)
-    // .required()
+    .min(1)
+    .required()
     .label("backend_routes"),
   frontend_routes: Joi.array()
-    // .min(1)
+    .min(1)
     .label("frontend_routes"),
-  status: Joi.string()
-    .trim()
+  status: Joi.string().valid("active",'inactive')
     .label("Status"),
 });
 export const editPermissionModuleSchema = Joi.object({
@@ -29,4 +28,8 @@ export const editPermissionModuleSchema = Joi.object({
   status: Joi.string()
     .trim()
     .label("Status"),
+});
+
+export const deletePermmissionSchema = Joi.object({
+  id: Joi.string().max(40).required().label("id"),
 });
