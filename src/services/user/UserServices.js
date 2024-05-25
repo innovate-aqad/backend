@@ -717,6 +717,8 @@ class UserServices {
       let currentTime = Date.now();
       currentTime = currentTime?.toString();
       let get = await pinePointServices(req.query.email, otp);
+      console.log(get,"GEtgge")
+
       if (get) {
         const find = await dynamoDBClient.send(
           new ScanCommand({
