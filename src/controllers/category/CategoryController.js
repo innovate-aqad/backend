@@ -67,6 +67,7 @@ class CategoryController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+  
 
   async editStatus(req, res) {
     try {

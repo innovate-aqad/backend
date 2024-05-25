@@ -121,7 +121,8 @@ class ProductServices {
               #size_id = :size_id,
               #brand = :brand,
               #minimum_order_quantity = :minimum_order_quantity,
-              #status = :status
+              #status = :status,
+               #summary =  :summary
         `,
           ExpressionAttributeNames: {
             "#title": "title",
@@ -136,7 +137,8 @@ class ProductServices {
             "#size_id": "size_id",
             "#brand": "brand",
             "#minimum_order_quantity": "minimum_order_quantity",
-            "#status": "status"
+            "#status": "status",
+            "#summary": "summary",
           },
           ExpressionAttributeValues: {
             ":title": { S: title || findProductData.Items[0].title.S },
@@ -165,7 +167,8 @@ class ProductServices {
             ":size_id": { S: size_id || findProductData.Items[0].size_id?.S || "" },
             ":brand": { S: brand || findProductData.Items[0].brand?.S || "" },
             ":minimum_order_quantity": { S: minimum_order_quantity || findProductData.Items[0].minimum_order_quantity?.S },
-            ":status": { S: status || findProductData.Items[0].status?.S || "active" }
+            ":status": { S: status || findProductData.Items[0].status?.S || "active" },
+            ":summary": { S: summary|| findProductData.Items[0].summary?.S || "" }
           }
         };
 

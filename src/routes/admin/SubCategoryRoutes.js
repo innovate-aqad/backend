@@ -11,6 +11,7 @@ SubCategoryRoutes.post("/add", SubCategoryControllerObj.add_sub_cat);
 SubCategoryRoutes.put("/edit_status_sub_cat", SubCategoryControllerObj.edit_status_sub_cat);
 
 SubCategoryRoutes.get("/get", SubCategoryControllerObj.get_cat);
+SubCategoryRoutes.get("/get_by_main_cat_id", SubCategoryControllerObj.get_by_main_cat_id);
 
 
 SubCategoryRoutes .delete("/delete", SubCategoryControllerObj.deleteData);

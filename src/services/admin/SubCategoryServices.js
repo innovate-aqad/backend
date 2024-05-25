@@ -1,8 +1,15 @@
+<<<<<<< HEAD
+=======
+// import AWS from "aws-sdk"
+import { v4 as uuidv4 } from "uuid";
+
+>>>>>>> a3784d7bee743f721859cc47139e9c6270e5519d
 import {
   DynamoDBClient,
   PutItemCommand,
   ScanCommand,
   UpdateItemCommand,
+<<<<<<< HEAD
   DeleteItemCommand,
   QueryCommand,
 } from "@aws-sdk/client-dynamodb";
@@ -10,7 +17,14 @@ import {
 import AWS from "aws-sdk";
 import { v4 as uuidv4 } from "uuid";
 
+=======
+  QueryCommand,
+  GetItemCommand,
+  DeleteItemCommand,
+} from "@aws-sdk/client-dynamodb";
+>>>>>>> a3784d7bee743f721859cc47139e9c6270e5519d
 import formidable from "formidable";
+import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
 
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -80,12 +94,17 @@ class SubCategoryServices {
           },
           ExpressionAttributeValues: {
             ":title": { S: title || findData?.Items[0]?.title?.S || "" },
+<<<<<<< HEAD
             ":status": {
               S: status || findData?.Items[0]?.status?.S || "active",
             },
             ":category_id": {
               S: category_id || findData?.Items[0]?.category_id?.S || "",
             },
+=======
+            ":status": { S: status || findData?.Items[0]?.status?.S || 'active' },
+            ":category_id": { S: category_id || findData?.Items[0]?.category_id?.S || '' },
+>>>>>>> a3784d7bee743f721859cc47139e9c6270e5519d
             ":updated_at": { S: timestamp },
           },
         };
@@ -217,12 +236,10 @@ class SubCategoryServices {
 
   async get_cat_data(req, res) {
     try {
-      const dynamoDB = new AWS.DynamoDB.DocumentClient();
-
-      // Fetch all categories
       const categoryParams = {
         TableName: "category",
       };
+<<<<<<< HEAD
       let categories = await dynamoDB.scan(categoryParams).promise();
       console.log(categories, "categoriescategories==");
       // if (categories.Items.length === 0) {
@@ -275,15 +292,85 @@ class SubCategoryServices {
         );
         if (checkCat) {
           el.categoryObj = checkCat;
+=======
+      const commandCat = new ScanCommand(categoryParams);
+      const categoryData = await dynamoDBClient.send(commandCat);
+      
+      const subcategoryParams = {
+        TableName: "sub_category",
+      };
+      const commandSub = new ScanCommand(subcategoryParams);
+      const subcategoryData = await dynamoDBClient.send(commandSub);
+      
+      // Map category and subcategory data
+      const simplifiedCategoryData = categoryData.Items.map(el => simplifyDynamoDBResponse(el));
+      const simplifiedSubcategoryData = subcategoryData.Items.map(el => simplifyDynamoDBResponse(el));
+      
+      // Create a map of subcategories by category_id for efficient lookup
+      const subcategoriesByCategoryId = {};
+      simplifiedSubcategoryData.forEach(subcategory => {
+        const categoryId = subcategory.category_id;
+        if (!subcategoriesByCategoryId[categoryId]) {
+          subcategoriesByCategoryId[categoryId] = [];
+>>>>>>> a3784d7bee743f721859cc47139e9c6270e5519d
         }
-      }
+        subcategoriesByCategoryId[categoryId].push(subcategory);
+      });
+      
+      // Combine category data with corresponding subcategories
+      const combinedData = simplifiedCategoryData.map(category => ({
+        ...category,
+        subcategoryArr: subcategoriesByCategoryId[category.id] || []
+      }));
+      
+      res.status(200).json({
+        message: "Fetch Data",
+        data: combinedData,
+        statusCode: 200,
+        success: true,
+      });
+      
+    } catch (err) {
+      console.error(err, "error");
+      return res.status(500).json({
+        message: err?.message,
+        statusCode: 500,
+        success: false,
+      });
+    }
+  }
 
+<<<<<<< HEAD
       res.status(200).json({
         message: "Fetch Data",
         // data: combinedData,
         statusCode: 200,
         categories,
         subcategories,
+=======
+
+  async get_subcat_by_main_cat_id(req, res) {
+    try {
+      const params = {
+        TableName: "sub_category",
+        FilterExpression: "#category_id = :category_id",
+        ExpressionAttributeNames: {
+          "#category_id": "category_id",
+        },
+        ExpressionAttributeValues: {
+          ":category_id": { S: req.query.category_id },
+        },
+      };
+
+      const command = new ScanCommand(params);
+      const data = await dynamoDBClient.send(command);
+      const simplifiedData = data.Items.map(el => simplifyDynamoDBResponse(el));
+
+      res.status(200).json({
+        message: "Fetch Data",
+        data: simplifiedData,
+        statusCode: 200,
+>>>>>>> a3784d7bee743f721859cc47139e9c6270e5519d
         success: true,
       });
     } catch (err) {

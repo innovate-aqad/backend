@@ -7,9 +7,9 @@ import {
   QueryCommand,
   GetItemCommand,
   DeleteItemCommand,
+  BatchGetItemCommand
 } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
-// import AWS from "aws-sdk";
 import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
 
 const dynamoDBClient = new DynamoDBClient({
@@ -20,52 +20,83 @@ const dynamoDBClient = new DynamoDBClient({
   },
 });
 
-class ApiEndpointServices {
+class RoleServices {
   async addData(req, res) {
     try {
-      let { title, type, status, id, } = req.body;
+      let { title, permission,  status, id, } = req.body;
       title = title?.trim();
       const timestamp = new Date().toISOString();
+
+      const allRouteIds = Array.from(new Set([...permission]));
+      // console.log(allRouteIds, "all routesss indsss")
+
+      const keys = allRouteIds.map(routeId => ({
+        id: { S: routeId }
+      }));
+      // console.log(keys, "keyskeyskeys")
+      const batchGetParams = {
+        RequestItems: {
+          "permission": {
+            Keys: keys
+          }
+        }
+      };
+      const batchGetCommand = new BatchGetItemCommand(batchGetParams);
+      const data = await dynamoDBClient.send(batchGetCommand);
+// console.log(data,"data............")
+      // Extract fetched items
+      const fetchedItems = data.Responses["permission"];
+      const fetchedIds = new Set(fetchedItems.map(item => item.id.S));
+      const missingIds = allRouteIds.filter(routeId => !fetchedIds.has(routeId));
+      // console.log(missingIds, "missingggggggg")
+      if (missingIds.length > 0) {
+        // Some IDs are missing, handle this case
+        res.status(400).json({
+          message: "Some Permission IDs are invalid.",
+          missingIds,
+          statusCode: 400,
+          success: false,
+        });
+        return 
+      }
       if (id) {
         let findData = await dynamoDBClient.send(
           new QueryCommand({
-            TableName: "api_endpoint",
+            TableName: "roles",
             KeyConditionExpression: "id = :id",
             ExpressionAttributeValues: {
               ":id": { S: id },
             },
           })
         );
-        console.log(findData, "findata !@#!32")
+        // console.log(findData, "findata !@#!32")
         if (findData && findData?.Count == 0) {
           return res.status(400).json({ message: "Document not found", statusCode: 400, success: false })
         }
-        // console.log("findDatafindData22", findData?.Items[0])
         const params = {
-          TableName: "api_endpoint",
+          TableName: "roles",
           Key: { id: { S: id } },
-          UpdateExpression: "SET #title = :title, #status = :status, #type =:type, #updated_at= :updated_at",
+          UpdateExpression: "SET #title = :title, #status = :status, #permission =:permission, #updated_at= :updated_at",
           ExpressionAttributeNames: {
             "#title": "title",
             "#status": "status",
-            "#type": "type",
+            "#permission": "permission",
             "#updated_at": "updated_at",
           },
           ExpressionAttributeValues: {
             ":title": { S: title || findData?.Items[0]?.title?.S || "" },
             ":status": { S: status || findData?.Items[0]?.status?.S || 'active' },
-            ":type": { S: type || findData?.Items[0]?.type?.S || '' },
+            ":permission": { L: permission.map(route => ({ S: route })) || findData?.Items[0]?.permission?.S || [] },
             ":updated_at": { S: timestamp }
           },
         };
-        console.log(params, "paramsssss")
+        // console.log(params, "paramsssss")
         await dynamoDBClient.send(new UpdateItemCommand(params));
         return res.status(200).json({ message: "Data updated successfully", statusCode: 200, success: true });
-
       } else {
         const dataExist = await dynamoDBClient.send(
           new QueryCommand({
-            TableName: "api_endpoint",
+            TableName: "roles",
             IndexName: "title", // replace with your GSI name
             KeyConditionExpression: "title = :title",
             ExpressionAttributeValues: {
@@ -75,27 +106,27 @@ class ApiEndpointServices {
         );
         if (dataExist?.Count) {
           return res.status(400).json({
-            message: "Api_endoint's title must be unique",
+            message: "Title must be unique",
             statusCode: 400,
             success: false,
           });
         }
+
         let id = uuidv4();
         id = id?.replace(/-/g, "");
-
         const params = {
-          TableName: "api_endpoint",
+          TableName: "roles",
           Item: {
             id: { S: id },
             title: { S: title },
-            type: { S: type },
+            permission: { L: permission.map(route => ({ S: route })) },
             status: { S: status || "active" },
             created_by: { S: req.userData?.id },
             created_at: { S: timestamp },
             updated_at: { S: timestamp },
           },
         };
-        console.log("docClient", "docccleint", params);
+        // console.log("docClient", "docccleint", params);
         let userData = await dynamoDBClient.send(new PutItemCommand(params));
         return res.status(201).json({
           data: id,
@@ -112,39 +143,39 @@ class ApiEndpointServices {
     }
   }
 
-  async getActiveData(req, res) {
-    try {
-      const params = {
-        TableName: "api_endpoint",
-        FilterExpression: "#status = :status",
-        ExpressionAttributeNames: {
-          "#status": "status",
-        },
-        ExpressionAttributeValues: {
-          ":status": "active",
-        },
-      };
+  // async getActiveData(req, res) {
+  //   try {
+  //     const params = {
+  //       TableName: "api_endpoint",
+  //       FilterExpression: "#status = :status",
+  //       ExpressionAttributeNames: {
+  //         "#status": "status",
+  //       },
+  //       ExpressionAttributeValues: {
+  //         ":status": "active",
+  //       },
+  //     };
 
-      let getAll = await dynamoDBClient.scan(params);
-      getAll = getAll?.sort((a, b) => b?.created_at - a?.created_at);
-      return res.status(200).json({
-        message: "Fetch data",
-        data: getAll,
-        success: true,
-        statusCode: 200,
-      });
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: err?.message, success: false, statusCode: 500 });
-    }
-  }
+  //     let getAll = await dynamoDBClient.scan(params);
+  //     getAll = getAll?.sort((a, b) => b?.created_at - a?.created_at);
+  //     return res.status(200).json({
+  //       message: "Fetch data",
+  //       data: getAll,
+  //       success: true,
+  //       statusCode: 200,
+  //     });
+  //   } catch (err) {
+  //     return res
+  //       .status(500)
+  //       .json({ message: err?.message, success: false, statusCode: 500 });
+  //   }
+  // }
 
   //get all data 
   async getAllData(req, res) {
     try {
       const params = {
-        TableName: "api_endpoint",
+        TableName: "roles",
       };
       if (!(req.userData.user_type === 'super_admin' && req.query.status === 'all')) {
         params.FilterExpression = "#status = :status";
@@ -155,17 +186,16 @@ class ApiEndpointServices {
           ":status": { S: "active" },
         };
       }
-      // let getAll = await dynamoDBClient.scan(params);
       let getAll = await dynamoDBClient.send(new ScanCommand(params));
-      let get = []
-      for (let el of getAll.Items) {
-        let get1 = simplifyDynamoDBResponse(el)
-        get.push(get1)
-      }
-      // getAll = getAll?.sort((a, b) => b?.created_at - a?.created_at);
+      // let get = []
+      const simplifiedData = getAll.Items.map(item => simplifyDynamoDBResponse(item));
+      // for (let el of getAll.Items) {
+      //   let get1 = simplifyDynamoDBResponse(el)
+      //   get.push(get1)
+      // }
       return res.status(200).json({
         message: "Fetch data",
-        data: get,
+        data: simplifiedData ,
         success: true,
         statusCode: 200,
       });
@@ -181,12 +211,11 @@ class ApiEndpointServices {
     try {
       const { id, status } = req.body;
       const getItemParams = {
-        TableName: 'api_endpoint',
+        TableName: 'roles',
         Key: {
           id: { S: id }
         }
       };
-
       const getItemCommand = new GetItemCommand(getItemParams);
       const getItemResponse = await dynamoDBClient.send(getItemCommand);
 
@@ -197,9 +226,8 @@ class ApiEndpointServices {
           success: false
         });
       }
-      // Update the item status
       const updateItemParams = {
-        TableName: 'api_endpoint',
+        TableName: 'roles',
         Key: {
           id: { S: id }
         },
@@ -225,13 +253,13 @@ class ApiEndpointServices {
     }
   }
 
-  async deleteEndpointById(req, res) {
+  async deleteById(req, res) {
     try {
       const { id } = req.query;
 
       const data = await dynamoDBClient.send(
         new QueryCommand({
-          TableName: "api_endpoint",
+          TableName: "roles",
           KeyConditionExpression: "id = :id",
           ExpressionAttributeValues: {
             ":id": { S: id },
@@ -241,10 +269,8 @@ class ApiEndpointServices {
       if (data?.Count == 0) {
         return res.status(400).json({ message: "Data not found or deleted already", statusCode: 400, success: false })
       }
-
-      // Delete the item
       const deleteItemParams = {
-        TableName: 'api_endpoint',
+        TableName: 'roles',
         Key: {
           id: { S: id }
         }
@@ -265,5 +291,5 @@ class ApiEndpointServices {
 
 }
 
-const ApiEndpointServicesObj = new ApiEndpointServices();
-export default ApiEndpointServicesObj;
+const RoleServicesObj = new RoleServices ();
+export default RoleServicesObj ;
