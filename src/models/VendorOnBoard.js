@@ -1,11 +1,30 @@
-import dynamoose from "dynamoose";
-import AWS from "aws-sdk";
+// import dynamoose from "dynamoose";
+// import AWS from "aws-sdk";
 
-AWS.config.update({
+// AWS.config.update({
+//   region: process.env.Aws_region,
+// });
+
+// dynamoose.aws.sdk = AWS;
+
+
+
+
+
+import dynamoose from "dynamoose";
+import { DynamoDB } from "@aws-sdk/client-dynamodb";
+
+// Configure AWS SDK v3
+const dynamoDBClient = new DynamoDB({ 
   region: process.env.Aws_region,
+  credentials: {
+    accessKeyId: process.env.Aws_accessKeyId,
+    secretAccessKey: process.env.Aws_secretAccessKey
+  }
 });
 
-dynamoose.aws.sdk = AWS;
+// Set the AWS SDK v3 instance for dynamoose
+dynamoose.aws.sdk = dynamoDBClient;
 
 // companyName
 // contactPerson

@@ -400,8 +400,8 @@ class ProductServices {
         return res.status(400).json({ message: "Product not found or deleted already", statusCode: 400, success: false })
       }
       console.log(data?.Items[0]?.created_by, "dataaaaaaa",userId,"data?.Items[0]?.",data?.Items[0])
-      if (user_type == 'vendor' && data?.Items[0]?.created_by != userId) {
-        return res.status(400).json({ message: "Not authorise to delete another vendor 's product", statusCode: 400, success: false })
+      if (user_type == 'vendor' && data?.Items[0]?.created_by != userId ) {
+        return res.status(400).json({ message: "Not authorise to delete another vendor's product", statusCode: 400, success: false })
       }
       const params = {
         TableName: "products",

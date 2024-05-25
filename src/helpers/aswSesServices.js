@@ -1,14 +1,41 @@
-import AWS from "aws-sdk";
+// import AWS from "aws-sdk";
 
-//phone => me-central-1
+// //phone => me-central-1
 
-const SES_COMMING = {
+// const SES_COMMING = {
+//   region: "me-south-1",
+//   accessKeyId: process.env.Aws_accessKeyId,
+//   secretAccessKey: process.env.Aws_secretAccessKey,
+// };
+// const AWS_SES = new AWS.SES(SES_COMMING);
+// const sns = new AWS.SNS(SES_COMMING);
+//---------------------------------------
+// new updated code
+import { SESClient } from "@aws-sdk/client-ses";
+import { SNSClient } from "@aws-sdk/client-sns";
+// import { fromIni } from "@aws-sdk/credential-provider-ini";
+
+// Create SES client
+const AWS_SES = new SESClient({
   region: "me-south-1",
-  accessKeyId: process.env.Aws_accessKeyId,
-  secretAccessKey: process.env.Aws_secretAccessKey,
-};
-const AWS_SES = new AWS.SES(SES_COMMING);
-const sns = new AWS.SNS(SES_COMMING);
+  credentials: {
+    accessKeyId: process.env.Aws_accessKeyId,
+    secretAccessKey: process.env.Aws_secretAccessKey
+  }
+});
+
+// Create SNS client
+const sns = new SNSClient({
+  region: "me-south-1",
+  credentials: {
+    accessKeyId: process.env.Aws_accessKeyId,
+    secretAccessKey: process.env.Aws_secretAccessKey
+  }
+});
+
+// export { sesClient, snsClient };
+
+
 export const pinePointServices = async (email, otp) => {
   try {
 

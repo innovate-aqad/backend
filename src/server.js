@@ -8,6 +8,11 @@ import { environmentVars } from "./config/environmentVar.js";
 import CategoryRoutes from "./routes/user/CategoryRoutes.js";
 import SubCategoryRoutes from "./routes/admin/SubCategoryRoutes.js";
 import ProductRoutes from "./routes/admin/ProductRoutes.js";
+import ApiEndpointRoutes from "./routes/admin/ApiendpointRoutes.js";
+// require('dotenv').config();
+// import dotenv from 'dotenv';
+// dotenv.config();
+// import mysql from 'mysql2';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const app = express();
@@ -51,6 +56,22 @@ const allowedOrigins = [
 //     credentials: true,
 //   })
 // );
+
+// const connection = mysql.createConnection({
+//   host:  "mysql-db.c328giyw47da.me-central-1.rds.amazonaws.com:3306",  // process.env.DB_HOST,
+//   user: 'admin',
+//   password: "03ycTZRKOxofr6L2IgZY"  ,
+//   // database: process.env.DB_NAME
+// });
+
+// connection.connect((err) => {
+//   if (err) {
+//     console.error('Error connecting to the database:', err.stack);
+//     return;
+//   }
+//   console.log('Connected to the database as id', connection.threadId);
+// });
+
 app.get("/", async (req, res) => {
   console.log("Hello World ! aqad" + Date.now())
   return res.status(200).send("Hello World ! aqad" + Date.now());
@@ -68,6 +89,7 @@ app.use("/api/product", ProductRoutes);
 app.use("/api/category", CategoryRoutes);
 app.use("/api/sub_category", SubCategoryRoutes);
 
+app.use("/api/endpoint",ApiEndpointRoutes)
 
 // app.use("/")
 // app.use("/api/user/ui",);

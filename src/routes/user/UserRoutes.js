@@ -6,6 +6,7 @@ import { upload } from "../../helpers/s3.js";
 
 const UserRoutes = express.Router();
 
+<<<<<<< HEAD
 UserRoutes.post(
   "/register",
   upload.fields([
@@ -48,6 +49,51 @@ UserRoutes.post(
   ]),
   UserControllerObj.register
 );
+=======
+UserRoutes.post("/register",  upload.fields([
+  {
+    name: "profile_photo",
+    maxCount: 1,
+  },
+  {
+    name: "passport",
+    maxCount: 1,
+  },
+  {
+    name: "trade_license",
+    maxCount: 1,
+  },
+  {
+    name: "cheque_scan",
+    maxCount: 1,
+  },
+  {
+    name: "vat_certificate",
+    maxCount: 1,
+  },
+  {
+    name: "residence_visa",
+    maxCount: 1,
+  },
+  {
+    name: "driver_images",
+    maxCount: 5,
+  },
+  {
+    name: "driving_license",
+    maxCount: 5,
+  },
+  {
+    name: "emirate_id_pic",
+    maxCount: 1,
+  }
+]), UserControllerObj.register);
+
+//create
+UserRoutes.post("/super_admn",  UserControllerObj.super_admin);
+
+
+>>>>>>> 67c45c562073e53cf5cea800d6e6a9bf2e9796ef
 
 UserRoutes.get("/get_by_email", UserControllerObj.getByEmail);
 UserRoutes.get("/send_otp_to_email", UserControllerObj.sendOtpOnEmailData);
@@ -55,6 +101,7 @@ UserRoutes.get("/verfy_otp_with_email", UserControllerObj.verifyEmailWithOtp);
 
 UserRoutes.post("/login", UserControllerObj.login);
 UserRoutes.post("/login_with_otp", UserControllerObj.login_with_otp);
+<<<<<<< HEAD
 UserRoutes.get("/get_data", authorize, UserControllerObj.get_data);
 UserRoutes.post("/add_sub_user", authorize, UserControllerObj.add_sub_user);
 UserRoutes.get("/get_sub_user", authorize, UserControllerObj.get_sub_user);
@@ -63,6 +110,19 @@ UserRoutes.delete(
   authorize,
   UserControllerObj.delete_sub_user
 );
+=======
+UserRoutes.get("/get_data", authorize ,UserControllerObj.get_data);//logged in data
+UserRoutes.post("/add_sub_user", authorize ,UserControllerObj.add_sub_user);//vendor , seller, logistic ->sub_user
+UserRoutes.get("/get_sub_user", authorize ,UserControllerObj.get_sub_user);
+UserRoutes.delete("/delete_sub_user", authorize ,UserControllerObj.delete_sub_user);
+
+//get all vendor or logistic or seller fetch with its sub_user
+// UserRoutes.get("/fetch_all_user",authorize,UserControllerObj)
+
+
+
+
+>>>>>>> 67c45c562073e53cf5cea800d6e6a9bf2e9796ef
 
 UserRoutes.put("/forgot_password", UserControllerObj.forgotPassword);
 UserRoutes.put("/verify_otp", UserControllerObj.verify_otp);
@@ -71,7 +131,7 @@ UserRoutes.get("/check_user_logged_in", UserControllerObj.check_user_logged_in);
 UserRoutes.get("/user_logout", UserControllerObj.user_logout);
 
 UserRoutes.put("/reset_password", UserControllerObj.resetPassword);
-UserRoutes.get("/fetch_users", UserControllerObj.FetchUsers);
+// UserRoutes.get("/fetch_users", UserControllerObj.FetchUsers);
 UserRoutes.get("/get_allusers", authorize, UserControllerObj.getAllUser);
 
 UserRoutes.post(
@@ -122,5 +182,4 @@ UserRoutes.post(
 UserRoutes.post("/vendor_on_board", UserControllerObj.vendorOnBoarding);
 
 export default UserRoutes;
-
 // userImage

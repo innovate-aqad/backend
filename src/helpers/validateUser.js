@@ -132,6 +132,8 @@ export const registerSchema = Joi.object({
   // ),
 
 });
+
+
 export const getDataByEmailSchema = Joi.object({
   email: Joi.string()
     .trim()
@@ -165,6 +167,22 @@ export const AddSubUserSchema = Joi.object({
     "string.pattern.base":
       "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
   }).label("phone"),
+});
+
+export const AddSuperUserSchema = Joi.object({
+  email: Joi.string()
+    .trim()
+    .required()
+    .email({ tlds: { allow: false } }).label("Email"),
+  name: Joi.string()
+    .trim().min(3).max(40)
+    .required()
+    .label("name"),
+  phone: Joi.string().trim().required().regex(phonePattern).messages({
+    "string.pattern.base":
+      "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
+  }).label("phone"),
+  
 });
 
 

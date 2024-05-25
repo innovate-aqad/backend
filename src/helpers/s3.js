@@ -1,19 +1,46 @@
-import AWS from "aws-sdk";
+// import AWS from "aws-sdk";
 import fs from "fs/promises";
 import multer from "multer";
-//
-// Configure AWS SDK
-AWS.config.update({
-  region: process.env.Aws_region, // Replace with your region
-  accessKeyId: process.env.Aws_accessKeyId, // Replace with your AWS Access Key ID
-  secretAccessKey: process.env.Aws_secretAccessKey, // Replace with your AWS Secret Access Key
-});
+// //
+// // Configure AWS SDK
+// AWS.config.update({
+//   region: process.env.Aws_region, // Replace with your region
+//   accessKeyId: process.env.Aws_accessKeyId, // Replace with your AWS Access Key ID
+//   secretAccessKey: process.env.Aws_secretAccessKey, // Replace with your AWS Secret Access Key
+// });
 
-// Create S3 instance
-const s3 = new AWS.S3();
+// // Create S3 instance
+// // const s3 = new AWS.S3();
 
 // Create DynamoDB instance
-const dynamodb = new AWS.DynamoDB.DocumentClient();
+// const dynamodb = new AWS.DynamoDB.DocumentClient();
+
+
+// new version 
+import { S3Client } from "@aws-sdk/client-s3";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+// import { fromIni } from "@aws-sdk/credential-provider-ini";
+
+// Create S3 client
+const s3 = new S3Client({
+  region: process.env.Aws_region,
+  credentials: { 
+    accessKeyId: process.env.Aws_accessKeyId,
+    secretAccessKey: process.env.Aws_secretAccessKey
+  }
+});
+
+// Create DynamoDB DocumentClient
+const dynamodb = new DynamoDBClient({
+  region: process.env.Aws_region,
+  credentials: { 
+    accessKeyId: process.env.Aws_accessKeyId,
+    secretAccessKey: process.env.Aws_secretAccessKey
+  }
+});
+
+// export { s3Client, dynamoDBClient };
+
 
 // export const upload = multer({ dest: 'uploads/' });
 
