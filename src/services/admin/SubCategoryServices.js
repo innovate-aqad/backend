@@ -1,28 +1,15 @@
-<<<<<<< HEAD
-=======
 // import AWS from "aws-sdk"
 import { v4 as uuidv4 } from "uuid";
 
->>>>>>> a3784d7bee743f721859cc47139e9c6270e5519d
 import {
   DynamoDBClient,
   PutItemCommand,
   ScanCommand,
   UpdateItemCommand,
-<<<<<<< HEAD
-  DeleteItemCommand,
-  QueryCommand,
-} from "@aws-sdk/client-dynamodb";
-
-import AWS from "aws-sdk";
-import { v4 as uuidv4 } from "uuid";
-
-=======
   QueryCommand,
   GetItemCommand,
   DeleteItemCommand,
 } from "@aws-sdk/client-dynamodb";
->>>>>>> a3784d7bee743f721859cc47139e9c6270e5519d
 import formidable from "formidable";
 import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
 
@@ -94,17 +81,12 @@ class SubCategoryServices {
           },
           ExpressionAttributeValues: {
             ":title": { S: title || findData?.Items[0]?.title?.S || "" },
-<<<<<<< HEAD
             ":status": {
               S: status || findData?.Items[0]?.status?.S || "active",
             },
             ":category_id": {
               S: category_id || findData?.Items[0]?.category_id?.S || "",
             },
-=======
-            ":status": { S: status || findData?.Items[0]?.status?.S || 'active' },
-            ":category_id": { S: category_id || findData?.Items[0]?.category_id?.S || '' },
->>>>>>> a3784d7bee743f721859cc47139e9c6270e5519d
             ":updated_at": { S: timestamp },
           },
         };
@@ -239,97 +221,45 @@ class SubCategoryServices {
       const categoryParams = {
         TableName: "category",
       };
-<<<<<<< HEAD
-      let categories = await dynamoDB.scan(categoryParams).promise();
-      console.log(categories, "categoriescategories==");
-      // if (categories.Items.length === 0) {
-      //   return res.status(200).json({
-      //     message: "No categories found",
-      //     data: [],
-      //     statusCode: 200,
-      //     success: true,
-      //   });
-      // }
-
-      // // Create a list of promises to fetch subcategories for each category
-      // const subCategoryPromises = categories.Items.map(category => {
-      //   const subCategoryParams = {
-      //     TableName: "sub_category",
-      //     IndexName: "category_id-index", // Ensure this GSI exists
-      //     KeyConditionExpression: "category_id = :category_id",
-      //     ExpressionAttributeValues: {
-      //       ":category_id": category.id,
-      //     },
-      //   };
-      //   return dynamoDB.query(subCategoryParams).promise();
-      // });
-
-      // // Resolve all promises
-      // const subCategoriesResults = await Promise.all(subCategoryPromises);
-      // let combinedData = [];
-
-      // // Combine each subcategory with the respective category
-      // subCategoriesResults.forEach((result, index) => {
-      //   result.Items.forEach(subCategory => {
-      //     combinedData.push({
-      //       category_id: categories.Items[index].id,
-      //       sub_category: subCategory.id,
-      //       title: subCategory.title,
-      //     });
-      //   });
-      // });
-      //======================================
-
-      const subcategoryParams = {
-        TableName: "sub_category",
-      };
-
-      let subcategories = await dynamoDB.scan(subcategoryParams).promise();
-
-      for (let el of subcategories?.Items) {
-        let checkCat = categories?.Items?.find(
-          (elem) => elem?.id == el?.category_id
-        );
-        if (checkCat) {
-          el.categoryObj = checkCat;
-=======
       const commandCat = new ScanCommand(categoryParams);
       const categoryData = await dynamoDBClient.send(commandCat);
-      
+
       const subcategoryParams = {
         TableName: "sub_category",
       };
       const commandSub = new ScanCommand(subcategoryParams);
       const subcategoryData = await dynamoDBClient.send(commandSub);
-      
+
       // Map category and subcategory data
-      const simplifiedCategoryData = categoryData.Items.map(el => simplifyDynamoDBResponse(el));
-      const simplifiedSubcategoryData = subcategoryData.Items.map(el => simplifyDynamoDBResponse(el));
-      
+      const simplifiedCategoryData = categoryData.Items.map((el) =>
+        simplifyDynamoDBResponse(el)
+      );
+      const simplifiedSubcategoryData = subcategoryData.Items.map((el) =>
+        simplifyDynamoDBResponse(el)
+      );
+
       // Create a map of subcategories by category_id for efficient lookup
       const subcategoriesByCategoryId = {};
-      simplifiedSubcategoryData.forEach(subcategory => {
+      simplifiedSubcategoryData.forEach((subcategory) => {
         const categoryId = subcategory.category_id;
         if (!subcategoriesByCategoryId[categoryId]) {
           subcategoriesByCategoryId[categoryId] = [];
->>>>>>> a3784d7bee743f721859cc47139e9c6270e5519d
         }
         subcategoriesByCategoryId[categoryId].push(subcategory);
       });
-      
+
       // Combine category data with corresponding subcategories
-      const combinedData = simplifiedCategoryData.map(category => ({
+      const combinedData = simplifiedCategoryData.map((category) => ({
         ...category,
-        subcategoryArr: subcategoriesByCategoryId[category.id] || []
+        subcategoryArr: subcategoriesByCategoryId[category.id] || [],
       }));
-      
+
       res.status(200).json({
         message: "Fetch Data",
         data: combinedData,
         statusCode: 200,
         success: true,
       });
-      
     } catch (err) {
       console.error(err, "error");
       return res.status(500).json({
@@ -339,15 +269,6 @@ class SubCategoryServices {
       });
     }
   }
-
-<<<<<<< HEAD
-      res.status(200).json({
-        message: "Fetch Data",
-        // data: combinedData,
-        statusCode: 200,
-        categories,
-        subcategories,
-=======
 
   async get_subcat_by_main_cat_id(req, res) {
     try {
@@ -364,13 +285,14 @@ class SubCategoryServices {
 
       const command = new ScanCommand(params);
       const data = await dynamoDBClient.send(command);
-      const simplifiedData = data.Items.map(el => simplifyDynamoDBResponse(el));
+      const simplifiedData = data.Items.map((el) =>
+        simplifyDynamoDBResponse(el)
+      );
 
       res.status(200).json({
         message: "Fetch Data",
         data: simplifiedData,
         statusCode: 200,
->>>>>>> a3784d7bee743f721859cc47139e9c6270e5519d
         success: true,
       });
     } catch (err) {
