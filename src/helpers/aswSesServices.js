@@ -11,7 +11,7 @@
 // const sns = new AWS.SNS(SES_COMMING);
 //---------------------------------------
 // new updated code
-import { SESClient } from "@aws-sdk/client-ses";
+import { SESClient,SendEmailCommand } from "@aws-sdk/client-ses";
 import { SNSClient } from "@aws-sdk/client-sns";
 // import { fromIni } from "@aws-sdk/credential-provider-ini";
 
@@ -58,16 +58,20 @@ export const pinePointServices = async (email, otp) => {
       Source: "aqadinnovate@gmail.com", // Replace with your sender email address
     };
     // Send email
-    let get = await AWS_SES.sendEmail(params, (err, data) => {
-      if (data) {
-        console.log("success data", data)
-      } else {
-        console.log("error ", err)
+    const command = new SendEmailCommand(params);
+    const data = await AWS_SES.send(command);
+console.log(data,"dataa")
+    // let get = await AWS_SES.sendEmail(params, (err, data) => {
+    //   if (data) {
+    //     console.log("success data", data)
+    //   } else {
+    //     console.log("error ", err)
 
-      }
-    })
+    //   }
+    // })
     return true
   } catch (error) {
+    console.log(error,"errrrrer")
     return false
   }
 };

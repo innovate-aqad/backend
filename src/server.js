@@ -77,26 +77,14 @@ app.get("/", async (req, res) => {
   console.log("Hello World ! aqad" + Date.now())
   return res.status(200).send("Hello World ! aqad" + Date.now());
 });
-app.get("/aqad", async (req, res) => {
-  return res.status(200).json({ msg: "Hello World? aqad", data: Date.now() });
-});
-console.log("hello wordl");
-//routes here like this =>     app.use('/user',userRoutes);
+
 app.use("/api/user", UserRoutes);
-
 app.use("/api/product", ProductRoutes);
-
 app.use("/api/category", CategoryRoutes);
 app.use("/api/sub_category", SubCategoryRoutes);
-
 app.use("/api/endpoint",ApiEndpointRoutes)
 app.use("/api/Permission",PermissionRoutes)
 
-// app.use("/api/admin/delivery", AdminDeliveryRoutes);
-// Set up routes and testing route on '/'
-app.get("/", (req, res) => {
-  res.send("Hello, World!");
-});
 // Start the server
 const PORT = environmentVars.port;
 

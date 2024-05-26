@@ -92,6 +92,7 @@ class UserServices {
         driver_name_array,
         driver_license_number_array,
         db_driver_details_array,
+        term_and_condition
       } = req.body;
       // console.log(req.body, "aaaaaaaaaa!@#!@#aa req.body");
       // console.log(req.files, "req.filesssss")
@@ -374,7 +375,7 @@ class UserServices {
             TableName: "users",
             Key: { id: { S: doc_id } },
             UpdateExpression:
-              "SET #trade_license = :trade_license, #cheque_scan = :cheque_scan, #vat_certificate = :vat_certificate, #residence_visa = :residence_visa , #emirates_id = :emirates_id, #iban = :iban , #emirate_id_pic= :emirate_id_pic, #updated_at=:updated_at",
+              "SET #trade_license = :trade_license, #cheque_scan = :cheque_scan, #vat_certificate = :vat_certificate, #residence_visa = :residence_visa , #emirates_id = :emirates_id, #iban = :iban , #emirate_id_pic= :emirate_id_pic, #updated_at=:updated_at, #term_and_condition = :term_and_condition",
             ExpressionAttributeNames: {
               "#trade_license": "trade_license",
               "#cheque_scan": "cheque_scan",
@@ -383,7 +384,8 @@ class UserServices {
               "#emirates_id": "emirates_id",
               "#iban": "iban",
               "#emirate_id_pic": "emirate_id_pic",
-              "#updated_at": "updated_at"
+              "#updated_at": "updated_at",
+              "#term_and_condition": "term_and_condition"
             },
             ExpressionAttributeValues: {
               ":trade_license": { S: trade_license },
@@ -393,10 +395,11 @@ class UserServices {
               ":emirates_id": { S: emirates_id || "" },
               ":iban": { S: iban || "" },
               ":emirate_id_pic": { S: emirate_id_pic || "" },
-              ":updated_at": { S: new Date().toISOString() }
+              ":updated_at": { S: new Date().toISOString() },
+              ":term_and_condition": { S: term_and_condition }
             },
           };
-          console.log(params, "apramnsnssnsm");
+          console.log(params, "apra slide 3");
           await dynamoDBClient.send(new UpdateItemCommand(params));
           return res.status(200).json({
             message: "User data updated successfully",
@@ -595,11 +598,7 @@ class UserServices {
         name,
       };
       sendPasswordViaEmailOf(obj);
-      // console.log("userData:12", userData);
-      // if (userData) {
-      // await sendPasswordViaEmail(res, data);
-      // }
-      return res
+       return res
         .status(201)
         .json({
           message: "User register successfully",
@@ -718,6 +717,8 @@ class UserServices {
       let currentTime = Date.now();
       currentTime = currentTime?.toString();
       let get = await pinePointServices(req.query.email, otp);
+      console.log(get,"GEtgge")
+
       if (get) {
         const find = await dynamoDBClient.send(
           new ScanCommand({
