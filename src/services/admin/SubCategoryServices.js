@@ -231,7 +231,6 @@ class SubCategoryServices {
     }
   }
 
-
   async get_subcat_by_main_cat_id(req, res) {
     try {
       const params = {
@@ -268,6 +267,19 @@ class SubCategoryServices {
   async delete(req, res) {
     try {
       let id = req.query.id
+      const data = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "sub_category",
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: id },
+          },
+        })
+      );
+      if (data?.Count == 0) {
+        return res.status(400).json({ message: "Data not found or deleted already", statusCode: 400, success: false })
+      }
+      
       const params = {
         TableName: 'sub_category',
         Key: {
@@ -275,7 +287,7 @@ class SubCategoryServices {
         }
       };
       let result = await dynamoDBClient.send(new DeleteItemCommand(params));
-      console.log(result, "checkkkk")
+      // console.log(result, "checkkkk")
       return res.status(200).json({ message: "Delete successfully", statusCode: 200, success: true })
     } catch (err) {
       console.error(err)

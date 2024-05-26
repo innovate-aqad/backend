@@ -30,12 +30,10 @@ class PermissionServices {
       const allRouteIds = Array.from(new Set([...backend_routes, ...frontend_routes]));
       console.log(allRouteIds, "all routesss indsss")
 
-      // Create keys for BatchGetItemCommand
       const keys = allRouteIds.map(routeId => ({
         id: { S: routeId }
       }));
       // console.log(keys, "keyskeyskeys")
-      // Create params for BatchGetItemCommand
       const batchGetParams = {
         RequestItems: {
           "api_endpoint": {
@@ -177,6 +175,7 @@ class PermissionServices {
   // }
 
   //get all data 
+  
   async getAllData(req, res) {
     try {
       const params = {
@@ -220,10 +219,8 @@ class PermissionServices {
           id: { S: id }
         }
       };
-
       const getItemCommand = new GetItemCommand(getItemParams);
       const getItemResponse = await dynamoDBClient.send(getItemCommand);
-
       if (!getItemResponse.Item) {
         return res.status(400).json({
           message: 'Data not found',
@@ -231,7 +228,6 @@ class PermissionServices {
           success: false
         });
       }
-      // Update the item status
       const updateItemParams = {
         TableName: 'permission',
         Key: {
@@ -262,7 +258,6 @@ class PermissionServices {
   async deleteEndpointById(req, res) {
     try {
       const { id } = req.query;
-
       const data = await dynamoDBClient.send(
         new QueryCommand({
           TableName: "permission",

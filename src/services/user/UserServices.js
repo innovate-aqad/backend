@@ -698,14 +698,6 @@ class UserServices {
 
   async sendOtpEmail(req, res) {
     try {
-      // let number = Math.round(Math.random() * 10000)
-      // if (number.length == 3) {
-      //   number = number + "0"
-      // } else if (number.length == 2) {
-      //   number = number + "00"
-      // } else if (number.length == 1) {
-      //   number = number + "000"
-      // }
       let otp = await generateOTP();
       if (otp.length == 3) {
         otp = otp + "0";
@@ -762,9 +754,7 @@ class UserServices {
               id: { S: id },
             },
           };
-          // console.log(params, "parasnsns");
           let Data = await dynamoDBClient.send(new PutItemCommand(params));
-          // console.log(Data, "dayayayaya");
         }
         return res
           .status(200)
@@ -778,14 +768,13 @@ class UserServices {
           .status(400)
           .json({
             message:
-              "not able to send otp on email , kindly do after some time",
+              "Not able to send otp on email , kindly do after some time",
             statusCode: 400,
             success: false,
           });
       }
     } catch (err) {
       console.error(err, "Eeee");
-
       return res
         .status(500)
         .json({ message: err?.message, statusCode: 500, success: false });
