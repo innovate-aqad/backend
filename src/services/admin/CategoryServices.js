@@ -20,7 +20,6 @@
 //   },
 // });
 
-
 import {
   DynamoDBClient,
   PutItemCommand,
@@ -43,7 +42,7 @@ const dynamoDBClient = new DynamoDBClient({
 });
 
 class CategoryServices {
-  //add and edit 
+  //add and edit
   async add(req, res) {
     try {
       let { title, status, id } = req.body;
@@ -53,6 +52,7 @@ class CategoryServices {
       //     .json({ message: "Not Authorise", statusCode: 400, success: false });
       // }
       let findData;
+      let image;
       if (id) {
         findData = await dynamoDBClient.send(
           new QueryCommand({
@@ -63,58 +63,64 @@ class CategoryServices {
             },
           })
         );
-        // console.log("findDatafindData22", findData?.Items[0]);
-        if (findData && findData?.Count > 0) {
-          const params = {
-            TableName: "category",
-            Key: { id: { S: id } },
-            UpdateExpression:
-              "SET #title = :title, #status = :status, #updated_at = :updated_at",
-            ExpressionAttributeNames: {
-              "#title": "title",
-              "#status": "status",
-              "#updated_at": "updated_at",
-            },
-            ExpressionAttributeValues: {
-              ":title": { S: title || findData?.Items[0]?.title?.S || "" },
-              ":status": {
-                S: status || findData?.Items[0]?.status?.S || "active",
-              },
-              ":updated_at": { S: new Date().toISOString() },
-            },
-          };
-          const findExist = await dynamoDBClient.send(
-            new QueryCommand({
-              TableName: "category",
-              IndexName: "title", // Use the correct GSI name
-              KeyConditionExpression: "title = :title",
-              FilterExpression: "id <> :id",
-              ExpressionAttributeValues: {
-                ":title": { S: title },
-                ":id": { S: id },
-              },
-            })
-          );
-
-          if (findExist?.Count > 0) {
-            return res.status(400).json({
-              message: "Title already exist",
-              statusCode: 400,
-              success: false,
-            });
-          } else {
-            await dynamoDBClient.send(new UpdateItemCommand(params));
-            return res.status(200).json({
-              message: "Data updated successfully",
-              statusCode: 200,
-              success: true,
-            });
-          }
-        } else {
+        if (findData && findData?.Count == 0) {
           return res.status(400).json({
             message: "Document Not Found",
             statusCode: 400,
             success: false,
+          });
+        }
+        // console.log("findDatafindData22", findData?.Items[0]);
+        image = req.files?.category_image?.length
+          ? req.files?.category_image[0]?.filename
+          : findData?.Items[0]?.category_image?.S || "";
+        const params = {
+          TableName: "category",
+          Key: { id: { S: id } },
+          UpdateExpression:
+            "SET #title = :title, #status = :status, #updated_at = :updated_at, #category_image=:category_image",
+          ExpressionAttributeNames: {
+            "#title": "title",
+            "#status": "status",
+            "#updated_at": "updated_at",
+            "#category_image": "category_image",
+          },
+          ExpressionAttributeValues: {
+            ":title": { S: title || findData?.Items[0]?.title?.S || "" },
+            ":status": {
+              S: status || findData?.Items[0]?.status?.S || "active",
+            },
+            ":category_image": {
+              S: image,
+            },
+            ":updated_at": { S: new Date().toISOString() },
+          },
+        };
+        const findExist = await dynamoDBClient.send(
+          new QueryCommand({
+            TableName: "category",
+            IndexName: "title", // Use the correct GSI name
+            KeyConditionExpression: "title = :title",
+            FilterExpression: "id <> :id",
+            ExpressionAttributeValues: {
+              ":title": { S: title },
+              ":id": { S: id },
+            },
+          })
+        );
+
+        if (findExist?.Count > 0) {
+          return res.status(400).json({
+            message: "Title already exist",
+            statusCode: 400,
+            success: false,
+          });
+        } else {
+          await dynamoDBClient.send(new UpdateItemCommand(params));
+          return res.status(200).json({
+            message: "Data updated successfully",
+            statusCode: 200,
+            success: true,
           });
         }
       } else {
@@ -143,6 +149,7 @@ class CategoryServices {
             id: { S: id },
             title: { S: title },
             status: { S: status },
+            category_image: { S: image },
             created_at: { S: new Date().toISOString() },
             updated_at: { S: new Date().toISOString() },
           },
@@ -220,7 +227,6 @@ class CategoryServices {
 
   async get_cat_data(req, res) {
     try {
-
       const params = {
         TableName: "category",
         FilterExpression: "#status = :status",
@@ -234,7 +240,9 @@ class CategoryServices {
 
       const command = new ScanCommand(params);
       const data = await dynamoDBClient.send(command);
-      const simplifiedData = data.Items.map(el => simplifyDynamoDBResponse(el));
+      const simplifiedData = data.Items.map((el) =>
+        simplifyDynamoDBResponse(el)
+      );
       // console.log("Scan successful:", data.Items);
       res.status(200).json({
         message: "Fetch Data",
@@ -253,7 +261,7 @@ class CategoryServices {
 
   async delete(req, res) {
     try {
-      let { id } = req.query
+      let { id } = req.query;
       const data = await dynamoDBClient.send(
         new QueryCommand({
           TableName: "category",
@@ -266,14 +274,18 @@ class CategoryServices {
         })
       );
       if (data?.Count == 0) {
-        return res.status(400).json({ message: "Category not found or deleted already", statusCode: 400, success: false })
+        return res.status(400).json({
+          message: "Category not found or deleted already",
+          statusCode: 400,
+          success: false,
+        });
       }
       const params = {
-        TableName: 'category',
+        TableName: "category",
         Key: {
-          id: { S: id }// Replace with your primary key attributes
-        }
-      }
+          id: { S: id }, // Replace with your primary key attributes
+        },
+      };
       const command = new DeleteItemCommand(params);
       await dynamoDBClient.send(command);
       // Query all subcategories with the same category_id
@@ -283,41 +295,46 @@ class CategoryServices {
           IndexName: "category_id-index", // Make sure to create a GSI on category_id
           KeyConditionExpression: "category_id = :category_id",
           ExpressionAttributeValues: {
-            ":category_id": { S: id }
+            ":category_id": { S: id },
           },
         })
       );
       let batchDeleteParams;
       let deleteRequests;
       if (subCategoriesData.Items.length > 0) {
-        console.log(subCategoriesData?.Items[0]?.id, "subCategoriesDatasubCategoriesData")
-        deleteRequests = subCategoriesData.Items.map(item => ({
+        console.log(
+          subCategoriesData?.Items[0]?.id,
+          "subCategoriesDatasubCategoriesData"
+        );
+        deleteRequests = subCategoriesData.Items.map((item) => ({
           DeleteRequest: {
             Key: {
-              id: item?.id // Assuming `id` is the primary key of the sub_category table
-            }
-          }
+              id: item?.id, // Assuming `id` is the primary key of the sub_category table
+            },
+          },
         }));
-        console.log(deleteRequests, "deleterequerst", JSON.stringify)
+        console.log(deleteRequests, "deleterequerst", JSON.stringify);
         batchDeleteParams = {
           RequestItems: {
-            "sub_category": deleteRequests
-          }
+            sub_category: deleteRequests,
+          },
         };
 
         await dynamoDBClient.send(new BatchWriteItemCommand(batchDeleteParams));
       }
-      // category_id-index	
+      // category_id-index
       return res.status(200).json({
-        message: "Category deleted successfully", statusCode: 200, success: true,
-      })
+        message: "Category deleted successfully",
+        statusCode: 200,
+        success: true,
+      });
     } catch (err) {
-      console.log(err, "Errorro")
-      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+      console.log(err, "Errorro");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
-
-
 }
 
 const CategoryServicesObj = new CategoryServices();

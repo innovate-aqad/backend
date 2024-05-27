@@ -18,7 +18,7 @@ import {
   ScanCommand,
   UpdateItemCommand,
   QueryCommand,
-  DeleteItemCommand
+  DeleteItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 // import AWS from "aws-sdk";
@@ -92,20 +92,18 @@ class UserServices {
         driver_name_array,
         driver_license_number_array,
         db_driver_details_array,
-        term_and_condition
+        term_and_condition,
       } = req.body;
       // console.log(req.body, "aaaaaaaaaa!@#!@#aa req.body");
       // console.log(req.files, "req.filesssss")
       email = email?.trim();
       let findData;
       if ((slide == 2 || slide == 3 || slide == 4) && doc_id == "") {
-        return res
-          .status(400)
-          .json({
-            message: "Doc_id is mandatory",
-            statusCode: 400,
-            success: false,
-          });
+        return res.status(400).json({
+          message: "Doc_id is mandatory",
+          statusCode: 400,
+          success: false,
+        });
       }
       if (slide == 2 || slide == 3 || doc_id) {
         findData = await dynamoDBClient.send(
@@ -143,13 +141,13 @@ class UserServices {
             "#profile_photo": "profile_photo",
             "#name": "name",
             "#dob": "dob",
-            "#updated_at": "updated_at"
+            "#updated_at": "updated_at",
           },
           ExpressionAttributeValues: {
             ":profile_photo": { S: profile_photo },
             ":name": { S: name || findData?.Items[0]?.name?.S },
             ":dob": { S: dob || findData?.Items[0]?.dob?.S },
-            ":updated_at": { S: new Date().toISOString() }
+            ":updated_at": { S: new Date().toISOString() },
           },
         };
         await dynamoDBClient.send(new UpdateItemCommand(params));
@@ -157,7 +155,7 @@ class UserServices {
           message: "User data updated successfully",
           statusCode: 200,
           success: true,
-          data: { id: doc_id }
+          data: { id: doc_id },
         });
       }
 
@@ -168,23 +166,19 @@ class UserServices {
         ) {
           if (slide == 2 && user_type == "vendor") {
             if (!warehouse_addresses || warehouse_addresses?.length == 0) {
-              return res
-                .status(400)
-                .json({
-                  message: "Atleast one warehouse is mandatory",
-                  statusCode: 400,
-                  success: false,
-                });
+              return res.status(400).json({
+                message: "Atleast one warehouse is mandatory",
+                statusCode: 400,
+                success: false,
+              });
             }
           } else if (slide == 2 && user_type == "seller") {
             if (!outlet_addresses || outlet_addresses?.length == 0) {
-              return res
-                .status(400)
-                .json({
-                  message: "Atleast one outlet_addresses is mandatory",
-                  statusCode: 400,
-                  success: false,
-                });
+              return res.status(400).json({
+                message: "Atleast one outlet_addresses is mandatory",
+                statusCode: 400,
+                success: false,
+              });
             }
           }
           const params = {
@@ -202,7 +196,7 @@ class UserServices {
               "#po_box": "po_box",
               "#warehouse_addresses": "warehouse_addresses",
               "#outlet_addresses": "outlet_addresses",
-              "#updated_at": "updated_at"
+              "#updated_at": "updated_at",
             },
             ExpressionAttributeValues: {
               ":company_name": {
@@ -255,7 +249,7 @@ class UserServices {
                   findData?.Items[0]?.outlet_addresses?.L ||
                   [],
               },
-              ":updated_at": { S: new Date().toISOString() }
+              ":updated_at": { S: new Date().toISOString() },
             },
           };
           // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_addresses",outlet_addresses)
@@ -264,7 +258,7 @@ class UserServices {
             message: "User data updated successfully",
             statusCode: 200,
             success: true,
-            data: { id: doc_id }
+            data: { id: doc_id },
           });
         } else if (user_type == "employee" && slide == 2) {
           // console.log(req.files, "req.filesssss employee");
@@ -305,7 +299,7 @@ class UserServices {
             message: "User data updated successfully",
             statusCode: 200,
             success: true,
-            data: { id: doc_id }
+            data: { id: doc_id },
           });
         } else {
           return res.status(400).json({
@@ -385,7 +379,7 @@ class UserServices {
               "#iban": "iban",
               "#emirate_id_pic": "emirate_id_pic",
               "#updated_at": "updated_at",
-              "#term_and_condition": "term_and_condition"
+              "#term_and_condition": "term_and_condition",
             },
             ExpressionAttributeValues: {
               ":trade_license": { S: trade_license },
@@ -396,7 +390,7 @@ class UserServices {
               ":iban": { S: iban || "" },
               ":emirate_id_pic": { S: emirate_id_pic || "" },
               ":updated_at": { S: new Date().toISOString() },
-              ":term_and_condition": { S: term_and_condition }
+              ":term_and_condition": { S: term_and_condition },
             },
           };
           console.log(params, "apra slide 3");
@@ -405,7 +399,7 @@ class UserServices {
             message: "User data updated successfully",
             statusCode: 200,
             success: true,
-            data: { id: doc_id }
+            data: { id: doc_id },
           });
         } else {
           return res.status(400).json({
@@ -422,13 +416,11 @@ class UserServices {
             req.files?.driver_image?.length == 0 ||
             req.files?.driving_license?.length == 0)
         ) {
-          return res
-            .status(400)
-            .json({
-              message: "Atleast one driver_details required",
-              statusCode: 400,
-              success: false,
-            });
+          return res.status(400).json({
+            message: "Atleast one driver_details required",
+            statusCode: 400,
+            success: false,
+          });
         }
         // console.log(
         //   vehicle_details_array,
@@ -437,13 +429,11 @@ class UserServices {
         // );
 
         if (vehicle_details_array?.length == 0) {
-          return res
-            .status(400)
-            .json({
-              message: "Atleast one vehicle details required",
-              statusCode: 400,
-              success: false,
-            });
+          return res.status(400).json({
+            message: "Atleast one vehicle details required",
+            statusCode: 400,
+            success: false,
+          });
         }
         let driver_details_array = db_driver_details_array?.length
           ? [...db_driver_details_array]
@@ -469,7 +459,7 @@ class UserServices {
           ExpressionAttributeNames: {
             "#vehicle_details_array": "vehicle_details_array",
             "#driver_details_array": "driver_details_array",
-            "#updated_at": "updated_at"
+            "#updated_at": "updated_at",
           },
           ExpressionAttributeValues: {
             ":vehicle_details_array": {
@@ -496,7 +486,7 @@ class UserServices {
                 findData?.Items[0]?.driver_details_array?.L ||
                 [],
             },
-            ":updated_at": { S: new Date().toISOString() }
+            ":updated_at": { S: new Date().toISOString() },
           },
         };
         // console.log(
@@ -510,7 +500,7 @@ class UserServices {
           message: "User data updated successfully",
           statusCode: 200,
           success: true,
-          data: { id: doc_id }
+          data: { id: doc_id },
         });
       }
       // console.log("before email check ")
@@ -586,7 +576,7 @@ class UserServices {
           country: { S: country || "" },
           password: { S: hashPassword },
           created_at: { S: new Date().toISOString() },
-          updated_at: { S: new Date().toISOString() }
+          updated_at: { S: new Date().toISOString() },
         },
       };
 
@@ -598,14 +588,12 @@ class UserServices {
         name,
       };
       sendPasswordViaEmailOf(obj);
-       return res
-        .status(201)
-        .json({
-          message: "User register successfully",
-          statusCode: 201,
-          success: true,
-          data: { id }
-        });
+      return res.status(201).json({
+        message: "User register successfully",
+        statusCode: 201,
+        success: true,
+        data: { id },
+      });
     } catch (err) {
       try {
         if (req.files) {
@@ -680,14 +668,12 @@ class UserServices {
       let rawData = simplifyDynamoDBResponse(find?.Items[0]);
       // console.log(rawData, "rawDataaaaaaaaaaaaa")
       delete rawData?.password;
-      return res
-        .status(200)
-        .json({
-          message: "Get data",
-          data: rawData,
-          statusCode: 200,
-          success: true,
-        });
+      return res.status(200).json({
+        message: "Get data",
+        data: rawData,
+        statusCode: 200,
+        success: true,
+      });
     } catch (err) {
       console.error(err, "erroror");
       return res
@@ -709,7 +695,7 @@ class UserServices {
       let currentTime = Date.now();
       currentTime = currentTime?.toString();
       let get = await pinePointServices(req.query.email, otp);
-      console.log(get,"GEtgge")
+      console.log(get, "GEtgge");
 
       if (get) {
         const find = await dynamoDBClient.send(
@@ -756,22 +742,17 @@ class UserServices {
           };
           let Data = await dynamoDBClient.send(new PutItemCommand(params));
         }
-        return res
-          .status(200)
-          .json({
-            message: "Otp send to email for verify",
-            statusCode: 200,
-            success: true,
-          });
+        return res.status(200).json({
+          message: "Otp send to email for verify",
+          statusCode: 200,
+          success: true,
+        });
       } else {
-        return res
-          .status(400)
-          .json({
-            message:
-              "Not able to send otp on email , kindly do after some time",
-            statusCode: 400,
-            success: false,
-          });
+        return res.status(400).json({
+          message: "Not able to send otp on email , kindly do after some time",
+          statusCode: 400,
+          success: false,
+        });
       }
     } catch (err) {
       console.error(err, "Eeee");
@@ -801,25 +782,21 @@ class UserServices {
         const timeDifference = nowTime - creationTime; // Difference in milliseconds
         const tenMinutes = 600000; //10 minutes in milliseconds
         if (timeDifference > tenMinutes) {
-          return res
-            .status(400)
-            .json({
-              message: "Otp is expired",
-              statusCode: 400,
-              success: false,
-            });
+          return res.status(400).json({
+            message: "Otp is expired",
+            statusCode: 400,
+            success: false,
+          });
         } else if (otpDb != otp) {
           return res
             .status(400)
             .json({ message: "In-valid otp", statusCode: 400, success: false });
         } else {
-          return res
-            .status(200)
-            .json({
-              message: "Email verified successfully",
-              statusCode: 200,
-              success: true,
-            });
+          return res.status(200).json({
+            message: "Email verified successfully",
+            statusCode: 200,
+            success: true,
+          });
         }
         // console.log("otpDb", "as",
         //   creationTime,
@@ -911,13 +888,11 @@ class UserServices {
         // console.log("ddddddddddddd")
         let get = await sendOtpForLogin(email, otp);
         if (get == false) {
-          return res
-            .status(400)
-            .json({
-              message: "internal server error",
-              statusCode: 400,
-              success: false,
-            });
+          return res.status(400).json({
+            message: "internal server error",
+            statusCode: 400,
+            success: false,
+          });
         }
         const find = await dynamoDBClient.send(
           new ScanCommand({
@@ -965,13 +940,11 @@ class UserServices {
           let Data = await dynamoDBClient.send(new PutItemCommand(params));
           console.log(Data, "dayayayaya");
         }
-        return res
-          .status(200)
-          .json({
-            message: "Otp sent to registered email",
-            statusCode: 200,
-            success: true,
-          });
+        return res.status(200).json({
+          message: "Otp sent to registered email",
+          statusCode: 200,
+          success: true,
+        });
 
         let obj = {
           name: findData?.Items[0]?.name?.S,
@@ -1050,30 +1023,24 @@ class UserServices {
           const timeDifference = nowTime - creationTime; // Difference in milliseconds
           const tenMinutes = 600000; //10 minutes in milliseconds
           if (timeDifference > tenMinutes) {
-            return res
-              .status(400)
-              .json({
-                message: "Otp is expired",
-                statusCode: 400,
-                success: false,
-              });
-          } else if (otpDb != otp) {
-            return res
-              .status(400)
-              .json({
-                message: "In-valid otp",
-                statusCode: 400,
-                success: false,
-              });
-          }
-        } else {
-          return res
-            .status(400)
-            .json({
-              message: "No data found",
+            return res.status(400).json({
+              message: "Otp is expired",
               statusCode: 400,
               success: false,
             });
+          } else if (otpDb != otp) {
+            return res.status(400).json({
+              message: "In-valid otp",
+              statusCode: 400,
+              success: false,
+            });
+          }
+        } else {
+          return res.status(400).json({
+            message: "No data found",
+            statusCode: 400,
+            success: false,
+          });
         }
         let obj = {
           name: findData?.Items[0]?.name?.S,
@@ -1119,153 +1086,76 @@ class UserServices {
     }
   }
 
-  async addSubUser(req, res) {
+  async role_id_assign_to_user(req, res) {
     try {
-      let { email, phone, name, country, doc_id, role } = req.body
-      role = 'eeeeeeeeee123123123123'
-      // let findRoleExist = await dynamoDBClient.send(
-      //   new QueryCommand({
-      //     TableName: "role",
-      //     KeyConditionExpression: "id= :id",
-      //     ExpressionAttributeValues: {
-      //       ":id": { S: id},
-      //     },
-      //   })
-      // );
-      // if (findRoleExist && findRoleExist?.Count == 0) {
-      //   return res.status(404).json({ message: "Role not found", statuscode: 404, success: false })
-      // }
-
-      if (doc_id) {
-        const findEmailExist = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "users",
-            // IndexName: "email",
-            KeyConditionExpression: "id= :id",
-            // ProjectionExpression: "email, phone, id",
-            ExpressionAttributeValues: {
-              ":id": { S: doc_id },
-            },
-          })
-        );
-        if (findEmailExist && findEmailExist?.Count == 0) {
-          return res.status(404).json({ message: "Data not found", statuscode: 404, success: false })
-        }
-        // console.log(findEmailExist ?.Items[0]?.,"aa")
-        const params = {
-          TableName: "users",
-          Key: { id: { S: doc_id } },
-          UpdateExpression:
-            "SET #name = :name, #phone = :phone, #role =:role, #country= :country , #updated_at=:updated_at",
-          ExpressionAttributeNames: {
-            "#name": "name",
-            "#phone": "phone",
-            "#role": "role",
-            "#country": "country",
-            "#updated_at": "updated_at"
-          },
-          ExpressionAttributeValues: {
-            ":name": { S: name || findEmailExist?.Items[0]?.name?.S },
-            ":phone": { S: phone || findEmailExist?.Items[0]?.phone?.S || "" },
-            ":role": { S: role || findEmailExist?.Items[0]?.role?.S || "" },
-            ":country": { S: country || findEmailExist?.Items[0]?.country?.S || "" },
-            ":updated_at": { S: new Date().toISOString() }
-          },
-        };
-        console.log(params, "apramnsnssnsm");
-        await dynamoDBClient.send(new UpdateItemCommand(params));
-        return res.status(200).json({ message: "User's details update successfully", statusCode: 200, success: true })
-      }
-
-      const findEmailExist = await dynamoDBClient.send(
+      let { user_id, role_id } = req.body;
+      let findRoleExist = await dynamoDBClient.send(
         new QueryCommand({
-          TableName: "users",
-          IndexName: "email", // Replace with your GSI name for email
-          KeyConditionExpression: "email = :email",
-          ProjectionExpression: "email, phone, id",
+          TableName: "role",
+          KeyConditionExpression: "id= :id",
           ExpressionAttributeValues: {
-            ":email": { S: email },
+            ":id": { S: role_id },
           },
         })
       );
-      if (findEmailExist.Count > 0) {
-        return res.status(400).json({
+      if (findRoleExist && findRoleExist?.Count == 0) {
+        return res.status(404).json({
+          message: "Role_id not found",
+          statuscode: 404,
           success: false,
-          message: "Email already exists!",
-          statusCode: 400,
         });
       }
-      const findPhoneExist = await dynamoDBClient.send(
+      const findExist = await dynamoDBClient.send(
         new QueryCommand({
           TableName: "users",
-          IndexName: "phone", // Replace with your GSI name for phone like phone-index
-          KeyConditionExpression: "phone = :phone",
-          ProjectionExpression: "email, phone, id",
+          // IndexName: "email",
+          KeyConditionExpression: "id= :id",
+          // ProjectionExpression: "email, phone, id",
           ExpressionAttributeValues: {
-            ":phone": { S: phone },
+            ":id": { S: user_id },
           },
         })
       );
-      if (findPhoneExist.Count > 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Phone number already exists!",
-          statusCode: 400,
-        });
+      if (findExist && findExist?.Count == 0) {
+        return res
+          .status(404)
+          .json({ message: "Data not found", statuscode: 404, success: false });
       }
-      // console.log(req.userData, "aaaaaassssdffgklsdj", "findUserExist", "fnd", "findUserExist?.Items", "asdsd")
-      let user_type = 'vendor_user'
-      if (req.userData?.user_type == 'logistic') {
-        user_type = 'logistic_user'
-      } else if (req.userData?.user_type == 'seller') {
-        user_type = 'seller_user'
-      }
-
-      let salt = environmentVars.salt;
-      let randomPassword = encryptStringWithKey(
-        email.toLowerCase()?.slice(0, 6)
-      );
-      // console.log(randomPassword, "randomPasswordrandomPassword");
-      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
-
-      let id = uuidv4();
-      id = id?.replace(/-/g, "");
-
+      // console.log(findEmailExist ?.Items[0]?.,"aa")
       const params = {
         TableName: "users",
-        Item: {
-          id: { S: id },
-          name: { S: name || "" },
-          email: { S: email || "" },
-          phone: { S: phone || "" },
-          user_type: { S: user_type },
-          country: { S: country || "" },
-          password: { S: hashPassword },
-          created_by: { S: req.userData?.id },
-          role: { S: role || "" },
-          created_at: { S: new Date().toISOString() },
-          updated_at: { S: new Date().toISOString() }
+        Key: { id: { S: user_id } },
+        UpdateExpression: "SET #role_id = :role_id, updated_at = :updated_at",
+        ExpressionAttributeNames: {
+          "#role_id": "role_id",
+          "#updated_at": "updated_at",
+        },
+        ExpressionAttributeValues: {
+          ":role_id": {
+            S: role_id || findEmailExist?.Items[0]?.role_id?.S || "",
+          },
+          ":updated_at": { S: new Date().toISOString() },
         },
       };
-
+      console.log(params, "apramnsnssnsm");
+      await dynamoDBClient.send(new UpdateItemCommand(params));
+      return res.status(200).json({
+        message: "User's role update successfully",
+        statusCode: 200,
+        success: true,
+      });
       // console.log("user_type", "docccleint", params);
-      let userData = await dynamoDBClient.send(new PutItemCommand(params));
-      let obj = {
-        email,
-        randomPassword,
-        name,
-      };
-      sendPasswordViaEmailOf(obj)
-      res.status(201).json({ message: "User added successfully", statusCode: 200, success: true })
     } catch (err) {
-      console.error(err, "error ")
-      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+      console.error(err, "error ");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
 
   async get_all_user(req, res) {
     try {
-      let { page, limit, lastEvaluatedKey, created_at } = req.query
+      let { page, limit, lastEvaluatedKey, created_at } = req.query;
       page = parseInt(page) || 1;
       limit = parseInt(limit) || 10;
       const offset = (page - 1) * limit;
@@ -1286,34 +1176,34 @@ class UserServices {
         // If offset is greater than 0, set ExclusiveStartKey to start from the correct position
         if (lastEvaluatedKey) {
           queryParams.ExclusiveStartKey = {
-            "id": {
-              "S": lastEvaluatedKey
+            id: {
+              S: lastEvaluatedKey,
             },
-            "created_by": {
-              "S": req.userData.id //"adab625867164c819584ee15e94c887c"
+            created_by: {
+              S: req.userData.id, //"adab625867164c819584ee15e94c887c"
             },
-            "created_at": {
-              "S": created_at
-            }
-          }
+            created_at: {
+              S: created_at,
+            },
+          };
         }
       }
       // console.log(queryParams, "asdasdadadsasd")
       const data = await dynamoDBClient.send(new QueryCommand(queryParams));
       let nextToken = null;
       if (data?.LastEvaluatedKey) {
-        let dataFetch = await simplifyDynamoDBResponse(data.LastEvaluatedKey)
+        let dataFetch = await simplifyDynamoDBResponse(data.LastEvaluatedKey);
         nextToken = dataFetch;
       }
 
-      let arr = []
+      let arr = [];
       for (let el of data?.Items) {
         let rawData = await simplifyDynamoDBResponse(el);
-        delete rawData.password
-        arr.push(rawData)
+        delete rawData.password;
+        arr.push(rawData);
       }
 
-      //fetch total count here 
+      //fetch total count here
       const queryParams2 = {
         TableName: "users",
         IndexName: "created_by-index",
@@ -1324,24 +1214,31 @@ class UserServices {
         Select: "COUNT", // Select COUNT to retrieve the count of matching items
       };
 
-      const countResponse = await dynamoDBClient.send(new QueryCommand(queryParams2));
+      const countResponse = await dynamoDBClient.send(
+        new QueryCommand(queryParams2)
+      );
       const totalCount = countResponse?.Count || 0; // Get the count of matching items
 
       res.status(200).json({
-        message: "Fetch User data", statusCode: 200, success: true, data: arr, nextPageToken: nextToken,
-        pagination: { totalCount, page, limit }
-      })
-      return
+        message: "Fetch User data",
+        statusCode: 200,
+        success: true,
+        data: arr,
+        nextPageToken: nextToken,
+        pagination: { totalCount, page, limit },
+      });
+      return;
     } catch (err) {
-      console.error(err, "error ")
-      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+      console.error(err, "error ");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
 
-
   async delete_user(req, res) {
     try {
-      let { id } = req.query
+      let { id } = req.query;
       const data = await dynamoDBClient.send(
         new QueryCommand({
           TableName: "users",
@@ -1354,25 +1251,38 @@ class UserServices {
         })
       );
       if (data?.Count == 0) {
-        return res.status(400).json({ message: "User not found or deleted already", statusCode: 400, success: false })
-
+        return res.status(400).json({
+          message: "User not found or deleted already",
+          statusCode: 400,
+          success: false,
+        });
       }
       if (data?.Items[0]?.created_by?.S != req.userData?.id) {
-        return res.status(400).json({ message: "Not authorise to perform this action", statusCode: 400, success: false })
+        return res.status(400).json({
+          message: "Not authorise to perform this action",
+          statusCode: 400,
+          success: false,
+        });
       }
       const params = {
-        TableName: 'users',
+        TableName: "users",
         Key: {
-          id: { S: id }// Replace with your primary key attributes
-        }
-      }
+          id: { S: id }, // Replace with your primary key attributes
+        },
+      };
       const command = new DeleteItemCommand(params);
       // console.log(command, "command command ")
       const response = await dynamoDBClient.send(command);
       // console.log(response, "response response")
-      return res.status(200).json({ message: "User deleted successfully", statusCode: 200, success: true })
+      return res.status(200).json({
+        message: "User deleted successfully",
+        statusCode: 200,
+        success: true,
+      });
     } catch (err) {
-      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
 
@@ -1389,31 +1299,32 @@ class UserServices {
           },
         })
       );
-      
+
       const params = {
-        TableName: 'users',
+        TableName: "users",
         Key: {
-          id: { S: id }// Replace with your primary key attributes
-        }
-      }
+          id: { S: id }, // Replace with your primary key attributes
+        },
+      };
       const command = new DeleteItemCommand(params);
       // console.log(command, "command command ")
       const response = await dynamoDBClient.send(command);
       // console.log(response, "response response")
-      return res.status(200).json({ message: "User deleted successfully", statusCode: 200, success: true })
+      return res.status(200).json({
+        message: "User deleted successfully",
+        statusCode: 200,
+        success: true,
+      });
     } catch (err) {
-      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
 
-
-
-
-
-
   async super_admin(req, res) {
     try {
-      let { email, phone, name, user_type } = req.body
+      let { email, phone, name, user_type } = req.body;
       const findEmailExist = await dynamoDBClient.send(
         new QueryCommand({
           TableName: "users",
@@ -1479,7 +1390,7 @@ class UserServices {
           // country: { S: country || "" },
           password: { S: hashPassword },
           created_at: { S: new Date().toISOString() },
-          updated_at: { S: new Date().toISOString() }
+          updated_at: { S: new Date().toISOString() },
         },
       };
       console.log("docClient", "docccleint", params);
@@ -1490,37 +1401,17 @@ class UserServices {
         name,
       };
       sendPasswordViaEmailOf(obj);
-      return res.status(201).json({ message: "Admin register successfully", statusCode: 201, success: false })
+      return res.status(201).json({
+        message: "Admin register successfully",
+        statusCode: 201,
+        success: false,
+      });
     } catch (err) {
-      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   async sendForgotPasswordEmail(req, res) {
     try {
@@ -1567,7 +1458,6 @@ class UserServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
 
   async verify_otp_data(req, res) {
     try {
@@ -1619,7 +1509,6 @@ class UserServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
 
   async resetUserPassword(req, res) {
     try {
@@ -1678,7 +1567,6 @@ class UserServices {
     }
   }
 
-
   async getAllUSerData(req, res) {
     try {
       let fetchArray = await UserModel.findAll();
@@ -1695,7 +1583,6 @@ class UserServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
 
   async updateUserDetails(id, data, res) {
     try {
@@ -1714,8 +1601,6 @@ class UserServices {
       return res.status(500).json({ success: false, message: err?.message });
     }
   }
-
-
 
   async sendEmailUserToAnother(req, res) {
     try {
@@ -1773,8 +1658,6 @@ class UserServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
-
 }
 
 const UserServicesObj = new UserServices();

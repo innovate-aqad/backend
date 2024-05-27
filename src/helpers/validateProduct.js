@@ -2,37 +2,54 @@ import Joi from "joi";
 import jwt from "jsonwebtoken";
 
 export const addProductchema = Joi.object({
-  title: Joi.string()
+  Universal_standard_code: Joi.string()
     .min(3)
-    .max(50)
+    .max(100)
     .trim()
     .required()
-    .label("title"),
-  sku: Joi.string().min(3)
-    .max(50)
-    .required()
-    .label("sku"),
-  summary: Joi.string()
-    .min(10)
-    .max(1000)
-    .trim()
-    .required()
-    .label("Summary"),
+    .label("Universal_standard_code"),
+  summary: Joi.string().min(10).max(1000).trim().required().label("Summary"),
+  brand: Joi.string().min(10).max(50).trim().required().label("Brand"),
   description: Joi.string()
     .min(10)
     .max(3000)
     .trim()
     .required()
     .label("description"),
-  category_id: Joi.string()
+  category_id: Joi.string().trim().required().label("category_id"),
+  sub_category_id: Joi.string().trim().required().label("sub_category_id"),
+  shape_id: Joi.string()
+    .trim()
+    // .required()
+    .label("shape"),
+  material_id: Joi.string()
+    .trim()
+    // .required()
+    .label("material_id"),
+  gender: Joi.array()
+    .items(Joi.string().trim())
+    // .required()
+    .label("Gender"),
+  weight_group_id: Joi.string().trim(),
+  // .required(),
+  size_id: Joi.string().trim(),
+  // .required(),
+});
+
+export const addProductVariantschema = Joi.object({
+  title: Joi.string().min(3).max(50).trim().required().label("title"),
+  sku: Joi.string().min(3).max(50).required().label("sku"),
+  summary: Joi.string().min(10).max(1000).trim().required().label("Summary"),
+  description: Joi.string()
+    .min(10)
+    .max(3000)
     .trim()
     .required()
-    .label("category_id"),
-  sub_category_id: Joi.string()
-    .trim()
-    .required()
-    .label("sub_category_id"),
-  minimum_order_quantity: Joi.number().positive()
+    .label("description"),
+  category_id: Joi.string().trim().required().label("category_id"),
+  sub_category_id: Joi.string().trim().required().label("sub_category_id"),
+  minimum_order_quantity: Joi.number()
+    .positive()
     .required()
     .label("minimum_order_quantity"),
   shape_id: Joi.string()
@@ -47,85 +64,46 @@ export const addProductchema = Joi.object({
     .items(Joi.string().trim())
     // .required()
     .label("Gender"),
-  weight_group_id: Joi.string()
-    .trim(),
+  weight_group_id: Joi.string().trim(),
   // .required(),
-  size_id: Joi.string()
-    .trim(),
+  size_id: Joi.string().trim(),
   // .required(),
 });
 
 export const editProductchema = Joi.object({
-  title: Joi.string()
-    .min(3)
-    .max(50)
-    .trim()
-    .label("Title"),
-  sku: Joi.string()
-    .trim()
-    .label("sku"),
-  summary: Joi.string()
-    .min(10)
-    .max(125)
-    .trim()
-    .label("Summary"),
-  product_id: Joi.string()
-    .trim()
-    .required()
-    .label("product_id"),
-  description: Joi.string()
-    .min(10)
-    .max(325)
-    .trim()
-    .label("description"),
-  gender: Joi.array()
-    .items(Joi.string().trim())
-    .label("Gender"),
+  title: Joi.string().min(3).max(50).trim().label("Title"),
+  sku: Joi.string().trim().label("sku"),
+  summary: Joi.string().min(10).max(125).trim().label("Summary"),
+  product_id: Joi.string().trim().required().label("product_id"),
+  description: Joi.string().min(10).max(325).trim().label("description"),
+  gender: Joi.array().items(Joi.string().trim()).label("Gender"),
 });
 
 export const addProductVariantchema = Joi.object({
-  product_id: Joi.string()
-    .required()
-    .label("Product id"),
-  color_id: Joi.string()
-    .required()
-    .label("color id"),
+  product_id: Joi.string().required().label("Product id"),
+  color_id: Joi.string().required().label("color id"),
 });
 
 export const editProductVariantchema = Joi.object({
-  variant_id: Joi.string()
-    .required()
-    .label("variant_id"),
+  variant_id: Joi.string().required().label("variant_id"),
 });
 
 export const addProductVariantImageschema = Joi.object({
-  product_id: Joi.string()
-    .required()
-    .label("Product id"),
-  variant_id: Joi.string()
-    .required()
-    .label("Variant id"),
+  product_id: Joi.string().required().label("Product id"),
+  variant_id: Joi.string().required().label("Variant id"),
 });
 
 export const editProductVariantImageschema = Joi.object({
-  variantImageName: Joi.string()
-    .required()
-    .label("varaintImageName"),
-  variant_id: Joi.string()
-    .required()
-    .label("Variant id"),
+  variantImageName: Joi.string().required().label("varaintImageName"),
+  variant_id: Joi.string().required().label("Variant id"),
 });
 
 export const addProductVariantStockschema = Joi.object({
   // product_id: Joi.string()
   //   .required()
   //   .label("product_id"),
-  variant_id: Joi.string()
-    .required()
-    .label("variant_id"),
-  country_code: Joi.string()
-    .required()
-    .label("country_code"),
+  variant_id: Joi.string().required().label("variant_id"),
+  country_code: Joi.string().required().label("country_code"),
   stock: Joi.number()
     .required()
     .custom((value, helpers) => {
@@ -138,12 +116,8 @@ export const addProductVariantStockschema = Joi.object({
 });
 
 export const addProductCountryschema = Joi.object({
-  variant_id: Joi.string()
-    .required()
-    .label("variant_id"),
-  country_code: Joi.string()
-    .required()
-    .label("country_code"),
+  variant_id: Joi.string().required().label("variant_id"),
+  country_code: Joi.string().required().label("country_code"),
   price: Joi.string()
     .required()
     .custom((value, helpers) => {
@@ -177,9 +151,7 @@ export const addProductCountryschema = Joi.object({
   // currency_symbol: Joi.string()
   //   // .required()
   //   .label("currency_symbol"),
-  status: Joi.string()
-    .valid("active", "inactive")
-    .label("status"),
+  status: Joi.string().valid("active", "inactive").label("status"),
   stock: Joi.number()
     .required()
     .custom((value, helpers) => {
@@ -192,24 +164,14 @@ export const addProductCountryschema = Joi.object({
 });
 
 export const addProductCountryOnlyschema = Joi.object({
-  variant_id: Joi.string()
-    .required()
-    .label("variant_id"),
+  variant_id: Joi.string().required().label("variant_id"),
   country_data: Joi.array()
     .items(
       Joi.object({
-        country_code: Joi.string()
-          .required()
-          .label("country_code"),
-        country: Joi.string()
-          .required()
-          .label("country"),
-        currency_symbol: Joi.string()
-          .required()
-          .label("currency_symbol"),
-        status: Joi.string()
-          .valid("active", "inactive")
-          .label("status"),
+        country_code: Joi.string().required().label("country_code"),
+        country: Joi.string().required().label("country"),
+        currency_symbol: Joi.string().required().label("currency_symbol"),
+        status: Joi.string().valid("active", "inactive").label("status"),
       })
     )
     .min(1)
@@ -218,13 +180,7 @@ export const addProductCountryOnlyschema = Joi.object({
 });
 
 export const editVariantCountryStatusschema = Joi.object({
-  variant_id: Joi.string()
-    .required()
-    .label("variant_id"),
-  country_code: Joi.string()
-    .required()
-    .label("country_code"),
-  status: Joi.string()
-    .valid("active", "inactive")
-    .label("status"),
+  variant_id: Joi.string().required().label("variant_id"),
+  country_code: Joi.string().required().label("country_code"),
+  status: Joi.string().valid("active", "inactive").label("status"),
 });

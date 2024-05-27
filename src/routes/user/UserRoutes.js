@@ -60,9 +60,12 @@ UserRoutes.get("/get_data", authorize ,UserControllerObj.get_data);//logged in d
 UserRoutes.post("/add_sub_user", authorize ,UserControllerObj.add_sub_user);//vendor , seller, logistic ->sub_user
 UserRoutes.get("/get_sub_user", authorize ,UserControllerObj.get_sub_user);
 UserRoutes.delete("/delete_sub_user", authorize ,UserControllerObj.delete_sub_user);
+UserRoutes.put("/role_id_to_aqad_employee ", authorize ,UserControllerObj.add_sub_user);//assign role_id to aqad_employee 
 
 //get all vendor or logistic or seller fetch with its sub_user
 // UserRoutes.get("/fetch_all_user",authorize,UserControllerObj)
+
+
 
 
 

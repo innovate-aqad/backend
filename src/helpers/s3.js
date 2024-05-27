@@ -15,33 +15,30 @@ import multer from "multer";
 // // Create DynamoDB instance
 // // const dynamodb = new AWS.DynamoDB.DocumentClient();
 
-
-// new version 
-import { S3Client ,PutObjectCommand} from "@aws-sdk/client-s3";
+// new version
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 // import { fromIni } from "@aws-sdk/credential-provider-ini";
 
 // Create S3 client
 const s3 = new S3Client({
   region: process.env.Aws_region,
-  credentials: { 
+  credentials: {
     accessKeyId: process.env.Aws_accessKeyId,
-    secretAccessKey: process.env.Aws_secretAccessKey
-  }
+    secretAccessKey: process.env.Aws_secretAccessKey,
+  },
 });
 
 // Create DynamoDB DocumentClient
 const dynamodb = new DynamoDBClient({
   region: process.env.Aws_region,
-  credentials: { 
+  credentials: {
     accessKeyId: process.env.Aws_accessKeyId,
-    secretAccessKey: process.env.Aws_secretAccessKey
-  }
+    secretAccessKey: process.env.Aws_secretAccessKey,
+  },
 });
 
 // export { s3Client, dynamoDBClient };
-
-
 // export const upload = multer({ dest: 'uploads/' });
 
 const storage = multer.diskStorage({
@@ -49,8 +46,8 @@ const storage = multer.diskStorage({
     // console.log(req.body,"req.bodyyyyyyyyy")
 
     const { user_type } = req.body;
-    console.log(req.files, "imnulterrrrrrrrrrrrr")
-    console.log(req.body, "req bodddddddddy")
+    console.log(req.files, "imnulterrrrrrrrrrrrr");
+    console.log(req.body, "req bodddddddddy");
     let destination = "./uploads/";
     if (user_type == "vendor") {
       destination += "vendor/";
@@ -74,12 +71,26 @@ export const upload = multer({
   storage: storage,
 });
 
+//category-images add or edit
+const categoryStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    let destination = "./uploads/category";
+    cb(null, destination);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+export const uploadCategory = multer({
+  storage: categoryStorage,
+});
 
 //product add to upload folder
 const storageProductAdd = multer.diskStorage({
   destination: function (req, file, cb) {
     // console.log(er)
-    console.log(req.files,"111111@@@!@#!@#!@#!@#req.filesssss")
+    console.log(req.files, "111111@@@!@#!@#!@#!@#req.filesssss");
     let destination = "./uploads/vendor/product";
     cb(null, destination);
   },
@@ -91,8 +102,6 @@ const storageProductAdd = multer.diskStorage({
 export const uploadProduct = multer({
   storage: storageProductAdd,
 });
-
-
 
 // Function to upload image to S3
 export const uploadImageToS3 = async (fileName, filePath) => {
@@ -108,9 +117,9 @@ export const uploadImageToS3 = async (fileName, filePath) => {
     };
 
     // const data = await s3.upload(params).promise();
-        // Execute the PutObjectCommand
-        const command = new PutObjectCommand(params);
-        const response = await s3.send(command);
+    // Execute the PutObjectCommand
+    const command = new PutObjectCommand(params);
+    const response = await s3.send(command);
     console.log("File uploaded successfully:", response.ETag);
     return response;
   } catch (err) {
@@ -120,7 +129,10 @@ export const uploadImageToS3 = async (fileName, filePath) => {
 };
 
 // Function to delete a file from S3
-export const deleteImageFromS3 = async (fileName, bucketName = "aqad-documents") => {
+export const deleteImageFromS3 = async (
+  fileName,
+  bucketName = "aqad-documents"
+) => {
   try {
     const params = {
       Bucket: bucketName,
@@ -135,7 +147,6 @@ export const deleteImageFromS3 = async (fileName, bucketName = "aqad-documents")
     throw err;
   }
 };
-
 
 // Function to store metadata in DynamoDB//
 export const storeImageMetadata = async (fileName, imageUrl) => {

@@ -50,6 +50,33 @@ class ProductController {
           });
         }
       }
+      await ProductServicesObj.add(req, res);
+    } catch (err) {
+      console.error(err, "errrrrrrrrr");
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+
+  async addProductVariants(req, res) {
+    try {
+      const { id } = req.body;
+      // console.log(req.body, "req.bodyyyyyyyy =", req.userData, "req.userdata  AAA  TT ");
+      if (req.userData?.user_type != 'vendor' && req.userData?.user_type != 'super_admin' && req.userData?.user_type != 'employee') {
+        return res.status(400).json({ message: "Not auithorise to add product", statusCode: 400, success: false })
+      }
+      if (!id) {
+        let { error } = addProductchema.validate(req.body, options);
+        if (error) {
+          return res.status(400).json({
+            message: error.details[0]?.message,
+            success: false,
+            statusCode: 400,
+          });
+        }
+      }
       if (req.files && req.files?.product_image?.length) {
         let name = req.files?.product_image[0]?.filename;
         let size = req.files?.product_image[0].size;
@@ -98,7 +125,7 @@ class ProductController {
           });
         }
       }
-      await ProductServicesObj.add(req, res);
+      await ProductServicesObj.add_variant_data(req, res);
     } catch (err) {
       console.error(err, "errrrrrrrrr");
       return res
