@@ -13,10 +13,6 @@ ProductRoutes.post(
   "/add_product_variant",
   uploadProduct.fields([
     {
-      name: "product_image",
-      maxCount: 1,
-    },
-    {
       name: "product_images_arr",
       maxCount: 10,
     },

@@ -37,37 +37,16 @@ export const addProductchema = Joi.object({
 });
 
 export const addProductVariantschema = Joi.object({
-  title: Joi.string().min(3).max(50).trim().required().label("title"),
+  title: Joi.string().min(3).max(50).trim().optional().label("title"),
   sku: Joi.string().min(3).max(50).required().label("sku"),
-  summary: Joi.string().min(10).max(1000).trim().required().label("Summary"),
-  description: Joi.string()
-    .min(10)
-    .max(3000)
-    .trim()
-    .required()
-    .label("description"),
-  category_id: Joi.string().trim().required().label("category_id"),
-  sub_category_id: Joi.string().trim().required().label("sub_category_id"),
-  minimum_order_quantity: Joi.number()
+  price: Joi.number().positive().required().label("price"),
+  quantity: Joi.number().positive().required().label("quantity"),
+  compare_price_at: Joi.number()
     .positive()
     .required()
-    .label("minimum_order_quantity"),
-  shape_id: Joi.string()
-    .trim()
-    // .required()
-    .label("shape"),
-  material_id: Joi.string()
-    .trim()
-    // .required()
-    .label("material_id"),
-  gender: Joi.array()
-    .items(Joi.string().trim())
-    // .required()
-    .label("Gender"),
-  weight_group_id: Joi.string().trim(),
-  // .required(),
-  size_id: Joi.string().trim(),
-  // .required(),
+    .label("compare_price_at"),
+  country_code: Joi.string().min(3).max(10).required().label("country_code"),
+  currency: Joi.string().min(3).max(10).required().label("currency"),
 });
 
 export const editProductchema = Joi.object({

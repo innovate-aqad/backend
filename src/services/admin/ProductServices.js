@@ -300,62 +300,28 @@ class ProductServices {
         title,
         status,
         sku,
-        hmn,
         description,
-        brand,
-        category_id,
-        sub_category_id,
         id,
         variant_arr,
         warehouse_arr,
-        summary,
         shape_id,
         material_id,
         gender,
         weight_group_id,
-        size_id, price, compare_price_at, quantity, minimum_order_quantity
+        // size_id, price, compare_price_at, quantity, minimum_order_quantity
       } = req.body;
-      if (category_id) {
-        let findData = await dynamoDBClient.send(
-          new ScanCommand({
-            // new QueryCommand({
-            TableName: "category",
-            FilterExpression: "id = :id",
-            ExpressionAttributeValues: {
-              ":id": { S: category_id },
-            },
-          })
-        );
+        // const findData = await dynamoDBClient.send(
+        //   new QueryCommand({
+        //     TableName: "products",
+        //     IndexName: "title", // replace with your GSI title.a
+        //     KeyConditionExpression: "title = :title",
+        //     ExpressionAttributeValues: {
+        //       ":title": { S: title },
+        //     },
+        //   })
+        // );
         // console.log("findDatafindData22", findData?.Items[0]);
-        if (findData?.Count == 0) {
-          return res.status(400).json({
-            message: "Category not found",
-            statusCode: 400,
-            success: false,
-          });
-        }
-      }
-      if (sub_category_id) {
-        let findData = await dynamoDBClient.send(
-          new ScanCommand({
-            // new QueryCommand({
-            TableName: "sub_category",
-            FilterExpression: "id = :id",
-            ExpressionAttributeValues: {
-              ":id": { S: sub_category_id },
-            },
-          })
-        );
-        // console.log("findDatafindData22", findData?.Items[0]);
-        if (findData?.Count == 0) {
-          return res.status(400).json({
-            message: "Sub_Category not found",
-            statusCode: 400,
-            success: false,
-          });
-        }
-      }
-
+        
       if (id) {
         let findProductData = await dynamoDBClient.send(
           new ScanCommand({

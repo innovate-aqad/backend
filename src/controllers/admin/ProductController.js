@@ -77,29 +77,29 @@ class ProductController {
           });
         }
       }
-      if (req.files && req.files?.product_image?.length) {
-        let name = req.files?.product_image[0]?.filename;
-        let size = req.files?.product_image[0].size;
-        let get = await ImageFileCheck(name, 'product_add', size,);
-        if (get == "invalid file") {
-          return res.status(400).json({
-            message:
-              "Image must be png or jpeg or webp file and size must be less than 500 kb",
-            statusCode: 400,
-            success: false,
-          });
-        } else {
-          uploadImageToS3(name, req.files?.product_image[0]?.path);
-        }
-      } else {
-        if (!id) {
-          return res.status(400).json({
-            message: "Product_image is required",
-            statusCode: 400,
-            success: false,
-          });
-        }
-      }
+      // if (req.files && req.files?.product_image?.length) {
+      //   let name = req.files?.product_image[0]?.filename;
+      //   let size = req.files?.product_image[0].size;
+      //   let get = await ImageFileCheck(name, 'product_add', size,);
+      //   if (get == "invalid file") {
+      //     return res.status(400).json({
+      //       message:
+      //         "Image must be png or jpeg or webp file and size must be less than 500 kb",
+      //       statusCode: 400,
+      //       success: false,
+      //     });
+      //   } else {
+      //     uploadImageToS3(name, req.files?.product_image[0]?.path);
+      //   }
+      // } else {
+      //   if (!id) {
+      //     return res.status(400).json({
+      //       message: "Product_image is required",
+      //       statusCode: 400,
+      //       success: false,
+      //     });
+      //   }
+      // }
       if (req.files && req.files?.product_images_arr?.length) {
         for (let el of req.files?.product_images_arr) {
           let name = el?.filename;
