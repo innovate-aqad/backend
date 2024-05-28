@@ -133,7 +133,7 @@ class PermissionServices {
         let userData = await dynamoDBClient.send(new PutItemCommand(params));
         return res.status(201).json({
           data: id,
-          message: "Api endpoint add successfully",
+          message: "Permission add successfully",
           statusCode: 201,
           success: true,
         });

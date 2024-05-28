@@ -20,16 +20,16 @@ const dynamoDBClient = new DynamoDBClient({
   },
 });
 
-class ApiEndpointServices {
+class SiUnitServices {
   async addData(req, res) {
     try {
-      let { title, type, status, id, } = req.body;
+      let { title, status, id, } = req.body;
       title = title?.trim();
       const timestamp = new Date().toISOString();
       if (id) {
         let findData = await dynamoDBClient.send(
           new QueryCommand({
-            TableName: "api_endpoint",
+            TableName: "si_unit",
             KeyConditionExpression: "id = :id",
             ExpressionAttributeValues: {
               ":id": { S: id },
@@ -42,31 +42,28 @@ class ApiEndpointServices {
         }
         // console.log("findDatafindData22", findData?.Items[0])
         const params = {
-          TableName: "api_endpoint",
+          TableName: "si_unit",
           Key: { id: { S: id } },
-          UpdateExpression: "SET #title = :title, #status = :status, #type =:type, #updated_at= :updated_at",
+          UpdateExpression: "SET #title = :title, #status = :status,  #updated_at= :updated_at",
           ExpressionAttributeNames: {
             "#title": "title",
             "#status": "status",
-            "#type": "type",
             "#updated_at": "updated_at",
           },
           ExpressionAttributeValues: {
             ":title": { S: title || findData?.Items[0]?.title?.S || "" },
             ":status": { S: status || findData?.Items[0]?.status?.S || 'active' },
-            ":type": { S: type || findData?.Items[0]?.type?.S || '' },
             ":updated_at": { S: timestamp }
           },
         };
-        console.log(params, "paramsssss")
+        // console.log(params, "paramsssss")
         await dynamoDBClient.send(new UpdateItemCommand(params));
         return res.status(200).json({ message: "Data updated successfully", statusCode: 200, success: true });
-
       } else {
         const dataExist = await dynamoDBClient.send(
           new QueryCommand({
-            TableName: "api_endpoint",
-            IndexName: "title", // replace with your GSI name
+            TableName: "si_unit",
+            IndexName: "title",
             KeyConditionExpression: "title = :title",
             ExpressionAttributeValues: {
               ":title": { S: title },
@@ -75,7 +72,7 @@ class ApiEndpointServices {
         );
         if (dataExist?.Count) {
           return res.status(400).json({
-            message: "Api_endoint's title must be unique",
+            message: "Title must be unique",
             statusCode: 400,
             success: false,
           });
@@ -265,5 +262,5 @@ class ApiEndpointServices {
 
 }
 
-const ApiEndpointServicesObj = new ApiEndpointServices();
-export default ApiEndpointServicesObj;
+const SiUnitServicesObj = new SiUnitServices ();
+export default SiUnitServicesObj;
