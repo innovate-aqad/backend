@@ -30,13 +30,11 @@ class ProductServices {
         status,
         description,
         universal_standard_code,
-        brand,
+        brand_id,
         category_id,
         sub_category_id,
         id,
         summary,
-        size_id,
-        //  price, compare_price_at, quantity, minimum_order_quantity
       } = req.body;
       if (category_id) {
         let findData = await dynamoDBClient.send(
@@ -48,7 +46,6 @@ class ProductServices {
             },
           })
         );
-        // console.log("findDatafindData22", findData?.Items[0]);
         if (findData?.Count == 0) {
           return res.status(400).json({
             message: "Category not found",
@@ -67,7 +64,6 @@ class ProductServices {
             },
           })
         );
-        // console.log("findDatafindData22", findData?.Items[0]);
         if (findData?.Count == 0) {
           return res.status(400).json({
             message: "Sub_Category not found",
@@ -76,7 +72,24 @@ class ProductServices {
           });
         }
       }
-
+      if (brand_id) {
+        let findData = await dynamoDBClient.send(
+          new QueryCommand({
+            TableName: "brand",
+            KeyConditionExpression: "id = :id",
+            ExpressionAttributeValues: {
+              ":id": { S: brand_id }, // Assuming  is a string
+            },
+          })
+        );
+        if (findData?.Count == 0) {
+          return res.status(400).json({
+            message: "Brand not found",
+            statusCode: 400,
+            success: false,
+          });
+        }
+      }
       if (id) {
         let findProductData = await dynamoDBClient.send(
           new QueryCommand({
@@ -95,7 +108,30 @@ class ProductServices {
             success: false,
           });
         }
-        // ":warehouse_arr": {
+        //need to discuss  universal_standard_code will be editable or not.
+        // if(universal_standard_code){
+        //   const findSkuExist = await dynamoDBClient.send(
+        //     new QueryCommand({
+        //       TableName: "products",
+        //       IndexName: "universal_standard_code", // replace with your GSI title.a
+        //       KeyConditionExpression:
+        //       "universal_standard_code = :universal_standard_code",
+        //       FilterExpression: "id <> :id",
+        //       ExpressionAttributeValues: {
+        //         ":universal_standard_code": { S: universal_standard_code },
+        //         ":id": { S: id },
+        //       },
+        //     })
+        //   );
+        //   if (findSkuExist.Count > 0) {
+        //     return res.status(400).json({
+        //       success: false,
+        //       message: "Product's universal_standard_code must be unique",
+        //       statusCode: 400,
+        //     });
+        //   }
+        // }
+          // ":warehouse_arr": {
         //   L: warehouse_arr ? warehouse_arr.map((el) => ({
         //     M: {
         //       address: { S: el.address || "" },
@@ -103,15 +139,6 @@ class ProductServices {
         //     }
         //   })) : findProductData.Items[0].warehouse_arr.L
         // },
-        // ":variant_arr": {
-        //   L: variant_arr ? variant_arr.map((el) => ({
-        //     M: {
-        //       price: { S: el.price || "" },
-        //       country: { S: el.country || "" },
-        //     },
-        //   })) : findProductData.Items[0].variant_arr?.L || []
-        // },
-
         const params = {
           TableName: "products",
           Key: { id: { S: id } },
@@ -120,7 +147,7 @@ class ProductServices {
               #category_id = :category_id,
               #sub_category_id = :sub_category_id,
               #description = :description,
-              #brand = :brand,
+              #brand_id = :brand_id,
               #status = :status,
                #summary =  :summary
         `,
@@ -129,7 +156,7 @@ class ProductServices {
             "#category_id": "category_id",
             "#sub_category_id": "sub_category_id",
             "#description": "description",
-            "#brand": "brand",
+            "#brand_id": "brand_id",
             "#status": "status",
             "#summary": "summary",
           },
@@ -147,7 +174,7 @@ class ProductServices {
             ":description": {
               S: description || findProductData.Items[0].description.S,
             },
-           ":brand": { S: brand || findProductData.Items[0].brand?.S || "" },
+           ":brand_id": { S: brand_id || findProductData.Items[0].brand_id?.S || "" },
             ":status": {
               S: status || findProductData.Items[0].status?.S || "active",
             },
@@ -166,14 +193,14 @@ class ProductServices {
         const findExist = await dynamoDBClient.send(
           new QueryCommand({
             TableName: "products",
-            IndexName: "title", // replace with your GSI title.a
+            IndexName: "title", // replace with your GSI title
             KeyConditionExpression: "title = :title",
             ExpressionAttributeValues: {
               ":title": { S: title },
             },
           })
         );
-        // console.log(findExist, "findexistttt findexistttt findexistttt ")
+        console.log(findExist, "findexistttt findexistttt findexistttt ")
         if (findExist.Count > 0) {
           return res.status(400).json({
             success: false,
@@ -181,7 +208,7 @@ class ProductServices {
             statusCode: 400,
           });
         }
-        const findSkuExist = await dynamoDBClient.send(
+        const find_universal_standard_codeExist = await dynamoDBClient.send(
           new QueryCommand({
             TableName: "products",
             IndexName: "universal_standard_code", // replace with your GSI title.a
@@ -192,7 +219,8 @@ class ProductServices {
             },
           })
         );
-        if (findSkuExist.Count > 0) {
+        console.log(find_universal_standard_codeExist)
+        if (find_universal_standard_codeExist.Count > 0) {
           return res.status(400).json({
             success: false,
             message: "Product's universal_standard_code must be unique",
@@ -211,6 +239,7 @@ class ProductServices {
             description: { S: description||"" },
             summary: { S: summary ||""},
             universal_standard_code: { S: universal_standard_code || "" },
+            brand_id: { S: brand_id|| "" },
             // warehouse_arr: {
             //   L: warehouse_arr?.map((el) => ({
             //     M: {
@@ -221,10 +250,9 @@ class ProductServices {
             // },
             // },
             variantion_arr:{L:[] },
-            brand: { S: brand || "" },
+            brand_id: { S: brand_id || "" },
             created_by: { S: req.userData?.id || "" },
             status: { S: status || "active" },
-            size_id: { S: size_id || "" },
             created_at: { S: new Date().toISOString() },
             updated_at: { S: new Date().toISOString() },
           },
@@ -302,7 +330,7 @@ let obj = {title,price,compare_price_at,quantity,warehouse_arr,variation,minimum
             "#quantity": "quantity",
             "#warehouse_arr": "warehouse_arr",
             "#variation": "variation",
-            "#brand": "brand",
+            "#brand_id": "brand_id",
             "#minimum_order_quantity": "minimum_order_quantity",
             "#status": "status",
           },

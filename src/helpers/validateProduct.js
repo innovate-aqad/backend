@@ -6,9 +6,15 @@ export const addProductchema = Joi.object({
     .max(100)
     .trim()
     .required()
-    .label("Universal_standard_code"),
+    .label("universal_standard_code"),
+  title: Joi.string()
+    .min(3)
+    .max(100)
+    .trim()
+    .required()
+    .label("title"),
   summary: Joi.string().min(10).max(1000).trim().required().label("Summary"),
-  brand: Joi.string().min(10).max(50).trim().required().label("Brand"),
+  brand_id: Joi.string().min(10).max(90).trim().required().label("brand_id"),
   description: Joi.string()
     .min(10)
     .max(3000)

@@ -1064,7 +1064,7 @@ class UserServices {
             success: true,
             message: "Logged in successful",
             statusCode: 200,
-            data:{user_type:obj?.user_type}
+            data:{user_type:obj?.user_type,id:obj?.id}
           });
       } else {
         return res
