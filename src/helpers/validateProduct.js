@@ -1,8 +1,7 @@
 import Joi from "joi";
-import jwt from "jsonwebtoken";
 
 export const addProductchema = Joi.object({
-  Universal_standard_code: Joi.string()
+  universal_standard_code: Joi.string()
     .min(3)
     .max(100)
     .trim()
@@ -37,16 +36,23 @@ export const addProductchema = Joi.object({
 });
 
 export const addProductVariantschema = Joi.object({
-  title: Joi.string().min(3).max(50).trim().optional().label("title"),
+  title: Joi.string().min(3).max(50).trim().optional().allow("",null).label("title"),
   sku: Joi.string().min(3).max(50).required().label("sku"),
+  variation: Joi.string().min(3).max(50).required().label("variation"),
+  product_id: Joi.string().min(3).max(50).required().label("product_id"),
   price: Joi.number().positive().required().label("price"),
   quantity: Joi.number().positive().required().label("quantity"),
   compare_price_at: Joi.number()
     .positive()
     .required()
     .label("compare_price_at"),
-  country_code: Joi.string().min(3).max(10).required().label("country_code"),
-  currency: Joi.string().min(3).max(10).required().label("currency"),
+  country_code: Joi.string().min(3).max(10)
+  // .required()
+  .allow("",null)
+  .label("country_code"),
+  currency: Joi.string().min(3).max(10)
+  // .required()
+  .allow("",null).label("currency"),
 });
 
 export const editProductchema = Joi.object({

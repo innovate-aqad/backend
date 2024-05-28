@@ -7,7 +7,7 @@ import { uploadProduct } from "../../helpers/s3.js";
 
 const ProductRoutes = express.Router();
 
-ProductRoutes.post("/add", authorize, ProductControllerObj.addProduct);
+ProductRoutes.post("/add", authorize, ProductControllerObj.addProduct);//ain product
 
 ProductRoutes.post(
   "/add_product_variant",

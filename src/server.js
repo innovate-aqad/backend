@@ -84,6 +84,7 @@ app.use("/api/product", ProductRoutes);
 app.use("/api/category", CategoryRoutes);
 app.use("/api/sub_category", SubCategoryRoutes);
 app.use("/api/endpoint",ApiEndpointRoutes)
+app.use("/api/endpoint",ApiEndpointRoutes)
 app.use("/api/permission",PermissionRoutes)
 app.use("/api/brand", BrandRoutes);
 
