@@ -98,13 +98,16 @@ export const sendPasswordViaEmailOf = async (obj) => {
       Source: "aqadinnovate@gmail.com", // Replace with your sender email address
     };
     // Send email
-    let get = await AWS_SES.sendEmail(params, (err, data) => {
-      if (data) {
-        console.log("success data", data)
-      } else {
-        console.log("error ", err)
-      }
-    })
+    // let get = await AWS_SES.sendEmail(params, (err, data) => {
+    //   if (data) {
+    //     console.log("success data", data)
+    //   } else {
+    //     console.log("error ", err)
+    //   }
+    // })
+    const command = new SendEmailCommand(params);
+    const data = await AWS_SES.send(command);
+// console.log(data,"dataa")
     return true
   } catch (error) {
     return false
@@ -132,25 +135,30 @@ export const sendOtpForLogin = async (email, otp) => {
       Source: "aqadinnovate@gmail.com", // Replace with your sender email address
     };
     // Send email
-    let get = await AWS_SES.sendEmail(params, (err, data) => {
-      if (data) {
-        console.log("success data", data)
-      } else {
-        console.log("error ", err)
+    // let get = await AWS_SES.sendEmail(params, (err, data) => {
+    //   if (data) {
+    //     console.log("success data", data)
+    //   } else {
+    //     console.log("error ", err)
 
-      }
-    })
+    //   }
+    // })
+    
+    const command = new SendEmailCommand(params);
+    const data = await AWS_SES.send(command);
+// console.log(data,"dataa")
     return true
   } catch (error) {
+    console.log(error,"errorrorr in login ")
     return false
   }
 };
 
 
-
 export const sendEmailOtp = async (email, otp) => {
-  const params = {
-    Destination: {
+  try {
+    const params = {
+      Destination: {
       ToAddresses: [email],
     },
     Message: {
@@ -169,13 +177,20 @@ export const sendEmailOtp = async (email, otp) => {
   };
 
   // Send email
-  AWS_SES.sendEmail(params, function (err, data) {
-    if (err) {
-      console.error("Error sending email:", err);
-    } else {
-      console.log("Email sent successfully:", data);
-    }
-  });
+  // AWS_SES.sendEmail(params, function (err, data) {
+  //   if (err) {
+  //     console.error("Error sending email:", err);
+  //   } else {
+  //     console.log("Email sent successfully:", data);
+  //   }
+  // });
+     
+  const command = new SendEmailCommand(params);
+  const data = await AWS_SES.send(command);
+  return true
+} catch (error) {
+  console.log(error,"Erororro ")
+}
 };
 
 export const sendPhoneOTP = async (phone, otp) => {

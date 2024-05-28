@@ -162,11 +162,25 @@ export const AddSubUserSchema = Joi.object({
     .trim().min(3).max(40)
     .required()
     .label("name"),
+  role: Joi.string()
+    .trim().min(3).max(50)
+    .required()
+    .label("role"),
   phone: Joi.string().trim().required().regex(phonePattern).messages({
     "string.pattern.base":
       "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
   }).label("phone"),
 });
+
+export const assignRoleToSubUserSchema = Joi.object({
+  user_id: Joi.string()
+    .trim()
+    .required().label("user_id"),
+  role_id: Joi.string()
+    .trim().max(40)
+    .required()
+    .label("role_id"),
+  });
 
 export const AddSuperUserSchema = Joi.object({
   email: Joi.string()

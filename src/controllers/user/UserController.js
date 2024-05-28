@@ -11,6 +11,7 @@ import {
   AddSubUserSchema,
   GetSubUserSchema,
   AddSuperUserSchema,
+  assignRoleToSubUserSchema,
 } from "../../helpers/validateUser.js";
 import bcrypt from "bcrypt";
 import UserServicesObj from "../../services/user/UserServices.js";
@@ -429,6 +430,29 @@ class UserController {
       return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
     }
   }
+
+  async role_id_to_aqad_employee(req, res) {
+    try {
+      if(req.userData?.user_type!='super_admin'){
+        return res.status(400).json({message:"Not authorise",statusCode:400,success:false})
+      }
+      if (!req.body.doc_id || req.body.doc_id == '') {
+        let { error } = assignRoleToSubUserSchema.validate(req.body, options);
+        if (error) {
+          return res.status(400).json({
+            message: error.details[0]?.message,
+            success: false,
+            statusCode: 400,
+          });
+        }
+      }
+      await UserServicesObj.addSubUser(req, res);
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
+    }
+  }
+
+
   //for super_admin fetch all user_type 
   async get_sub_user(req, res) {
     try {
@@ -466,7 +490,7 @@ class UserController {
   // get all vendors, logistics,seller filter data according to the user_type
   async fetch_all_user(req, res) {
     try {
-      if (req.userData.user_type == 'super_admin') {
+      if (req.userData.user_type != 'super_admin') {
         return res.status(400).json({ message: "Not authorise", statusCode: 400, success: false })
       }
       // let { error } = GetSubUserSchema.validate(req.body, options);

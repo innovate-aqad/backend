@@ -15,33 +15,30 @@ import multer from "multer";
 // // Create DynamoDB instance
 // // const dynamodb = new AWS.DynamoDB.DocumentClient();
 
-
-// new version 
-import { S3Client ,PutObjectCommand} from "@aws-sdk/client-s3";
+// new version
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 // import { fromIni } from "@aws-sdk/credential-provider-ini";
 
 // Create S3 client
 const s3 = new S3Client({
   region: process.env.Aws_region,
-  credentials: { 
+  credentials: {
     accessKeyId: process.env.Aws_accessKeyId,
-    secretAccessKey: process.env.Aws_secretAccessKey
-  }
+    secretAccessKey: process.env.Aws_secretAccessKey,
+  },
 });
 
 // Create DynamoDB DocumentClient
 const dynamodb = new DynamoDBClient({
   region: process.env.Aws_region,
-  credentials: { 
+  credentials: {
     accessKeyId: process.env.Aws_accessKeyId,
-    secretAccessKey: process.env.Aws_secretAccessKey
-  }
+    secretAccessKey: process.env.Aws_secretAccessKey,
+  },
 });
 
 // export { s3Client, dynamoDBClient };
-
-
 // export const upload = multer({ dest: 'uploads/' });
 
 const storage = multer.diskStorage({
@@ -74,6 +71,24 @@ export const upload = multer({
   storage: storage,
 });
 
+<<<<<<< HEAD
+=======
+//category-images add or edit
+const categoryStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    let destination = "./uploads/category";
+    cb(null, destination);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+export const uploadCategory = multer({
+  storage: categoryStorage,
+});
+
+>>>>>>> 850365ea9d2ea3900a6702fb21d612553c8e1854
 //product add to upload folder
 const storageProductAdd = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -105,9 +120,9 @@ export const uploadImageToS3 = async (fileName, filePath) => {
     };
 
     // const data = await s3.upload(params).promise();
-        // Execute the PutObjectCommand
-        const command = new PutObjectCommand(params);
-        const response = await s3.send(command);
+    // Execute the PutObjectCommand
+    const command = new PutObjectCommand(params);
+    const response = await s3.send(command);
     console.log("File uploaded successfully:", response.ETag);
     return response;
   } catch (err) {

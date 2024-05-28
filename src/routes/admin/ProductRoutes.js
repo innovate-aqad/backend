@@ -7,22 +7,28 @@ import { uploadProduct } from "../../helpers/s3.js";
 
 const ProductRoutes = express.Router();
 
-ProductRoutes.post("/add", uploadProduct.fields([
-    {
-        name: "product_image",
-        maxCount: 1,
-    },
-    {
-        name: "product_images_arr",
-        maxCount: 10,
-    },
-]),authorize, ProductControllerObj.addProduct);
+ProductRoutes.post("/add", authorize, ProductControllerObj.addProduct);//ain product
 
+ProductRoutes.post(
+  "/add_product_variant",
+  uploadProduct.fields([
+    {
+      name: "product_images_arr",
+      maxCount: 10,
+    },
+  ]),
+  authorize,
+  ProductControllerObj.addProductVariants
+);
 
-ProductRoutes.get("/get",authorize, ProductControllerObj.get_data);
-// 
+ProductRoutes.get("/get", authorize, ProductControllerObj.get_data);
+//
 
 // ProductRoutes.delete("/delete", ProductControllerObj.deleteData);
-ProductRoutes.delete("/delete_product",authorize, ProductControllerObj.delete_product);
+ProductRoutes.delete(
+  "/delete_product",
+  authorize,
+  ProductControllerObj.delete_product
+);
 
 export default ProductRoutes;

@@ -21,7 +21,7 @@ import UploadsDocumentModel from "../../models/UploadsDocumentModel.js";
 import docClient from "../../config/dbConfig.js";
 import vendorOnBoardModel from "../../models/VendorOnBoard.js";
 import { ImageFileCheck } from "../../helpers/validateImageFile.js";
-import { addProductchema } from "../../helpers/validateProduct.js";
+import { addProductVariantschema, addProductchema } from "../../helpers/validateProduct.js";
 import ProductServicesServicesObj from "../../services/admin/ProductServices.js";
 import ProductServicesObj from "../../services/admin/ProductServices.js";
 // import axios from "axios";
@@ -38,7 +38,7 @@ class ProductController {
       const { id } = req.body;
       // console.log(req.body, "req.bodyyyyyyyy =", req.userData, "req.userdata  AAA  TT ");
       if (req.userData?.user_type != 'vendor' && req.userData?.user_type != 'super_admin' && req.userData?.user_type != 'employee') {
-        return res.status(400).json({ message: "Not auithorise to add product", statusCode: 400, success: false })
+        return res.status(400).json({ message: "Not authorise to add product", statusCode: 400, success: false })
       }
       if (!id) {
         let { error } = addProductchema.validate(req.body, options);
@@ -50,26 +50,30 @@ class ProductController {
           });
         }
       }
-      if (req.files && req.files?.product_image?.length) {
-        let name = req.files?.product_image[0]?.filename;
-        let size = req.files?.product_image[0].size;
-        let get = await ImageFileCheck(name, 'product_add', size,);
-        if (get == "invalid file") {
+      await ProductServicesObj.add(req, res);
+    } catch (err) {
+      console.error(err, "errrrrrrrrr");
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+
+  async addProductVariants(req, res) {
+    try {
+      const { id } = req.body;
+      // console.log(req.body, "req.bodyyyyyyyy =", req.userData, "req.userdata  AAA  TT ");
+      if (req.userData?.user_type != 'vendor' && req.userData?.user_type != 'super_admin' && req.userData?.user_type != 'employee') {
+        return res.status(400).json({ message: "Not auithorise to add product", statusCode: 400, success: false })
+      }
+      if (!id) {
+        let { error } = addProductVariantschema.validate(req.body, options);
+        if (error) {
           return res.status(400).json({
-            message:
-              "Image must be png or jpeg or webp file and size must be less than 500 kb",
-            statusCode: 400,
+            message: error.details[0]?.message,
             success: false,
-          });
-        } else {
-          uploadImageToS3(name, req.files?.product_image[0]?.path);
-        }
-      } else {
-        if (!id) {
-          return res.status(400).json({
-            message: "Product_image is required",
             statusCode: 400,
-            success: false,
           });
         }
       }
@@ -98,7 +102,7 @@ class ProductController {
           });
         }
       }
-      await ProductServicesObj.add(req, res);
+      await ProductServicesObj.add_variant_data(req, res);
     } catch (err) {
       console.error(err, "errrrrrrrrr");
       return res

@@ -36,7 +36,9 @@ export async function ImageFileCheck(name, data, size) {
       filePath = `./uploads/vendor/${name}`;
     } else if (data == "product_add") {
       filePath = `./uploads/vendor/product/${name}`;
-    } else {
+    } else if(data=='category'){
+      filePath = `./uploads/category/${name}`;
+    }else {
       filePath = `./uploads/other/${name}`;
     }
     let check = fs.readFileSync(filePath);

@@ -58,6 +58,7 @@ UserRoutes.get("/verfy_otp_with_email", UserControllerObj.verifyEmailWithOtp);
 
 UserRoutes.post("/login", UserControllerObj.login);
 UserRoutes.post("/login_with_otp", UserControllerObj.login_with_otp);
+<<<<<<< HEAD
 UserRoutes.get("/get_data", authorize, UserControllerObj.get_data); //logged in data
 UserRoutes.post("/add_sub_user", authorize, UserControllerObj.add_sub_user); //vendor , seller, logistic ->sub_user
 UserRoutes.get("/get_sub_user", authorize, UserControllerObj.get_sub_user);
@@ -66,10 +67,26 @@ UserRoutes.delete(
   authorize,
   UserControllerObj.delete_sub_user
 );
+=======
+UserRoutes.get("/get_data", authorize ,UserControllerObj.get_data);//logged in data
+UserRoutes.post("/add_sub_user", authorize ,UserControllerObj.add_sub_user);//vendor , seller, logistic ->sub_user
+UserRoutes.get("/get_sub_user", authorize ,UserControllerObj.get_sub_user);
+UserRoutes.delete("/delete_sub_user", authorize ,UserControllerObj.delete_sub_user);
+UserRoutes.put("/role_id_to_aqad_employee ", authorize ,UserControllerObj.add_sub_user);//assign role_id to aqad_employee 
+>>>>>>> 850365ea9d2ea3900a6702fb21d612553c8e1854
 
 //get all vendor or logistic or seller fetch with its sub_user
 // UserRoutes.get("/fetch_all_user",authorize,UserControllerObj)
 
+<<<<<<< HEAD
+=======
+
+
+
+
+
+
+>>>>>>> 850365ea9d2ea3900a6702fb21d612553c8e1854
 UserRoutes.put("/forgot_password", UserControllerObj.forgotPassword);
 UserRoutes.put("/verify_otp", UserControllerObj.verify_otp);
 

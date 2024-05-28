@@ -16,7 +16,11 @@ import UploadsDocumentModel from "../../models/UploadsDocumentModel.js";
 import docClient from "../../config/dbConfig.js";
 import vendorOnBoardModel from "../../models/VendorOnBoard.js";
 import { ImageFileCheck } from "../../helpers/validateImageFile.js";
-import { CategorySchema,  changeStatusSchema, deleteCategorySchema } from "../../helpers/validateCategory.js";
+import {
+  CategorySchema,
+  changeStatusSchema,
+  deleteCategorySchema,
+} from "../../helpers/validateCategory.js";
 import CategoryServicesObj from "../../services/admin/CategoryServices.js";
 // import axios from "axios";
 
@@ -29,8 +33,7 @@ const options = {
 class CategoryController {
   async add_cat(req, res) {
     try {
-      if(!req.body.id){
-
+      if (!req.body.id) {
         let { error } = CategorySchema.validate(req.body, options);
         if (error) {
           return res.status(400).json({
@@ -40,7 +43,23 @@ class CategoryController {
           });
         }
       }
-    
+      if (req.files && req.files?.category_image?.length) {
+        for (let el of req.files?.category_image) {
+          let name = el?.filename;
+          let size = el?.size;
+          let get = await ImageFileCheck(name, "category", size);
+          if (get == "invalid file") {
+            return res.status(400).json({
+              message:
+                "Image must be png or jpeg or webp file and size must be less than 500 kb",
+              statusCode: 400,
+              success: false,
+            });
+          } else {
+            // uploadImageToS3(name, el?.path);
+          }
+        }
+      }
       await CategoryServicesObj.add(req, res);
     } catch (err) {
       return res
@@ -48,7 +67,7 @@ class CategoryController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-  
+
   async get_cat(req, res) {
     try {
       // let { error } = CategorySchema.validate(req.body, options);
@@ -59,7 +78,7 @@ class CategoryController {
       //     statusCode: 400,
       //   });
       // }
-    
+
       await CategoryServicesObj.get_cat_data(req, res);
     } catch (err) {
       return res
@@ -67,7 +86,6 @@ class CategoryController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-  
 
   async editStatus(req, res) {
     try {
@@ -79,7 +97,7 @@ class CategoryController {
           statusCode: 400,
         });
       }
-    
+
       await CategoryServicesObj.changeStatus(req, res);
     } catch (err) {
       return res
@@ -87,7 +105,7 @@ class CategoryController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-  
+
   async deleteData(req, res) {
     try {
       let { error } = deleteCategorySchema.validate(req.query, options);
@@ -98,7 +116,7 @@ class CategoryController {
           statusCode: 400,
         });
       }
-    
+
       await CategoryServicesObj.delete(req, res);
     } catch (err) {
       return res
@@ -106,8 +124,7 @@ class CategoryController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
 }
 
 const CategoryControllerObj = new CategoryController();
-export default CategoryControllerObj ;
+export default CategoryControllerObj;
