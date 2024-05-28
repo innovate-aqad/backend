@@ -391,7 +391,7 @@ class ProductServices {
         let dbVariant = findExist.Items[0]?.variation_arr?.L || []
         if (dbVariant && dbVariant?.length) {
         let  dbVariant2 = simplifyDynamoDBResponse(dbVariant)
-          console.log(dbVariant, "@@@@@@@@@2tdbVariant")
+          // console.log(dbVariant, "@@@@@@@@@2tdbVariant")
           for (let ele in dbVariant2) {
             let tempObj = dbVariant2[ele]
             for (let el in tempObj) {
