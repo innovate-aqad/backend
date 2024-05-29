@@ -307,10 +307,7 @@ class SubCategoryServices {
 
   async delete(req, res) {
     try {
-<<<<<<< HEAD
       let id = req.query.id;
-=======
-      let id = req.query.id
       const data = await dynamoDBClient.send(
         new QueryCommand({
           TableName: "sub_category",
@@ -321,10 +318,15 @@ class SubCategoryServices {
         })
       );
       if (data?.Count == 0) {
-        return res.status(400).json({ message: "Data not found or deleted already", statusCode: 400, success: false })
+        return res
+          .status(400)
+          .json({
+            message: "Data not found or deleted already",
+            statusCode: 400,
+            success: false,
+          });
       }
-      
->>>>>>> 850365ea9d2ea3900a6702fb21d612553c8e1854
+
       const params = {
         TableName: "sub_category",
         Key: {
@@ -332,17 +334,14 @@ class SubCategoryServices {
         },
       };
       let result = await dynamoDBClient.send(new DeleteItemCommand(params));
-<<<<<<< HEAD
-      console.log(result, "checkkkk");
-      return res.status(200).json({
-        message: "Delete successfully",
-        statusCode: 200,
-        success: true,
-      });
-=======
       // console.log(result, "checkkkk")
-      return res.status(200).json({ message: "Delete successfully", statusCode: 200, success: true })
->>>>>>> 850365ea9d2ea3900a6702fb21d612553c8e1854
+      return res
+        .status(200)
+        .json({
+          message: "Delete successfully",
+          statusCode: 200,
+          success: true,
+        });
     } catch (err) {
       console.error(err);
       return res

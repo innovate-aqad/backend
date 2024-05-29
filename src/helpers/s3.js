@@ -71,8 +71,6 @@ export const upload = multer({
   storage: storage,
 });
 
-<<<<<<< HEAD
-=======
 //category-images add or edit
 const categoryStorage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -88,7 +86,6 @@ export const uploadCategory = multer({
   storage: categoryStorage,
 });
 
->>>>>>> 850365ea9d2ea3900a6702fb21d612553c8e1854
 //product add to upload folder
 const storageProductAdd = multer.diskStorage({
   destination: function (req, file, cb) {
