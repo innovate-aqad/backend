@@ -15,7 +15,7 @@ export const simplifyDynamoDBResponse = (data) => {
       } else if (value.M !== undefined) {
         return simplifyDynamoDBResponse(value.M); // Recursively simplify map
       }
-      throw new Error("Unrecognized or unsupported DynamoDB data type");
+      // throw new Error("Unrecognized or unsupported DynamoDB data type");
     }; 
 
     for (const key in data) {
@@ -25,6 +25,54 @@ export const simplifyDynamoDBResponse = (data) => {
     }
     return simpleData;
   };
+
+// export  const simplifyDynamoDBResponseForArrayOfObject = (data) => {
+//     const simpleData = data.map(item => {
+//       const simplifiedItem = {};
+//       for (const key in item.M) {
+//         simplifiedItem[key] = item.M[key].S || item.M[key].N || item.M[key].BOOL || null;
+//         if (item.M[key].L) {
+//           simplifiedItem[key] = item.M[key].L.map(simplifyDynamoDBResponseForArrayOfObject ); // Handle lists recursively
+//         } else if (item.M[key].M) {
+//           simplifiedItem[key] = simplifyDynamoDBResponseForArrayOfObject ([item.M[key]]); // Handle maps recursively
+//         }
+//       }
+//       return simplifiedItem;
+//     });
+//     return simpleData;
+//   };
+
+
+export const simplifyDynamoDBResponse2 = (data) => {
+  return data.map(item => {
+    const simplifiedItem = {};
+    for (const key in item.M) {
+      const value = item.M[key];
+      if (value.S !== undefined) {
+        simplifiedItem[key] = value.S;
+      } else if (value.N !== undefined) {
+        simplifiedItem[key] = Number(value.N);
+      } else if (value.BOOL !== undefined) {
+        simplifiedItem[key] = value.BOOL;
+      } else if (value.L !== undefined) {
+        simplifiedItem[key] = value.L.map(simplifyDynamoDBResponse2); // Handle lists recursively
+      } else if (value.M !== undefined) {
+        simplifiedItem[key] = simplifyDynamoDBResponse2([value]); // Handle maps recursively
+      } else if (value.B !== undefined) {
+        simplifiedItem[key] = value.B; // Handle binary data
+      } else if (value.NULL !== undefined) {
+        simplifiedItem[key] = null; // Handle null values
+      } else if (value.SS !== undefined) {
+        simplifiedItem[key] = value.SS; // Handle string sets
+      } else if (value.NS !== undefined) {
+        simplifiedItem[key] = value.NS.map(Number); // Handle number sets
+      } else if (value.BS !== undefined) {
+        simplifiedItem[key] = value.BS; // Handle binary sets
+      }
+    }
+    return simplifiedItem;
+  });
+};
 
 
 

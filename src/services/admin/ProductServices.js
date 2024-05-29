@@ -12,7 +12,7 @@ import {
 
 import { v4 as uuidv4 } from "uuid";
 import AWS from "aws-sdk";
-import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
+import { simplifyDynamoDBResponse, simplifyDynamoDBResponse2 } from "../../helpers/datafetch.js";
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const dynamoDBClient = new DynamoDBClient({
@@ -274,194 +274,6 @@ class ProductServices {
     }
   }
 
-  async add_variant_data(req, res) {
-    try {
-      let {
-        title,
-        status,
-        sku,
-        id,
-        variation,
-        warehouse_arr,
-        product_id,
-        price,
-        compare_price_at,
-        quantity, minimum_order_quantity
-      } = req.body;
-      console.log(req.body, "req.per")
-      if (id) {
-        const findProductData = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "products",
-            KeyConditionExpression: "id = :id",
-            ExpressionAttributeValues: {
-              ":id": { S: product_id },
-            },
-          })
-        );
-        if (findProductData?.Count == 0) {
-          return res.status(400).json({
-            message: "Product's not found",
-            statusCode: 400,
-            success: false,
-          });
-        }
-        findProductData = simplifyDynamoDBResponse(findProductData)
-        let dbData = findProductData?.variantion_arr?.find((el) => el?.id == id)
-        if (!dbData) { return res.status(400).json({ message: "Product's variant not found", statusCode: 400, success: false }) }
-        let obj = { title, price, compare_price_at, quantity, warehouse_arr, variation, minimum_order_quantity }
-        const params = {
-          TableName: "product",
-          Key: { id: { S: id } },
-          UpdateExpression: `
-          SET #variantion_arr
-              #price = :price,
-              #compare_price_at = :compare_price_at,
-              #quantity = :quantity,
-              #warehouse_arr = :warehouse_arr,
-              #variation = :variation,
-              #minimum_order_quantity = :minimum_order_quantity,
-              #status = :status,
-        `,
-          ExpressionAttributeNames: {
-            "#title": "title",
-            "#price": "price",
-            "#compare_price_at": "compare_price_at",
-            "#quantity": "quantity",
-            "#warehouse_arr": "warehouse_arr",
-            "#variation": "variation",
-            "#brand_id": "brand_id",
-            "#minimum_order_quantity": "minimum_order_quantity",
-            "#status": "status",
-          },
-          ExpressionAttributeValues: {
-            ":title": { S: title || findProductData.Items[0].title.S },
-            ":price": { S: price || findProductData.Items[0].price.S || "" },
-            ":compare_price_at": {
-              S:
-                compare_price_at ||
-                findProductData.Items[0].compare_price_at.S ||
-                "",
-            },
-            ":quantity": { S: quantity || findProductData.Items[0].quantity.S },
-            ":warehouse_arr": {
-              L: warehouse_arr
-                ? warehouse_arr.map((el) => ({
-                  M: {
-                    address: { S: el.address || "" },
-                    po_box: { S: el.po_box || "" },
-                  },
-                }))
-                : findProductData.Items[0].warehouse_arr.L,
-            },
-            ":minimum_order_quantity": {
-              S:
-                minimum_order_quantity ||
-                findProductData.Items[0].minimum_order_quantity?.S,
-            },
-            ":status": {
-              S: status || findProductData.Items[0].status?.S || "active",
-            },
-          },
-        };
-        await dynamoDBClient.send(new UpdateItemCommand(params));
-        return res.status(200).json({
-          message: "Product's variant details update successfully",
-          statusCode: 200,
-          sucess: true,
-        });
-      } else {
-        const findExist = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "products",
-            KeyConditionExpression: "id = :id",
-            ExpressionAttributeValues: {
-              ":id": { S: product_id },
-            },
-          })
-        );
-        // console.log(findExist, "findexistttt findexistttt findexistttt ")
-        if (findExist.Count == 0) {
-          return res.status(400).json({
-            success: false,
-            message: "Product not found",
-            statusCode: 400,
-          });
-        }
-        let dbVariant = findExist.Items[0]?.variation_arr?.L || []
-        if (dbVariant && dbVariant?.length) {
-        let  dbVariant2 = simplifyDynamoDBResponse(dbVariant)
-          // console.log(dbVariant, "@@@@@@@@@2tdbVariant")
-          for (let ele in dbVariant2) {
-            let tempObj = dbVariant2[ele]
-            for (let el in tempObj) {
-              if (el == 'title' && tempObj[el] == title || el == 'sku' && tempObj[el] == sku) {
-                return res.status(400).json({ message: "Product variant 's title or sku must be unqiue", statuscode: 400, success: false })
-              }
-            }
-          }
-        }
-        id = uuidv4();
-        id = id?.replace(/-/g, "");
-        const params = {
-          id: { S: id },
-          title: { S: title || "" },
-          price: { S: price || "" },
-          compare_price_at: { S: compare_price_at || "" },
-          quantity: { S: quantity || "" },
-          sku: { S: sku },
-          variation: { S: variation || "" },
-          warehouse_arr: {
-            L:
-              warehouse_arr?.map((el) => ({
-                M: {
-                  address: { S: el?.address || "" },
-                  po_box: { S: el?.po_box || "" },
-                },
-              })) || [],
-          },
-          created_by: { S: req.userData?.id || "" },
-          minimum_order_quantity: { S: minimum_order_quantity || "" },
-          status: { S: status || "active" },
-          created_at: { S: new Date().toISOString() },
-          updated_at: { S: new Date().toISOString() },
-        };
-        params.product_images_arr = {
-          L:
-            req.files.product_images_arr?.map((el) => ({
-              M: {
-                image: { S: el?.filename || "" },
-              },
-            })) || [],
-        };
-        dbVariant.push({ M: params });
-        console.log(params, "paramsnsnsnn add product variant");
-
-        const updateParams = {
-          TableName: "products",
-          Key: {
-            id: { S: product_id } // Replace with actual product ID
-          },
-          UpdateExpression: "SET variation_arr = :variation_arr",
-          ExpressionAttributeValues: {
-            ":variation_arr": { L: dbVariant }
-          },
-          ReturnValues: "UPDATED_NEW"
-        };
-        const updateResult = await dynamoDBClient.send(new UpdateItemCommand(updateParams));
-        return res.status(200).json({
-          success: true,
-          message: "Variant added successfully",
-          data: updateResult.Attributes,
-        });
-      }
-    } catch (err) {
-      console.log(err, "errorororro");
-      return res
-        .status(500)
-        .json({ message: err?.message, success: false, statusCode: 500 });
-    }
-  }
 
   async get_dataOf(req, res) {
     try {
@@ -530,7 +342,6 @@ class ProductServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
-
   //change status of main product
   async changeStatus(req, res) {
     try {
@@ -641,6 +452,206 @@ class ProductServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
+
+  async add_variant_data(req, res) {
+    try {
+      let {
+        title,
+        status,
+        sku,
+        id,
+        variation,
+        warehouse_arr,
+        product_id,
+        price,
+        compare_price_at,
+        quantity, minimum_order_quantity
+      } = req.body;
+      console.log(req.body, "req.per")
+      if (id) {
+        const findProductData = await dynamoDBClient.send(
+          new QueryCommand({
+            TableName: "products",
+            KeyConditionExpression: "id = :id",
+            ExpressionAttributeValues: {
+              ":id": { S: product_id },
+            },
+          })
+        );
+        if (findProductData?.Count == 0) {
+          return res.status(400).json({
+            message: "Product's not found",
+            statusCode: 400,
+            success: false,
+          });
+        }
+        let findProductData2 = simplifyDynamoDBResponse(findProductData?.Items[0]?.variation_arr?.L)
+        let dbVariantObj={}
+        for (let el in findProductData2) {
+          let findObj = findProductData2[el]
+          if(findObj?.id==id){
+            dbVariantObj=findObj
+          }
+        }
+        console.log(dbVariantObj,"findObjfindObj")
+        if (!dbVariantObj) { return res.status(400).json({ message: "Product's variant not found", statusCode: 400, success: false }) }
+        return
+        let obj = { title, price, compare_price_at, quantity, warehouse_arr, variation, minimum_order_quantity }
+        const params = {
+          TableName: "product",
+          Key: { id: { S: id } },
+          UpdateExpression: `
+          SET #variantion_arr
+              #price = :price,
+              #compare_price_at = :compare_price_at,
+              #quantity = :quantity,
+              #warehouse_arr = :warehouse_arr,
+              #variation = :variation,
+              #minimum_order_quantity = :minimum_order_quantity,
+              #status = :status,
+        `,
+          ExpressionAttributeNames: {
+            "#title": "title",
+            "#price": "price",
+            "#compare_price_at": "compare_price_at",
+            "#quantity": "quantity",
+            "#warehouse_arr": "warehouse_arr",
+            "#variation": "variation",
+            "#brand_id": "brand_id",
+            "#minimum_order_quantity": "minimum_order_quantity",
+            "#status": "status",
+          },
+          ExpressionAttributeValues: {
+            ":title": { S: title || findProductData.Items[0].title.S },
+            ":price": { S: price || findProductData.Items[0].price.S || "" },
+            ":compare_price_at": {
+              S:
+                compare_price_at ||
+                findProductData.Items[0].compare_price_at.S ||
+                "",
+            },
+            ":quantity": { S: quantity || findProductData.Items[0].quantity.S },
+            ":warehouse_arr": {
+              L: warehouse_arr
+                ? warehouse_arr.map((el) => ({
+                  M: {
+                    address: { S: el.address || "" },
+                    po_box: { S: el.po_box || "" },
+                  },
+                }))
+                : findProductData.Items[0].warehouse_arr.L,
+            },
+            ":minimum_order_quantity": {
+              S:
+                minimum_order_quantity ||
+                findProductData.Items[0].minimum_order_quantity?.S,
+            },
+            ":status": {
+              S: status || findProductData.Items[0].status?.S || "active",
+            },
+          },
+        };
+        await dynamoDBClient.send(new UpdateItemCommand(params));
+        return res.status(200).json({
+          message: "Product's variant details update successfully",
+          statusCode: 200,
+          sucess: true,
+        });
+      } else {
+        const findExist = await dynamoDBClient.send(
+          new QueryCommand({
+            TableName: "products",
+            KeyConditionExpression: "id = :id",
+            ExpressionAttributeValues: {
+              ":id": { S: product_id },
+            },
+          })
+        );
+        // console.log(findExist, "findexistttt findexistttt findexistttt ")
+        if (findExist.Count == 0) {
+          return res.status(400).json({
+            success: false,
+            message: "Product not found",
+            statusCode: 400,
+          });
+        }
+        let dbVariant = findExist.Items[0]?.variation_arr?.L || []
+        // console.log(dbVariant,"dbariantntntntntnt")
+        if (dbVariant && dbVariant?.length) {
+          let dbVariant2 = simplifyDynamoDBResponse(dbVariant)
+          //   console.log(dbVariant, "@@@@@@@@@2tdbVariant")
+          for (let ele in dbVariant2) {
+            let tempObj = dbVariant2[ele]
+            for (let el in tempObj) {
+              if (el == 'title' && tempObj[el] == title || el == 'sku' && tempObj[el] == sku) {
+                return res.status(400).json({ message: "Product variant 's title or sku must be unqiue", statuscode: 400, success: false })
+              }
+            }
+          }
+        }
+        id = uuidv4();
+        id = id?.replace(/-/g, "");
+        const params = {
+          id: { S: id },
+          title: { S: title || "" },
+          price: { S: price || "" },
+          compare_price_at: { S: compare_price_at || "" },
+          quantity: { S: quantity || "" },
+          sku: { S: sku },
+          variation: { S: variation || "" },
+          warehouse_arr: {
+            L:
+              warehouse_arr?.map((el) => ({
+                M: {
+                  address: { S: el?.address || "" },
+                  po_box: { S: el?.po_box || "" },
+                },
+              })) || [],
+          },
+          created_by: { S: req.userData?.id || "" },
+          minimum_order_quantity: { S: minimum_order_quantity || "" },
+          status: { S: status || "active" },
+          created_at: { S: new Date().toISOString() },
+          updated_at: { S: new Date().toISOString() },
+        };
+        params.product_images_arr = {
+          L:
+            req.files.product_images_arr?.map((el) => ({
+              M: {
+                image: { S: el?.filename || "" },
+              },
+            })) || [],
+        };
+        dbVariant.push({ M: params });
+        console.log(params, "paramsnsnsnn add product variant");
+
+        const updateParams = {
+          TableName: "products",
+          Key: {
+            id: { S: product_id } // Replace with actual product ID
+          },
+          UpdateExpression: "SET variation_arr = :variation_arr",
+          ExpressionAttributeValues: {
+            ":variation_arr": { L: dbVariant }
+          },
+          ReturnValues: "UPDATED_NEW"
+        };
+        const updateResult = await dynamoDBClient.send(new UpdateItemCommand(updateParams));
+        return res.status(200).json({
+          success: true,
+          message: "Variant added successfully",
+          data: { obj: { id: id } },
+        });
+      }
+    } catch (err) {
+      console.log(err, "errorororro");
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+
 }
 
 const ProductServicesObj = new ProductServices();
