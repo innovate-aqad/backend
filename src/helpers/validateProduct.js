@@ -43,15 +43,22 @@ export const addProductchema = Joi.object({
 
 export const addProductVariantschema = Joi.object({
   title: Joi.string().min(3).max(50).trim().optional().allow("",null).label("title"),
+  product_id: Joi.string().min(3).max(50).trim().required().label("product_id"),
   sku: Joi.string().min(3).max(50).required().label("sku"),
-  variation: Joi.string().min(3).max(50).required().label("variation"),
-  product_id: Joi.string().min(3).max(50).required().label("product_id"),
+  variation: Joi.string().min(1).max(10).required().label("variation"),
+  // product_id: Joi.string().min(3).max(50).required().label("product_id"),
   price: Joi.number().positive().required().label("price"),
   quantity: Joi.number().positive().required().label("quantity"),
   compare_price_at: Joi.number()
     .positive()
     .required()
     .label("compare_price_at"),
+    warehouse_arr: Joi.array().items(
+      Joi.object({
+        address: Joi.string().required().label("address"),
+        po_box: Joi.string().allow("", null).label("po_box"),
+      })
+    ).min(1).required().label("warehouse_arr"),
   country_code: Joi.string().min(3).max(10)
   // .required()
   .allow("",null)

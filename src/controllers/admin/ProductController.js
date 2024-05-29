@@ -90,7 +90,7 @@ class ProductController {
               success: false,
             });
           } else {
-            uploadImageToS3(name, el?.path);/////  needd here 
+            // uploadImageToS3(name, el?.path);////
           }
         }
       } else {

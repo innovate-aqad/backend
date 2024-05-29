@@ -24,8 +24,11 @@ class SiUnitServices {
   async addData(req, res) {
     try {
       let { title, status, id, } = req.body;
-      title = title?.trim();
+     title = title?.trim();
+     let  titleOf = title?.toLowerCase()?.trim();
       const timestamp = new Date().toISOString();
+      
+     
       if (id) {
         let findData = await dynamoDBClient.send(
           new QueryCommand({
@@ -36,9 +39,28 @@ class SiUnitServices {
             },
           })
         );
-        console.log(findData, "findata !@#!32")
+        // console.log(findData, "findata !@#!32")
         if (findData && findData?.Count == 0) {
           return res.status(400).json({ message: "Document not found", statusCode: 400, success: false })
+        }
+        const dataExist = await dynamoDBClient.send(
+          new QueryCommand({
+            TableName: "si_unit",
+            IndexName: "title",
+            KeyConditionExpression: "title = :title",
+            FilterExpression: "id <> :id",
+            ExpressionAttributeValues: {
+              ":title": { S: titleOf },
+              ":id": { S: id },
+            },
+          })
+        );
+        if (dataExist?.Count) {
+          return res.status(400).json({
+            message: "Title must be unique",
+            statusCode: 400,
+            success: false,
+          });
         }
         // console.log("findDatafindData22", findData?.Items[0])
         const params = {
@@ -66,7 +88,7 @@ class SiUnitServices {
             IndexName: "title",
             KeyConditionExpression: "title = :title",
             ExpressionAttributeValues: {
-              ":title": { S: title },
+              ":title": { S: titleOf },
             },
           })
         );
@@ -81,22 +103,21 @@ class SiUnitServices {
         id = id?.replace(/-/g, "");
 
         const params = {
-          TableName: "api_endpoint",
+          TableName: "si_unit",
           Item: {
             id: { S: id },
             title: { S: title },
-            type: { S: type },
             status: { S: status || "active" },
             created_by: { S: req.userData?.id },
             created_at: { S: timestamp },
             updated_at: { S: timestamp },
           },
         };
-        console.log("docClient", "docccleint", params);
+        // console.log("docClient", "docccleint", params);
         let userData = await dynamoDBClient.send(new PutItemCommand(params));
         return res.status(201).json({
           data: id,
-          message: "Api endpoint add successfully",
+          message: "Data added successfully",
           statusCode: 201,
           success: true,
         });
@@ -112,7 +133,7 @@ class SiUnitServices {
   async getActiveData(req, res) {
     try {
       const params = {
-        TableName: "api_endpoint",
+        TableName: "si_unit",
         FilterExpression: "#status = :status",
         ExpressionAttributeNames: {
           "#status": "status",
@@ -141,7 +162,7 @@ class SiUnitServices {
   async getAllData(req, res) {
     try {
       const params = {
-        TableName: "api_endpoint",
+        TableName: "si_unit",
       };
       if (!(req.userData.user_type === 'super_admin' && req.query.status === 'all')) {
         params.FilterExpression = "#status = :status";
@@ -178,7 +199,7 @@ class SiUnitServices {
     try {
       const { id, status } = req.body;
       const getItemParams = {
-        TableName: 'api_endpoint',
+        TableName: 'si_unit',
         Key: {
           id: { S: id }
         }
@@ -196,7 +217,7 @@ class SiUnitServices {
       }
       // Update the item status
       const updateItemParams = {
-        TableName: 'api_endpoint',
+        TableName: 'si_unit',
         Key: {
           id: { S: id }
         },
@@ -222,13 +243,13 @@ class SiUnitServices {
     }
   }
 
-  async deleteEndpointById(req, res) {
+  async deleteById(req, res) {
     try {
       const { id } = req.query;
 
       const data = await dynamoDBClient.send(
         new QueryCommand({
-          TableName: "api_endpoint",
+          TableName: "si_unit",
           KeyConditionExpression: "id = :id",
           ExpressionAttributeValues: {
             ":id": { S: id },
@@ -241,7 +262,7 @@ class SiUnitServices {
 
       // Delete the item
       const deleteItemParams = {
-        TableName: 'api_endpoint',
+        TableName: 'si_unit',
         Key: {
           id: { S: id }
         }

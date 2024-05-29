@@ -89,8 +89,7 @@ export const uploadCategory = multer({
 //product add to upload folder
 const storageProductAdd = multer.diskStorage({
   destination: function (req, file, cb) {
-    // console.log(er)
-    console.log(req.files, "111111@@@!@#!@#!@#!@#req.filesssss");
+    // console.log(req.files, "111111@@@!@#!@#!@#!@#req.filesssss");
     let destination = "./uploads/vendor/product";
     cb(null, destination);
   },
