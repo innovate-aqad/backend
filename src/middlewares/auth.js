@@ -10,15 +10,15 @@ import {
   PutItemCommand,
   ScanCommand,
   UpdateItemCommand,
-  QueryCommand,
+  QueryCommand
 } from "@aws-sdk/client-dynamodb";
 
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
   credentials: {
     accessKeyId: process.env.Aws_accessKeyId,
-    secretAccessKey: process.env.Aws_secretAccessKey,
-  },
+    secretAccessKey: process.env.Aws_secretAccessKey
+  }
 });
 
 export const simplifyDynamoDBResponse = (data) => {
@@ -49,17 +49,17 @@ export const simplifyDynamoDBResponse = (data) => {
   return simpleData;
 };
 
-let arr=["/api/category/add"]
+let arr = ["/api/category/add"];
 
 export const authorize = async (req, res, next) => {
   // console.log(req.originalUrl,"aas ");
-  let _secrate = req?.cookies?._token;
-  let authToekn=req?.header?.authorization
-console.log(authToekn,"authToeknauthToeknauthToekn")
+  let _secrate = req.headers["_token"];
+  let authToekn = req?.header?.authorization;
+  console.log(authToekn, "authToeknauthToeknauthToekn");
   // console.log(_secrate, "_secrate_secrate_secrate_secrate")
   try {
     const proof = jwt.verify(_secrate, environmentVars.jwtSecret, {
-      algorithm: "HS512",
+      algorithm: "HS512"
     });
     // console.log(proof, "proof qwerty")
     // return
@@ -68,8 +68,8 @@ console.log(authToekn,"authToeknauthToeknauthToekn")
         TableName: "users",
         KeyConditionExpression: "id= :id",
         ExpressionAttributeValues: {
-          ":id": { S: proof?.id },
-        },
+          ":id": { S: proof?.id }
+        }
       })
     );
     if (findDataExist && findDataExist?.Count == 0) {
@@ -91,7 +91,7 @@ console.log(authToekn,"authToeknauthToeknauthToekn")
     return res.status(401).json({
       success: false,
       message: "Please login to continue...",
-      statusCode: 401,
+      statusCode: 401
     });
   }
 };
@@ -102,7 +102,7 @@ async function checkPermissionAccess(req, res, userData) {
     if (userData?.role_id) {
       roleData = await RolesModel.findOne({
         where: { id: userData?.role_id },
-        raw: true,
+        raw: true
       });
     }
     // console.log(roleData, "rolelelleeelele");
@@ -110,15 +110,15 @@ async function checkPermissionAccess(req, res, userData) {
       where: {
         id: roleData?.permissions,
         status: "active",
-        deleted_at: null,
+        deleted_at: null
       },
-      raw: true,
+      raw: true
     });
     if (fetchPermissionData?.length == 0) {
       res.status(400).json({
         message: "No permission available",
         statusCode: 400,
-        success: false,
+        success: false
       });
       return;
     }
@@ -190,13 +190,13 @@ export const authorizeAdmin = async (req, res, next) => {
   // console.log(_secrate, "_secrate_secrate_secrate_secrate");
   try {
     const proof = jwt.verify(_secrate, environmentVars.jwtSecretAdmin, {
-      algorithm: "HS512",
+      algorithm: "HS512"
     });
     // console.log(proof, "proof qwerty");
     // return
     const userData = await AdminUserModel.findOne({
       where: { id: proof.id },
-      raw: true,
+      raw: true
     });
     if (!userData) {
       return res
@@ -211,7 +211,7 @@ export const authorizeAdmin = async (req, res, next) => {
         return res.status(400).json({
           message: "Permission required for this action",
           statusCode: 400,
-          success: false,
+          success: false
         });
       }
       // return;
@@ -224,7 +224,7 @@ export const authorizeAdmin = async (req, res, next) => {
     return res.status(401).json({
       success: false,
       message: "Please login to continue...",
-      statusCode: 401,
+      statusCode: 401
     });
   }
 };
@@ -234,18 +234,18 @@ export const authorizeSuperAdmin = async (req, res, next) => {
   //   console.log(_secrate,"_secrate_secrate_secrate_secrate")
   try {
     const proof = jwt.verify(_secrate, environmentVars.jwtSecretAdmin, {
-      algorithm: "HS512",
+      algorithm: "HS512"
     });
     // console.log(proof,"proof qwerty")
     const userData = await AdminUserModel.findOne({
       where: { id: proof.id },
-      raw: true,
+      raw: true
     });
     if (!userData) {
       return res.status(400).json({
         message: "Super admin not found",
         success: false,
-        statusCode: 400,
+        statusCode: 400
       });
     }
     req.userData = userData;
