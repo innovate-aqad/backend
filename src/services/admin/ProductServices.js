@@ -26,15 +26,15 @@ class ProductServices {
   async add(req, res) {
     try {
       let {
-        title,
-        status,
-        description,
         universal_standard_code,
-        brand_id,
-        category_id,
-        sub_category_id,
-        id,
+        title,
+        description,
         summary,
+        category_id,
+        brand_id,
+        sub_category_id,model_number,
+        status,
+        id,
       } = req.body;
       if (category_id) {
         let findData = await dynamoDBClient.send(
@@ -91,6 +91,7 @@ class ProductServices {
         }
       }
       if (id) {
+        console.time("first")
         let findProductData = await dynamoDBClient.send(
           new QueryCommand({
             TableName: "products",
@@ -100,6 +101,7 @@ class ProductServices {
             },
           })
         );
+        console.timeEnd("first")
         // console.log("findDatafindData22", findData?.Items[0]);
         if (findProductData?.Count == 0) {
           return res.status(400).json({
@@ -149,7 +151,7 @@ class ProductServices {
               #description = :description,
               #brand_id = :brand_id,
               #status = :status,
-               #summary =  :summary
+              #summary =  :summary
         `,
           ExpressionAttributeNames: {
             "#title": "title",
@@ -200,7 +202,7 @@ class ProductServices {
             },
           })
         );
-        console.log(findExist, "findexistttt findexistttt findexistttt ")
+        // console.log(findExist, "findexistttt findexistttt ")
         if (findExist.Count > 0) {
           return res.status(400).json({
             success: false,
@@ -219,7 +221,7 @@ class ProductServices {
             },
           })
         );
-        console.log(find_universal_standard_codeExist)
+        // console.log(find_universal_standard_codeExist)
         if (find_universal_standard_codeExist.Count > 0) {
           return res.status(400).json({
             success: false,
@@ -260,10 +262,11 @@ class ProductServices {
         // console.log(params, "paramsnsnsnn add product ");
         await dynamoDBClient.send(new PutItemCommand(params));
       }
+      let obj={id}
       return res.status(201).json({
         message: "Product add successfully",
         statusCode: 201,
-        data: id,
+        data: obj,
         success: true,
       });
     } catch (err) {
@@ -273,7 +276,6 @@ class ProductServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
 
   async get_dataOf(req, res) {
     try {
@@ -452,7 +454,7 @@ class ProductServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
-
+//  VARIANT API'S BELOW
   async add_variant_data(req, res) {
     try {
       let {
@@ -647,11 +649,12 @@ class ProductServices {
           },
           ReturnValues: "UPDATED_NEW"
         };
-        const updateResult = await dynamoDBClient.send(new UpdateItemCommand(updateParams));
+         await dynamoDBClient.send(new UpdateItemCommand(updateParams));
+        let obj={id }
         return res.status(200).json({
           success: true,
           message: "Variant added successfully",
-          data: { obj: { id: id } },
+          data: { obj },
         });
       }
     } catch (err) {
