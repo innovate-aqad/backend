@@ -55,7 +55,7 @@ export const authorize = async (req, res, next) => {
   // console.log(req.originalUrl,"aas ");
   let _secrate = req.headers["_token"];
   let authToekn = req?.header?.authorization;
-  console.log(authToekn, "authToeknauthToeknauthToekn");
+  console.log(authToekn, "authToeknauthToeknauthToekn",_secrate,"aa@@@@@@2");
   // console.log(_secrate, "_secrate_secrate_secrate_secrate")
   try {
     const proof = jwt.verify(_secrate, environmentVars.jwtSecret, {
