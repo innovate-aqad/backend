@@ -401,9 +401,9 @@ class ProductServices {
 
   async delete(req, res) {
     try {
-      let id = req.query.id;
-      let user_type = req.userData?.user_type;
-      let userId = req.id;
+      let id = req?.query?.id;
+      let user_type = req?.userData?.user_type;
+      let userId = req?.userData?.id;
 
       const data = await dynamoDBClient.send(
         new QueryCommand({
@@ -442,6 +442,7 @@ class ProductServices {
         },
       };
       await dynamoDBClient.send(new DeleteItemCommand(params));
+      
       return res.status(200).json({
         message: "Product Delete successfully",
         statusCode: 200,
@@ -471,6 +472,9 @@ class ProductServices {
       } = req.body;
       console.log(req.body, "req.per")
       if (id) {
+        if(!product_id){
+          return res.status(400).json({message:"Product_id is mandatory",statusCode:400,success:false})
+        }
         const findProductData = await dynamoDBClient.send(
           new QueryCommand({
             TableName: "products",
@@ -480,6 +484,7 @@ class ProductServices {
             },
           })
         );
+
         if (findProductData?.Count == 0) {
           return res.status(400).json({
             message: "Product's not found",
@@ -495,19 +500,20 @@ class ProductServices {
           let findObj = findProductData2[el]
           if (findObj?.id == id) {
             dbVariantObj = findObj
-            dbVariantObj.title = title || dbVariantObj.title;
+            dbVariantObj.title = dbVariantObj.title;
+            dbVariantObj.sku =  dbVariantObj.sku;
             dbVariantObj.price = price || dbVariantObj.price;
             dbVariantObj.compare_price_at = compare_price_at || dbVariantObj.compare_price_at;
             dbVariantObj.quantity = quantity || dbVariantObj.quantity;
-            dbVariantObj.sku = sku || dbVariantObj.sku;
+            //sku remain same
             dbVariantObj.variation = variation || dbVariantObj.variation;
             dbVariantObj.warehouse_arr = warehouse_arr || dbVariantObj.warehouse_arr;
             dbVariantObj.minimum_order_quantity = minimum_order_quantity || dbVariantObj.minimum_order_quantity;
             dbVariantObj.status = status || dbVariantObj.status;
             dbVariantObj.updated_at = new Date().toISOString();
             // Update other fields as necessary
+            let existingImages = dbVariantObj.product_images_arr || [];
             if (req.files && req.files.product_images_arr) {
-              let existingImages = dbVariantObj.product_images_arr || [];
               let newImages = req.files.product_images_arr.map(el => ({
                 image: el?.filename || ""
               }));

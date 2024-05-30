@@ -89,6 +89,7 @@ let transporter2 = nodemailer.createTransport({
 //     console.log(err, "Err");
 //   }
 // }
+
 export async function sendPasswordViaEmail(res, data) {
   try {
     // console.log(data, "AAAAAAAAAAAAAAAAAA");
