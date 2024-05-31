@@ -106,9 +106,9 @@ export const uploadProduct = multer({
 export const uploadImageToS3 = async (fileName, filePath, type) => {
   try {
     const fileContent = await fs.readFile(filePath);
-    let fileNameTemp = fileName
-    if (type == 'product') {
-      fileNameTemp = `vendor/product/${fileName}`
+    let fileNameTemp = fileName;
+    if (type == "product") {
+      fileNameTemp = `vendor/product/${fileName}`;
     }
     // Bucket name: aqad-documents
     // Location: me-central-1
@@ -118,7 +118,7 @@ export const uploadImageToS3 = async (fileName, filePath, type) => {
       Body: fileContent,
       //   ACL: 'public-read' // Set the access control list for the object
     };
-console.log(params,"paramsnsns")
+    console.log(params, "paramsnsns");
     // const data = await s3.upload(params).promise();
     // Execute the PutObjectCommand
     const command = new PutObjectCommand(params);
@@ -134,12 +134,17 @@ console.log(params,"paramsnsns")
 // Function to delete a file from S3
 export const deleteImageFromS3 = async (
   fileName,
+  type,
   bucketName = "aqad-documents"
 ) => {
+  let fileNameTemp = fileName;
+  if (type == "product") {
+    fileNameTemp = `vendor/product/${fileName}`;
+  }
   try {
     const params = {
       Bucket: bucketName,
-      Key: fileName,
+      Key: fileNameTemp,
     };
 
     const data = await s3.deleteObject(params).promise();
@@ -180,3 +185,19 @@ export const storeImageMetadata = async (fileName, imageUrl) => {
 //   .catch(err => {
 //     console.error('Error:', err);
 //   });
+
+export const deleteImageFRomLocal = async (imageName, location) => {
+  try {
+    try {
+      let filePath = `../src/uploads/vendor/${imageName}`;
+      if (location == "product") {
+        filePath = `../src/uploads/vendor/product/${imageName}`;
+      }
+      await fs.unlinkSync(filePath);
+    } catch (er) {
+      // console.log(er);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};

@@ -28,6 +28,11 @@ ProductRoutes.post(
 );
 
 
+ProductRoutes.delete(
+  "/delete_product_variant",
+  authorize,
+  ProductControllerObj.delete_product_variant
+);
 // ProductRoutes.delete("/delete", ProductControllerObj.deleteData);
 
 export default ProductRoutes;

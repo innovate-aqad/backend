@@ -112,10 +112,6 @@ class ProductController {
 
 
 
-
-
-
-
   async get_data(req, res) {
     try {
       await ProductServicesObj.get_dataOf(req, res);
@@ -125,16 +121,6 @@ class ProductController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
-
-
-
-
-
-
-
-
-
 
   async delete_product(req, res) {
     try {
@@ -147,6 +133,24 @@ class ProductController {
       //   });
       // }
       await ProductServicesObj.delete(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
+    }
+  }
+
+  async delete_product_variant(req, res) {
+    try {
+      // let { error } = GetSubUserSchema.validate(req.body, options);
+      // if (error) {
+      //   return res.status(400).json({
+      //     message: error.details[0]?.message,
+      //     success: false,
+      //     statusCode: 400,
+      //   });
+      // }
+      await ProductServicesObj.delete_product_variant_by_id(req, res);
     } catch (err) {
       return res
         .status(500)
