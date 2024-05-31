@@ -21,7 +21,7 @@ import UploadsDocumentModel from "../../models/UploadsDocumentModel.js";
 import docClient from "../../config/dbConfig.js";
 import vendorOnBoardModel from "../../models/VendorOnBoard.js";
 import { ImageFileCheck } from "../../helpers/validateImageFile.js";
-import { addProductVariantschema, addProductchema } from "../../helpers/validateProduct.js";
+import { addProductVariantschema, addProductchema, deleteVariantImagechema, getProductByIdchema } from "../../helpers/validateProduct.js";
 import ProductServicesServicesObj from "../../services/admin/ProductServices.js";
 import ProductServicesObj from "../../services/admin/ProductServices.js";
 // import axios from "axios";
@@ -88,9 +88,7 @@ class ProductController {
               statusCode: 400,
               success: false,
             });
-          } else {
-            // uploadImageToS3(name, el?.path,"product");////
-          }
+          } 
         }
       } else {
         if (!id) {
@@ -110,11 +108,26 @@ class ProductController {
     }
   }
 
-
-
   async get_data(req, res) {
     try {
       await ProductServicesObj.get_dataOf(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+  async get_data_by_id(req, res) {
+    try {
+      let { error } = getProductByIdchema.validate(req.query, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+      await ProductServicesObj.get_data_by_id_(req, res);
     } catch (err) {
       return res
         .status(500)
@@ -151,6 +164,24 @@ class ProductController {
       //   });
       // }
       await ProductServicesObj.delete_product_variant_by_id(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
+    }
+  }
+
+  async delete_variant_image(req, res) {
+    try {
+      let { error } = deleteVariantImagechema.validate(req.query, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+      await ProductServicesObj.delete_variant_image_data(req, res);
     } catch (err) {
       return res
         .status(500)

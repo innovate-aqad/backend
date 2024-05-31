@@ -82,6 +82,16 @@ export const addProductVariantchema = Joi.object({
   color_id: Joi.string().required().label("color id"),
 });
 
+export const deleteVariantImagechema = Joi.object({
+  product_id: Joi.string().max(50).required().label("Product id"),
+  variant_id: Joi.string().max(50).required().label("variant_id"),
+  image: Joi.string().max(200) .required().label("image_name"),
+});
+
+export const getProductByIdchema = Joi.object({
+  product_id: Joi.string().max(90).required().label("Product id"),
+});
+
 export const editProductVariantchema = Joi.object({
   variant_id: Joi.string().required().label("variant_id"),
 });

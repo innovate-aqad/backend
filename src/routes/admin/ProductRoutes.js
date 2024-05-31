@@ -9,6 +9,7 @@ const ProductRoutes = express.Router();
 
 ProductRoutes.post("/add", authorize, ProductControllerObj.addProduct);//ain product
 ProductRoutes.get("/get", authorize, ProductControllerObj.get_data);
+ProductRoutes.get("/get_by_id", authorize, ProductControllerObj.get_data_by_id);
 ProductRoutes.delete(
   "/delete_product",
   authorize,
@@ -32,6 +33,12 @@ ProductRoutes.delete(
   "/delete_product_variant",
   authorize,
   ProductControllerObj.delete_product_variant
+);
+
+ProductRoutes.delete(
+  "/delete_variant_image",
+  authorize,
+  ProductControllerObj.delete_variant_image
 );
 // ProductRoutes.delete("/delete", ProductControllerObj.deleteData);
 

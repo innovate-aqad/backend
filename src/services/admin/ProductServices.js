@@ -18,7 +18,7 @@ import {
   simplifyDynamoDBResponse,
   simplifyDynamoDBResponse2,
 } from "../../helpers/datafetch.js";
-import { deleteImageFRomLocal, deleteImageFromS3 } from "../../helpers/s3.js";
+import { deleteImageFRomLocal, deleteImageFromS3, uploadImageToS3 } from "../../helpers/s3.js";
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const dynamoDBClient = new DynamoDBClient({
@@ -378,6 +378,38 @@ class ProductServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
+
+  async get_data_by_id_(req, res) {
+    try {
+      const product_id = req.query?.product_id;
+      let findProductData = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "products",
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: product_id },
+          },
+        })
+      )
+      console.log(findProductData, "findproduct dataa")
+      const simplifiedData = findProductData.Items.map((el) =>
+        simplifyDynamoDBResponse(el)
+      );
+
+      res.status(200).json({
+        message: "Fetch Data",
+        data: simplifiedData[0],
+        statusCode: 200,
+        success: true,
+      });
+      return;
+    } catch (err) {
+      console.error(err, "erroror");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
   //change status of main product
   async changeStatus(req, res) {
     try {
@@ -444,7 +476,6 @@ class ProductServices {
       let id = req?.query?.id;
       let user_type = req?.userData?.user_type;
       let userId = req?.userData?.id;
-
       const data = await dynamoDBClient.send(
         new QueryCommand({
           TableName: "products",
@@ -454,7 +485,6 @@ class ProductServices {
           },
         })
       );
-      // console.log(data,"sdasdwe");
       if (data?.Count == 0) {
         return res.status(400).json({
           message: "Product not found or deleted already",
@@ -462,13 +492,6 @@ class ProductServices {
           success: false,
         });
       }
-      // console.log(
-      //   data?.Items[0]?.created_by,
-      //   "dataaaaaaa",
-      //   userId,
-      //   "data?.Items[0]?.",
-      //   data?.Items[0]
-      // );
       if (user_type == "vendor" && data?.Items[0]?.created_by?.S != userId) {
         return res.status(400).json({
           message: "Not authorise to delete another vendor's product",
@@ -487,14 +510,12 @@ class ProductServices {
         (item) => item.M.product_images_arr?.L
       );
       productImagesArray = productImagesArray?.flatMap((el) => el);
-      // const arrayOfObjects = checkProductImage.map(item => item.M);
-      // console.log("checkProductImage", "che", productImagesArray);
       for (let el of productImagesArray) {
-        console.log(el?.M?.image?.S, "aaaaa");
-        deleteImageFRomLocal(el?.M?.image?.S, "product");
+        // console.log(el?.M?.image?.S, "aaaaa");
+        let filePath = `./uploads/vendor/product/${el?.M?.image?.S}`
+        deleteImageFRomLocal(filePath);
         deleteImageFromS3(el?.M?.image?.S, "product");
       }
-
       await dynamoDBClient.send(new DeleteItemCommand(params));
       return res.status(200).json({
         message: "Product Delete successfully",
@@ -508,7 +529,6 @@ class ProductServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
-
   //  VARIANT API'S BELOW
   async add_variant_data(req, res) {
     try {
@@ -528,6 +548,11 @@ class ProductServices {
       console.log(req.body, "req.per");
       if (id) {
         if (!product_id) {
+          if (req.files.product_images_arr) {
+            for (let el of req.files?.product_images_arr) {
+              deleteImageFRomLocal(el?.path)
+            }
+          }
           return res.status(400).json({
             message: "Product_id is mandatory",
             statusCode: 400,
@@ -543,8 +568,12 @@ class ProductServices {
             },
           })
         );
-
         if (findProductData?.Count == 0) {
+          if (req.files.product_images_arr) {
+            for (let el of req.files?.product_images_arr) {
+              deleteImageFRomLocal(el?.path)
+            }
+          }
           return res.status(400).json({
             message: "Product's not found",
             statusCode: 400,
@@ -587,15 +616,20 @@ class ProductServices {
             break;
           }
         }
-        console.log(dbVariantObj, "findObjfindObj");
+        // console.log(dbVariantObj, "findObjfindObj");
         if (!dbVariantObj?.id) {
+          if (req.files.product_images_arr) {
+            for (let el of req.files?.product_images_arr) {
+              deleteImageFRomLocal(el?.path)
+            }
+          }
           return res.status(400).json({
             message: "Product's variant not found",
             statusCode: 400,
             success: false,
           });
         }
-        console.log(findProductData2, "findaaaproduct 2222222");
+        // console.log(findProductData2, "findaaaproduct 2222222");
         let updatedVariants = findProductDataArray?.map((variant) =>
           variant.id === id ? dbVariantObj : variant
         );
@@ -642,7 +676,12 @@ class ProductServices {
           ReturnValues: "UPDATED_NEW",
         };
         await dynamoDBClient.send(new UpdateItemCommand(updateParams));
-
+        if (req.files.product_images_arr) {
+          for (let el of req.files?.product_images_arr) {
+            console.log(el, "elel")
+            uploadImageToS3(el?.filename, el?.path, "product");
+          }
+        }
         return res.status(200).json({
           message: "Product's variant details update successfully",
           statusCode: 200,
@@ -660,6 +699,11 @@ class ProductServices {
         );
         // console.log(findExist, "findexistttt findexistttt findexistttt ")
         if (findExist.Count == 0) {
+          if (req.files.product_images_arr) {
+            for (let el of req.files?.product_images_arr) {
+              deleteImageFRomLocal(el?.path)
+            }
+          }
           return res.status(400).json({
             success: false,
             message: "Product not found",
@@ -678,6 +722,11 @@ class ProductServices {
                 (el == "title" && tempObj[el] == title) ||
                 (el == "sku" && tempObj[el] == sku)
               ) {
+                if (req.files.product_images_arr) {
+                  for (let el of req.files?.product_images_arr) {
+                    deleteImageFRomLocal(el?.path)
+                  }
+                }
                 return res.status(400).json({
                   message: "Product variant 's title or sku must be unqiue",
                   statuscode: 400,
@@ -721,7 +770,7 @@ class ProductServices {
             })) || [],
         };
         dbVariant.push({ M: params });
-        console.log(params, "paramsnsnsnn add product variant");
+        // console.log(params, "paramsnsnsnn add product variant");
 
         const updateParams = {
           TableName: "products",
@@ -735,14 +784,25 @@ class ProductServices {
           ReturnValues: "UPDATED_NEW",
         };
         await dynamoDBClient.send(new UpdateItemCommand(updateParams));
+        if (req.files.product_images_arr) {
+          for (let el of req.files?.product_images_arr) {
+            console.log(el, "elel")
+            uploadImageToS3(el?.filename, el?.path, "product");
+          }
+        }
         let obj = { id };
         return res.status(200).json({
           success: true,
           message: "Variant added successfully",
-          data: { obj },
+          data: obj,
         });
       }
     } catch (err) {
+      if (req.files.product_images_arr) {
+        for (let el of req.files?.product_images_arr) {
+          deleteImageFRomLocal(el?.path)
+        }
+      }
       console.log(err, "errorororro");
       return res
         .status(500)
@@ -774,13 +834,6 @@ class ProductServices {
           success: false,
         });
       }
-      // console.log(
-      //   data?.Items[0]?.created_by,
-      //   "dataaaaaaa",
-      //   userId,
-      //   "data?.Items[0]?.",
-      //   data?.Items[0]
-      // );
       if (user_type == "vendor" && data?.Items[0]?.created_by?.S != userId) {
         return res.status(400).json({
           message: "Not authorise to delete another vendor's product",
@@ -797,7 +850,7 @@ class ProductServices {
       let checkProductImage = data?.Items[0]?.variation_arr?.L;
       let productImagesArray = checkProductImage.map((item) => item.M);
       productImagesArray = productImagesArray?.flatMap((el) => el);
-      console.log(productImagesArray, "productImagesArrayproductImagesArray");
+      // console.log(productImagesArray, "productImagesArrayproductImagesArray");
       let updatedVariants = productImagesArray?.filter(
         (el) => el?.id?.S != variant_id
       );
@@ -820,13 +873,12 @@ class ProductServices {
           console.log(el?.M?.image?.S, "el?.M?.image");
           try {
             deleteImageFRomLocal(el?.M?.image?.S, "product");
-          } catch (er) {}
+          } catch (er) { }
           try {
             // deleteImageFromS3(el?.M?.image?.S, "product");
-          } catch (Er) {}
+          } catch (Er) { }
         }
       }
-      // return
       const updatedDbVariant = updatedVariants?.map((variant) => ({
         M: {
           id: { S: variant.id },
@@ -858,7 +910,7 @@ class ProductServices {
           },
         },
       }));
-      console.log(updatedDbVariant, "updatedDbVariantupdatedDbVariant");
+      // console.log(updatedDbVariant, "updatedDbVariantupdatedDbVariant");
       const updateParams = {
         TableName: "products",
         Key: {
@@ -884,6 +936,63 @@ class ProductServices {
       return res
         .status(500)
         .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
+
+  async delete_variant_image_data(req, res) {
+    try {
+      let { product_id, variant_id, image } = req.query
+      let findProductData = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "products",
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: product_id },
+          },
+        })
+      )
+      if (findProductData && findProductData?.Count == 0) {
+        return res.status(400).json({ message: "Product not found", statusCode: 400, success: false })
+      }
+      let checkProductImage = findProductData?.Items[0]?.variation_arr?.L;
+      let productImagesArray = checkProductImage.map((item) => item.M);
+      // console.log(productImagesArray[0]?.product_images_arr?.L,"productImagesArray productImagesArray ")
+      productImagesArray.forEach(variant => {
+        if (variant?.id?.S === variant_id) {
+          variant.product_images_arr.L = variant.product_images_arr.L.filter(
+            elem => elem.M.image.S !== image
+          );
+        }
+      });
+      const updatedVariationArr = productImagesArray.map(item => ({
+        M: item,
+      }));
+
+      console.log(productImagesArray, "oductayproductImagesArray");
+
+      const params = {
+        TableName: 'products',
+        Key: {
+          id: { S: product_id },
+        },
+        UpdateExpression: 'set variation_arr = :varArr',
+        ExpressionAttributeValues: {
+          ':varArr': { L: updatedVariationArr },
+        },
+      };
+      const updateCommand = new UpdateItemCommand(params);
+       await dynamoDBClient.send(updateCommand);
+      let filePath = `./uploads/vendor/product/${image}`
+      try {
+        deleteImageFRomLocal(filePath);
+      } catch (er) { }
+      try {
+        deleteImageFromS3(image, "product");
+      } catch (er) {
+      }
+      return res.status(400).json({ message: "Image deleted successfully", statusCode: 400, success: false })
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
     }
   }
 }

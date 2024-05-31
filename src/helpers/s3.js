@@ -16,7 +16,7 @@ import multer from "multer";
 // // const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 // new version
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand ,DeleteObjectCommand} from "@aws-sdk/client-s3";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 // import { fromIni } from "@aws-sdk/credential-provider-ini";
 
@@ -146,8 +146,9 @@ export const deleteImageFromS3 = async (
       Bucket: bucketName,
       Key: fileNameTemp,
     };
-
-    const data = await s3.deleteObject(params).promise();
+    const command = new DeleteObjectCommand(params);
+    const data = await s3.send(command);
+    // const data = await s3.deleteObject(params).promise();
     console.log("File deleted successfully");
     return data; // Returns data about the deletion
   } catch (err) {
@@ -186,16 +187,14 @@ export const storeImageMetadata = async (fileName, imageUrl) => {
 //     console.error('Error:', err);
 //   });
 
-export const deleteImageFRomLocal = async (imageName, location) => {
+export const deleteImageFRomLocal = async (filePath) => {
   try {
     try {
-      let filePath = `../src/uploads/vendor/${imageName}`;
-      if (location == "product") {
-        filePath = `../src/uploads/vendor/product/${imageName}`;
-      }
-      await fs.unlinkSync(filePath);
-    } catch (er) {
-      // console.log(er);
+      console.log("imageName","iiaiaiaia", filePath,"filepathhtht",  "location","location")
+      //  fs.unlinkSync(filePath).then((el)=>console.log(el,"errroror")).catch((el)=>console.log(el,"elelel"));
+       await fs.unlink(filePath);
+      } catch (er) {
+      console.log(er,"asdads");
     }
   } catch (err) {
     console.log(err);
