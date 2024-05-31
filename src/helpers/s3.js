@@ -103,18 +103,22 @@ export const uploadProduct = multer({
 });
 
 // Function to upload image to S3
-export const uploadImageToS3 = async (fileName, filePath) => {
+export const uploadImageToS3 = async (fileName, filePath, type) => {
   try {
     const fileContent = await fs.readFile(filePath);
+    let fileNameTemp = fileName
+    if (type == 'product') {
+      fileNameTemp = `vendor/product/${fileName}`
+    }
     // Bucket name: aqad-documents
     // Location: me-central-1
     const params = {
       Bucket: "aqad-documents",
-      Key: fileName,
+      Key: fileNameTemp,
       Body: fileContent,
       //   ACL: 'public-read' // Set the access control list for the object
     };
-
+console.log(params,"paramsnsns")
     // const data = await s3.upload(params).promise();
     // Execute the PutObjectCommand
     const command = new PutObjectCommand(params);

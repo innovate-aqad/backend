@@ -13,7 +13,7 @@ export const addProductchema = Joi.object({
     .trim()
     .required()
     .label("title"),
-  summary: Joi.string().min(10).max(1000).trim().required().label("Summary"),
+  summary: Joi.string().min(10).max(1000).trim().label("Summary"),
   brand_id: Joi.string().min(10).max(90).trim().required().label("brand_id"),
   description: Joi.string()
     .min(10)
@@ -45,7 +45,7 @@ export const addProductVariantschema = Joi.object({
   title: Joi.string().min(3).max(50).trim().optional().allow("",null).label("title"),
   product_id: Joi.string().min(3).max(50).trim().required().label("product_id"),
   sku: Joi.string().min(3).max(50).required().label("sku"),
-  variation: Joi.string().min(1).max(10).required().label("variation"),
+  variation: Joi.string().min(1).max(60).required().label("variation"),
   // product_id: Joi.string().min(3).max(50).required().label("product_id"),
   price: Joi.number().positive().required().label("price"),
   quantity: Joi.number().positive().required().label("quantity"),

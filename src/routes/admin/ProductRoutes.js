@@ -27,7 +27,6 @@ ProductRoutes.post(
   ProductControllerObj.addProductVariants
 );
 
-//
 
 // ProductRoutes.delete("/delete", ProductControllerObj.deleteData);
 

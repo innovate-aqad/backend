@@ -59,7 +59,6 @@ class ProductController {
     }
   }
 
-
   async addProductVariants(req, res) {
     try {
       const { id } = req.body;
@@ -90,7 +89,7 @@ class ProductController {
               success: false,
             });
           } else {
-            // uploadImageToS3(name, el?.path);////
+            // uploadImageToS3(name, el?.path,"product");////
           }
         }
       } else {
