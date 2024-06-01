@@ -7,7 +7,7 @@ import { uploadProduct } from "../../helpers/s3.js";
 
 const ProductRoutes = express.Router();
 
-ProductRoutes.post("/add", authorize, ProductControllerObj.addProduct);//ain product
+ProductRoutes.post("/add", authorize, ProductControllerObj.addProduct);//main product
 ProductRoutes.get("/get", authorize, ProductControllerObj.get_data);
 ProductRoutes.get("/get_by_id", authorize, ProductControllerObj.get_data_by_id);
 ProductRoutes.delete(
@@ -15,7 +15,7 @@ ProductRoutes.delete(
   authorize,
   ProductControllerObj.delete_product
 );
-
+//VARIANT API'S
 ProductRoutes.post(
   "/add_product_variant",
   authorize,

@@ -26,23 +26,6 @@ export const simplifyDynamoDBResponse = (data) => {
     return simpleData;
   };
 
-// export  const simplifyDynamoDBResponseForArrayOfObject = (data) => {
-//     const simpleData = data.map(item => {
-//       const simplifiedItem = {};
-//       for (const key in item.M) {
-//         simplifiedItem[key] = item.M[key].S || item.M[key].N || item.M[key].BOOL || null;
-//         if (item.M[key].L) {
-//           simplifiedItem[key] = item.M[key].L.map(simplifyDynamoDBResponseForArrayOfObject ); // Handle lists recursively
-//         } else if (item.M[key].M) {
-//           simplifiedItem[key] = simplifyDynamoDBResponseForArrayOfObject ([item.M[key]]); // Handle maps recursively
-//         }
-//       }
-//       return simplifiedItem;
-//     });
-//     return simpleData;
-//   };
-
-
 export const simplifyDynamoDBResponse2 = (data) => {
   return data.map(item => {
     const simplifiedItem = {};
@@ -74,60 +57,17 @@ export const simplifyDynamoDBResponse2 = (data) => {
   });
 };
 
-
+export const del_image_local_and_s3_and_upload_image=(removalImg,removal_img_path,user_type,upload_image_name)=>{
+  try {
+    
+  } catch (error) {
+    
+  }
+}
 
 
   /**
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  import { v4 as uuidv4 } from 'uuid';
-import { DynamoDBClient, GetItemCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
-import Joi from 'joi';
-import { addProductVariantSchema } from './your-schema-file'; // replace with the actual path
-
-const dynamoDBClient = new DynamoDBClient({ region: 'your-region' }); // replace 'your-region' with actual AWS region
-
-const simplifyDynamoDBResponse = (data) => {
-  const simpleData = {};
-
-  const simplifyAttribute = (value) => {
-    if (value.S !== undefined) {
-      return value.S;
-    } else if (value.N !== undefined) {
-      return Number(value.N);
-    } else if (value.BOOL !== undefined) {
-      return value.BOOL;
-    } else if (value.NULL !== undefined) {
-      return null;
-    } else if (value.L !== undefined) {
-      return value.L.map(simplifyAttribute); // Recursively simplify each item in the list
-    } else if (value.M !== undefined) {
-      return simplifyDynamoDBResponse(value.M); // Recursively simplify map
-    }
-    throw new Error("Unrecognized or unsupported DynamoDB data type");
-  };
-
-  for (const key in data) {
-    if (data.hasOwnProperty(key)) {
-      simpleData[key] = simplifyAttribute(data[key]);
-    }
-  }
-  return simpleData;
-};
-
+  
 export const addProductVariant = async (req, res) => {
   // Validate input
   const { error, value } = addProductVariantSchema.validate(req.body);

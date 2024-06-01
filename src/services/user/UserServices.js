@@ -30,9 +30,16 @@ import {
   sendPasswordViaEmailOf,
 } from "../../helpers/aswSesServices.js";
 import { generateOTP } from "../../helpers/generateOtp.js";
-import { deleteImageFromS3 } from "../../helpers/s3.js";
+import {
+  deleteImageFRomLocal,
+  deleteImageFromS3,
+  uploadImageToS3,
+} from "../../helpers/s3.js";
 import { removefIle } from "../../helpers/validateImageFile.js";
-import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
+import {
+  del_image_local_and_s3_and_upload_image,
+  simplifyDynamoDBResponse,
+} from "../../helpers/datafetch.js";
 
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
 const dynamoDBClient = new DynamoDBClient({
@@ -94,7 +101,7 @@ class UserServices {
         db_driver_details_array,
         term_and_condition,
       } = req.body;
-      // console.log(req.body, "aaaaaaaaaa!@#!@#aa req.body");
+      console.log(req.body, " @@@  a  aaaaaa!@#!@#aa req.body");
       // console.log(req.files, "req.filesssss")
       email = email?.trim();
       let findData;
@@ -107,30 +114,46 @@ class UserServices {
       }
       if (slide == 2 || slide == 3 || doc_id) {
         findData = await dynamoDBClient.send(
-          new ScanCommand({
-            // new QueryCommand({
+          new QueryCommand({
             TableName: "users",
-            FilterExpression: "id = :id",
+            KeyConditionExpression: "id = :id",
             ExpressionAttributeValues: {
               ":id": { S: doc_id },
             },
           })
         );
+        // console.log(findData, "findataaaaaaaa222222111");
       }
-      // console.log(
-      //   findData?.Items[0]?.profile_photo?.S,
-      //   "findDatafindData22",
-      //   findData
-      // );
+      console.log(
+        findData?.Items[0]?.profile_photo?.S,
+        "findDatafindData22",
+        findData
+      );
       // return
       if (findData?.Count > 0 && slide == 1) {
         let profile_photo = findData?.Items[0]?.profile_photo?.S;
         if (req.files && req.files?.profile_photo?.length) {
           profile_photo = req.files?.profile_photo[0]?.filename;
-          // if (findData?.Items[0]?.profile_photo?.S&&req.files?.profile_photo&&req.files?.profile_photo?.length) {
-          //   await deleteImageFromS3(findData?.Items[0]?.profile_photo?.S);
-          //   await removefIle(findData?.Items[0]?.profile_photo?.S, user_type);
-          // }
+          let filePath = `./uploads/${user_type}/${findData?.Items[0]?.profile_photo?.S}`;
+          try {
+            deleteImageFRomLocal(filePath);
+          } catch (err) {
+            console.error(err, "deleteImageFRomLocal");
+          }
+          try {
+            deleteImageFromS3(findData?.Items[0]?.profile_photo?.S, user_type);
+          } catch (err) {
+            console.error(err, "deleteImageFromS3");
+          }
+          try {
+            uploadImageToS3(
+              req.files?.profile_photo[0]?.filename,
+              req.files?.profile_photo[0]?.path,
+              user_type
+            );
+          } catch (er) {
+            console.error(er, "uploadImageToS3 ");
+          }
         }
         const params = {
           TableName: "users",
@@ -262,6 +285,34 @@ class UserServices {
           });
         } else if (user_type == "employee" && slide == 2) {
           // console.log(req.files, "req.filesssss employee");
+          if (
+            req?.files?.residence_visa &&
+            req?.files?.residence_visa[0]?.filename
+          ) {
+            let filePath = `./uploads/${user_type}/${findData?.Items[0]?.residence_visa?.S}`;
+            try {
+              deleteImageFRomLocal(filePath);
+            } catch (err) {
+              console.error(err, "deleteImageFRomLocal");
+            }
+            try {
+              deleteImageFromS3(
+                findData?.Items[0]?.residence_visa?.S,
+                user_type
+              );
+            } catch (err) {
+              console.error(err, "deleteImageFromS3");
+            }
+            try {
+              uploadImageToS3(
+                req.files?.residence_visa[0]?.filename,
+                req.files?.residence_visa[0]?.path,
+                user_type
+              );
+            } catch (er) {
+              console.error(er, "uploadImageToS3 ");
+            }
+          }
           let passport = req?.files?.passport[0]?.filename;
           let residence_visa = req?.files.residence_visa[0]?.filename;
           let emirate_id_pic = req?.files?.emirate_id_pic[0]?.filename;
@@ -314,53 +365,131 @@ class UserServices {
         let trade_license = req?.files?.trade_license?.length
           ? req?.files?.trade_license[0]?.filename
           : findData?.Items[0]?.trade_license?.S || "";
-        // if (
-        //   findData?.Items[0]?.trade_license?.S &&
-        //   req?.files?.trade_license?.length&&req?.files?.trade_license?.length>0
-        // ) {
-        //   await deleteImageFromS3(findData?.Items[0]?.trade_license?.S);
-        //   await removefIle(findData?.Items[0]?.trade_license?.S, user_type);
-        // }
+        if (req.files && req.files?.trade_license?.length) {
+          let filePath = `./uploads/${user_type}/${findData?.Items[0]?.trade_license?.S}`;
+          try {
+            deleteImageFRomLocal(filePath);
+          } catch (err) {
+            console.error(err, "deleteImageFRomLocal");
+          }
+          try {
+            deleteImageFromS3(findData?.Items[0]?.trade_license?.S, user_type);
+          } catch (err) {
+            console.error(err, "deleteImageFromS3");
+          }
+          try {
+            uploadImageToS3(
+              req.files?.trade_license[0]?.filename,
+              req.files?.trade_license[0]?.path,
+              user_type
+            );
+          } catch (er) {
+            console.error(er, "uploadImageToS3 ");
+          }
+        }
         let cheque_scan = req.files?.cheque_scan?.length
           ? req.files?.cheque_scan[0]?.filename
           : findData?.Items[0]?.cheque_scan?.S || "";
-        // if (
-        //   findData?.Items[0]?.cheque_scan?.S &&
-        //   req.files?.cheque_scan?.length&&req.files?.cheque_scan?.length>0
-        // ) {
-        //   await deleteImageFromS3(findData?.Items[0]?.cheque_scan?.S);
-        //   await removefIle(findData?.Items[0]?.cheque_scan?.S, user_type);
-        // }
+        if (req.files && req.files?.cheque_scan?.length) {
+          let filePath = `./uploads/${user_type}/${findData?.Items[0]?.cheque_scan?.S}`;
+          try {
+            deleteImageFRomLocal(filePath);
+          } catch (err) {
+            console.error(err, "deleteImageFRomLocal");
+          }
+          try {
+            deleteImageFromS3(findData?.Items[0]?.cheque_scan?.S, user_type);
+          } catch (err) {
+            console.error(err, "deleteImageFromS3");
+          }
+          try {
+            uploadImageToS3(
+              req.files?.cheque_scan[0]?.filename,
+              req.files?.cheque_scan[0]?.path,
+              user_type
+            );
+          } catch (er) {
+            console.error(er, "uploadImageToS3 ");
+          }
+        }
         let vat_certificate = req.files?.vat_certificate?.length
           ? req.files?.vat_certificate[0]?.filename
           : findData?.Items[0]?.vat_certificate?.S || "";
-        // if (
-        //   findData?.Items[0]?.vat_certificate?.S &&
-        //   req.files?.vat_certificate?.length&&req.files?.vat_certificate?.length>0
-        // ) {
-        //   await deleteImageFromS3(findData?.Items[0]?.vat_certificate?.S);
-        //   await removefIle(findData?.Items[0]?.vat_certificate?.S, user_type);
-        // }
+        if (req.files && req.files?.vat_certificate?.length) {
+          let filePath = `./uploads/${user_type}/${findData?.Items[0]?.vat_certificate?.S}`;
+          try {
+            deleteImageFRomLocal(filePath);
+          } catch (err) {
+            console.error(err, "deleteImageFRomLocal");
+          }
+          try {
+            deleteImageFromS3(
+              findData?.Items[0]?.vat_certificate?.S,
+              user_type
+            );
+          } catch (err) {
+            console.error(err, "deleteImageFromS3");
+          }
+          try {
+            uploadImageToS3(
+              req.files?.vat_certificate[0]?.filename,
+              req.files?.vat_certificate[0]?.path,
+              user_type
+            );
+          } catch (er) {
+            console.error(er, "uploadImageToS3 ");
+          }
+        }
         let residence_visa = req.files?.residence_visa?.length
           ? req.files?.residence_visa[0]?.filename
           : findData?.Items[0]?.residence_visa?.S || "";
-        // if (
-        //   req.files?.residence_visa?.length &&req.files?.residence_visa?.length>0 &&
-        //   findData?.Items[0]?.residence_visa?.S
-        // ) {
-        //   await deleteImageFromS3(findData?.Items[0]?.residence_visa?.S);
-        //   await removefIle(findData?.Items[0]?.residence_visa?.S, user_type);
-        // }
+        if (req.files && req.files?.residence_visa?.length) {
+          let filePath = `./uploads/${user_type}/${findData?.Items[0]?.residence_visa?.S}`;
+          try {
+            deleteImageFRomLocal(filePath);
+          } catch (err) {
+            console.error(err, "deleteImageFRomLocal");
+          }
+          try {
+            deleteImageFromS3(findData?.Items[0]?.residence_visa?.S, user_type);
+          } catch (err) {
+            console.error(err, "deleteImageFromS3");
+          }
+          try {
+            uploadImageToS3(
+              req.files?.residence_visa[0]?.filename,
+              req.files?.residence_visa[0]?.path,
+              user_type
+            );
+          } catch (er) {
+            console.error(er, "uploadImageToS3 ");
+          }
+        }
         let emirate_id_pic = req.files?.emirate_id_pic?.length
           ? req.files?.emirate_id_pic[0]?.filename
           : findData?.Items[0]?.emirate_id_pic?.S || "";
-        // if (
-        //   req.files?.emirate_id_pic?.length &&req.files?.emirate_id_pic?.length>0 &&
-        //   findData?.Items[0]?.emirate_id_pic?.S
-        // ) {
-        //   await deleteImageFromS3(findData?.Items[0]?.emirate_id_pic?.S);
-        //   await removefIle(findData?.Items[0]?.emirate_id_pic?.S, user_type);
-        // }
+        if (req.files && req.files?.emirate_id_pic?.length) {
+          let filePath = `./uploads/${user_type}/${findData?.Items[0]?.emirate_id_pic?.S}`;
+          try {
+            deleteImageFRomLocal(filePath);
+          } catch (err) {
+            console.error(err, "deleteImageFRomLocal");
+          }
+          try {
+            deleteImageFromS3(findData?.Items[0]?.emirate_id_pic?.S, user_type);
+          } catch (err) {
+            console.error(err, "deleteImageFromS3");
+          }
+          try {
+            uploadImageToS3(
+              req.files?.emirate_id_pic[0]?.filename,
+              req.files?.emirate_id_pic[0]?.path,
+              user_type
+            );
+          } catch (er) {
+            console.error(er, "uploadImageToS3 ");
+          }
+        }
         if (
           ["vendor", "seller", "logistic"].includes(user_type?.toLowerCase()) &&
           slide == 3
@@ -393,7 +522,7 @@ class UserServices {
               ":term_and_condition": { S: term_and_condition },
             },
           };
-          console.log(params, "apra slide 3");
+          // console.log(params, "apra slide 3");
           await dynamoDBClient.send(new UpdateItemCommand(params));
           return res.status(200).json({
             message: "User data updated successfully",
@@ -422,11 +551,6 @@ class UserServices {
             success: false,
           });
         }
-        // console.log(
-        //   vehicle_details_array,
-        //   "vehicle_details_array",
-        //   JSON.stringify(vehicle_details_array)
-        // );
 
         if (vehicle_details_array?.length == 0) {
           return res.status(400).json({
@@ -442,12 +566,43 @@ class UserServices {
         let driving_license_arr = req.files?.driving_license;
         for (let i = 0; i < driver_name_array?.length; i++) {
           let obj = {
+            id: Date.now(),
             name: driver_name_array[i],
             drive_image: driver_images_arr[i]?.filename || "",
             driving_license: driving_license_arr[i]?.filename || "",
             driving_license_number: driver_license_number_array[i],
           };
           driver_details_array.push(obj);
+          if (
+            driving_license_arr &&
+            driving_license_arr?.length &&
+            driving_license_arr[i]?.filename
+          ) {
+            try {
+              uploadImageToS3(
+                driving_license_arr[i]?.filename,
+                driving_license_arr[i]?.path,
+                user_type
+              );
+            } catch (er) {
+              console.error(er, "uploadImageToS3 ");
+            }
+          }
+          if (
+            driver_images_arr &&
+            driver_images_arr?.length &&
+            driver_images_arr[i]?.filename
+          ) {
+            try {
+              uploadImageToS3(
+                driver_images_arr[i]?.filename,
+                driver_images_arr[i]?.path,
+                user_type
+              );
+            } catch (er) {
+              console.error(er, "uploadImageToS3 user_type 4 ");
+            }
+          }
         }
         // console.log(driver_details_array, "req.filesssssssssssssss");
 
@@ -503,23 +658,34 @@ class UserServices {
           data: { id: doc_id },
         });
       }
-      // console.log("before email check ")
+      if (doc_id && findData?.Count == 0) {
+        return res
+          .status(400)
+          .json({ message: "Data not found", statusCode: 400, success: false });
+      }
       const findEmailExist = await dynamoDBClient.send(
-        new ScanCommand({
-          // new QueryCommand({
+        new QueryCommand({
           TableName: "users",
-          FilterExpression: "email = :email",
+          IndexName: "email",
+          KeyConditionExpression: "email = :email",
           ExpressionAttributeValues: {
             ":email": { S: email },
           },
         })
       );
-      // console.log(" email check ")
+      // console.log(findEmailExist, "@@@!!!  email check ");
       if (findEmailExist.Count > 0) {
-        // if (req.files && req.files?.profile_photo?.length&&req.files?.profile_photo?.length>0) {
-        //   await deleteImageFromS3(req.files?.profile_photo[0]?.filename);
-        //   await removefIle(req.files?.profile_photo[0]?.filename, user_type);
-        // }
+        if (
+          req.files &&
+          req.files?.profile_photo?.length &&
+          req.files?.profile_photo?.length > 0
+        ) {
+          try {
+            deleteImageFRomLocal(req.files?.profile_photo[0]?.path);
+          } catch (err) {
+            console.error(err, "deleteImageFRomLocal");
+          }
+        }
         return res.status(400).json({
           success: false,
           message: "Email already exist!",
@@ -527,20 +693,28 @@ class UserServices {
         });
       }
       if (phone) {
-        // if (req.files && req.files?.profile_photo?.length&& req.files?.profile_photo?.length>0) {
-        //   await deleteImageFromS3(req.files?.profile_photo[0]?.filename);
-        //   await removefIle(req.files?.profile_photo[0]?.filename, user_type);
-        // }
         const findPhoneExist = await dynamoDBClient.send(
-          new ScanCommand({
+          new QueryCommand({
             TableName: "users",
-            FilterExpression: "phone = :phone",
+            IndexName: "phone", // replace with your GSI name
+            KeyConditionExpression: "phone = :phone",
             ExpressionAttributeValues: {
               ":phone": { S: phone },
             },
           })
         );
         if (findPhoneExist.Count > 0) {
+          if (
+            req.files &&
+            req.files?.profile_photo?.length &&
+            req.files?.profile_photo?.length > 0
+          ) {
+            try {
+              deleteImageFRomLocal(req.files?.profile_photo[0]?.path);
+            } catch (err) {
+              console.error(err, "deleteImageFRomLocal");
+            }
+          }
           return res.status(400).json({
             success: false,
             message: "Phone number already exists!",
@@ -577,6 +751,8 @@ class UserServices {
           password: { S: hashPassword },
           created_at: { S: new Date().toISOString() },
           updated_at: { S: new Date().toISOString() },
+          account_status: { S: "activated" },
+          is_verified: { BOOL: false },
         },
       };
 
@@ -588,6 +764,17 @@ class UserServices {
         name,
       };
       sendPasswordViaEmailOf(obj);
+      if (req.files?.profile_photo && req.files?.profile_photo[0]?.filename) {
+        try {
+          uploadImageToS3(
+            req.files?.profile_photo[0]?.filename,
+            req.files?.profile_photo[0]?.path,
+            user_type
+          );
+        } catch (er) {
+          console.error(er, "uploadImageToS3 ");
+        }
+      }
       return res.status(201).json({
         message: "User register successfully",
         statusCode: 201,
@@ -861,6 +1048,13 @@ class UserServices {
       );
 
       console.log(findData?.Items[0], "dinffdddaa", "findData");
+      if (findData?.Items[0]?.account_status != "activate") {
+        return res.status(400).json({
+          message: "This account de-activated",
+          statusCode: 400,
+          success: false,
+        });
+      }
       if (findData?.Count > 0 && findData?.Items?.length) {
         let checkpassword = await bcrypt.compare(
           password,
@@ -1007,9 +1201,17 @@ class UserServices {
       // console.log(findData?.Items[0], "dinffdddaa", findData);
       if (findData?.Count > 0 && findData?.Items?.length) {
         const find = await dynamoDBClient.send(
-          new ScanCommand({
+          // new ScanCommand({
+          //   TableName: "userOtp",
+          //   FilterExpression: "email = :email",
+          //   ExpressionAttributeValues: {
+          //     ":email": { S: email },
+          //   },
+          // })
+          new QueryCommand({
             TableName: "userOtp",
-            FilterExpression: "email = :email",
+            IndexName: "email", // replace with your GSI name
+            KeyConditionExpression: "email = :email",
             ExpressionAttributeValues: {
               ":email": { S: email },
             },
@@ -1047,6 +1249,7 @@ class UserServices {
           email: findData?.Items[0]?.email?.S,
           user_type: findData?.Items[0]?.user_type?.S,
           id: findData?.Items[0]?.id?.S,
+          is_verified: findData?.Items[0]?.is_verified?.BOOL,
         };
         let token = generateAccessToken(obj);
         let expiryDate = new Date();
@@ -1064,7 +1267,13 @@ class UserServices {
             success: true,
             message: "Logged in successful",
             statusCode: 200,
-            data:{user_type:obj?.user_type,id:obj?.id,token:token}
+            data: {
+              user_type: obj?.user_type,
+              id: obj?.id,
+              token: token,
+              is_verified: obj?.is_verified,
+              account_status: obj?.account_status,
+            },
           });
       } else {
         return res
@@ -1084,6 +1293,102 @@ class UserServices {
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  async verifyUserAccount(req, res) {
+    try {
+      if (req.userData.user_type != "super_admin") {
+        return res
+          .status(400)
+          .json({ message: "Not authorise", statusCode: 400, success: false });
+      }
+      let { user_id, status } = req.body;
+      // let get=await new
+      const findData = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          // IndexName: "email", // replace with your GSI name
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: user_id },
+          },
+        })
+      );
+      if (findData && findData?.Count == 0) {
+        return res
+          .status(400)
+          .json({ message: "User not found", statusCode: 400, success: false });
+      }
+      const params = {
+        TableName: "users",
+        Key: {
+          id: { S: user_id }, // Assuming id is the partition key
+        },
+        UpdateExpression: "SET is_verified = :verified",
+        ExpressionAttributeValues: {
+          ":verified": { BOOL: status }, // Assuming you want to set it to true
+        },
+        ReturnValues: "ALL_NEW", // Specify what values you want to return after the update
+      };
+      await dynamoDBClient.send(new UpdateItemCommand(params));
+      return res.status(200).json({
+        message: "Verify status changed successfully",
+        statusCode: 400,
+        success: false,
+      });
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
+
+  async UserAccountDeactivateOrActivate(req, res) {
+    try {
+      let { user_id, status } = req.body;
+      if (req.userData.user_type != "super_admin") {
+        return res
+          .status(400)
+          .json({ message: "Not authorise", statusCode: 400, success: false });
+      }
+      // let get=await new
+      const findData = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          // IndexName: "email", // replace with your GSI name
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: user_id },
+          },
+        })
+      );
+      if (findData && findData?.Count == 0) {
+        return res
+          .status(400)
+          .json({ message: "User not found", statusCode: 400, success: false });
+      }
+      const params = {
+        TableName: "users",
+        Key: {
+          id: { S: user_id }, // Assuming id is the partition key
+        },
+        UpdateExpression: "SET account_status = :status",
+        ExpressionAttributeValues: {
+          ":status": { S: status }, // Assuming you want to set it to true
+        },
+        ReturnValues: "ALL_NEW", // Specify what values you want to return after the update
+      };
+      await dynamoDBClient.send(new UpdateItemCommand(params));
+      return res.status(200).json({
+        message: "User's account status changed successfully",
+        statusCode: 400,
+        success: false,
+      });
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
 

@@ -16,7 +16,6 @@ import AWS from "aws-sdk";
 import fs from "fs";
 import {
   simplifyDynamoDBResponse,
-  simplifyDynamoDBResponse2,
 } from "../../helpers/datafetch.js";
 import { deleteImageFRomLocal, deleteImageFromS3, uploadImageToS3 } from "../../helpers/s3.js";
 
@@ -513,8 +512,14 @@ class ProductServices {
       for (let el of productImagesArray) {
         // console.log(el?.M?.image?.S, "aaaaa");
         let filePath = `./uploads/vendor/product/${el?.M?.image?.S}`
-        deleteImageFRomLocal(filePath);
-        deleteImageFromS3(el?.M?.image?.S, "product");
+        try{
+          deleteImageFRomLocal(filePath);
+        }catch(err){
+        }
+        try{
+
+          deleteImageFromS3(el?.M?.image?.S, "product");
+        }catch(err){}
       }
       await dynamoDBClient.send(new DeleteItemCommand(params));
       return res.status(200).json({

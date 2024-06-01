@@ -12,6 +12,7 @@ import ApiEndpointRoutes from "./routes/admin/ApiendpointRoutes.js";
 import PermissionRoutes from "./routes/admin/PermissionRoutes.js";
 import BrandRoutes from "./routes/admin/BrandRoutes.js";
 import SiUnitRoutes from "./routes/admin/SiUnitRoutesRoutes.js";
+import RoleRoutes from "./routes/admin/RoleRoutes.js";
 // require('dotenv').config();
 // import dotenv from 'dotenv';
 // dotenv.config();
@@ -76,7 +77,7 @@ const allowedOrigins = [
 // });
 
 app.get("/", async (req, res) => {
-  console.log("Hello World ! aqad" + Date.now())
+  console.log("Hello World ! aqad" + Date.now());
   return res.status(200).send("Hello World ! aqad" + Date.now());
 });
 
@@ -84,9 +85,9 @@ app.use("/api/user", UserRoutes);
 app.use("/api/product", ProductRoutes);
 app.use("/api/category", CategoryRoutes);
 app.use("/api/sub_category", SubCategoryRoutes);
-app.use("/api/endpoint",ApiEndpointRoutes)
-app.use("/api/endpoint",ApiEndpointRoutes)
-app.use("/api/permission",PermissionRoutes)
+app.use("/api/role", RoleRoutes);
+app.use("/api/endpoint", ApiEndpointRoutes);
+app.use("/api/permission", PermissionRoutes);
 app.use("/api/brand", BrandRoutes);
 app.use("/api/si_unit", SiUnitRoutes);
 

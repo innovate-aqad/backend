@@ -16,7 +16,11 @@ import multer from "multer";
 // // const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 // new version
-import { S3Client, PutObjectCommand ,DeleteObjectCommand} from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 // import { fromIni } from "@aws-sdk/credential-provider-ini";
 
@@ -109,6 +113,14 @@ export const uploadImageToS3 = async (fileName, filePath, type) => {
     let fileNameTemp = fileName;
     if (type == "product") {
       fileNameTemp = `vendor/product/${fileName}`;
+    }else if(type=='vendor'){
+      fileNameTemp = `vendor/${fileName}`;
+    }else if(type=='logistic'){
+      fileNameTemp = `logistic/${fileName}`;
+    }else if(type=='seller'){
+      fileNameTemp = `seller/${fileName}`;
+    }else if(type=='employee'){
+      fileNameTemp = `employee/${fileName}`;
     }
     // Bucket name: aqad-documents
     // Location: me-central-1
@@ -140,6 +152,14 @@ export const deleteImageFromS3 = async (
   let fileNameTemp = fileName;
   if (type == "product") {
     fileNameTemp = `vendor/product/${fileName}`;
+  } else if (type == "vendor") {
+    fileNameTemp = `vendor/${fileName}`;
+  } else if (type == "seller") {
+    fileNameTemp = `seller/${fileName}`;
+  } else if (type == "logistic") {
+    fileNameTemp = `logistic/${fileName}`;
+  } else if (type == "employee") {
+    fileNameTemp = `employee/${fileName}`;
   }
   try {
     const params = {
@@ -190,11 +210,11 @@ export const storeImageMetadata = async (fileName, imageUrl) => {
 export const deleteImageFRomLocal = async (filePath) => {
   try {
     try {
-      console.log("imageName","iiaiaiaia", filePath,"filepathhtht",  "location","location")
+      console.log("imagea", filePath, "fi cation");
       //  fs.unlinkSync(filePath).then((el)=>console.log(el,"errroror")).catch((el)=>console.log(el,"elelel"));
-       await fs.unlink(filePath);
-      } catch (er) {
-      console.log(er,"asdads");
+      await fs.unlink(filePath);
+    } catch (er) {
+      console.log(er, "asdads");
     }
   } catch (err) {
     console.log(err);

@@ -12,6 +12,8 @@ import {
   GetSubUserSchema,
   AddSuperUserSchema,
   assignRoleToSubUserSchema,
+  verifyAccountSchema,
+  AccountDeactivateOrActiveSchema,
 } from "../../helpers/validateUser.js";
 import bcrypt from "bcrypt";
 import UserServicesObj from "../../services/user/UserServices.js";
@@ -32,7 +34,6 @@ const options = {
 };
 
 class UserController {
-
   async super_admin(req, res) {
     try {
       console.log(req.body, "req.bodyyyyyyyyyy")
@@ -62,7 +63,8 @@ class UserController {
             statusCode: 400,
           });
         }
-      }//changes
+      }
+      // changes
       //v a t _ c e r t i f i c a t e
       if (
         (user_type == "vendor" && slide == 3) ||
@@ -338,8 +340,6 @@ class UserController {
     }
   }
 
-
-
   async getByEmail(req, res) {
     try {
       let { error } = getDataByEmailSchema.validate(req.query, options);
@@ -370,7 +370,6 @@ class UserController {
           statusCode: 400,
         });
       }
-
       await UserServicesObj.sendOtpEmail(req, res);
     } catch (err) {
       return res
@@ -389,7 +388,6 @@ class UserController {
           statusCode: 400,
         });
       }
-
       await UserServicesObj.verifyEmailWithOtpCheck(req, res);
     } catch (err) {
       return res
@@ -410,7 +408,6 @@ class UserController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
 
   // add sub_user created
   async add_sub_user(req, res) {
@@ -452,7 +449,6 @@ class UserController {
     }
   }
 
-
   //for super_admin fetch all user_type 
   async get_sub_user(req, res) {
     try {
@@ -469,7 +465,6 @@ class UserController {
       return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
     }
   }
-
 
   async delete_sub_user(req, res) {
     try {
@@ -557,6 +552,40 @@ class UserController {
           .json({ message: error.details[0]?.message, success: false });
       }
       UserServicesObj.sendForgotPasswordEmail(req, res);
+    } catch (err) {
+      // console.log(err, "error user contrl");
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  async verify_user_account(req, res) {
+    try {
+      let { error } = verifyAccountSchema.validate(req?.body, options);
+      if (error) {
+        return res
+          .status(400)
+          .json({ message: error.details[0]?.message, success: false });
+      }
+      UserServicesObj.verifyUserAccount(req, res);
+    } catch (err) {
+      // console.log(err, "error user contrl");
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  async User_account_deactivate_or_activate(req, res) {
+    try {
+      let { error } = AccountDeactivateOrActiveSchema.validate(req?.body, options);
+      if (error) {
+        return res
+          .status(400)
+          .json({ message: error.details[0]?.message, success: false });
+      }
+      UserServicesObj.UserAccountDeactivateOrActivate(req, res);
     } catch (err) {
       // console.log(err, "error user contrl");
       return res
