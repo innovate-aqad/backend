@@ -281,7 +281,7 @@ export const verifyAccountSchema = Joi.object({
 
 export const AccountDeactivateOrActiveSchema = Joi.object({
   user_id: Joi.string().max(50).required().label("id"),
-  status: Joi.string().required().valid("deactive",'activate').label("status"),
+  status: Joi.string().required().valid("deactivated",'activated').label("status"),
 });
 export const editAdminSchema = Joi.object({
   id: Joi.number().required().label("id"),

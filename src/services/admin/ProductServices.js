@@ -542,7 +542,7 @@ class ProductServices {
         status,
         sku,
         id,
-        variation,
+        variation,input_field,
         warehouse_arr,
         product_id,
         price,
@@ -603,6 +603,7 @@ class ProductServices {
             dbVariantObj.quantity = quantity || dbVariantObj.quantity;
             //sku remain same
             dbVariantObj.variation = variation || dbVariantObj.variation;
+            dbVariantObj.input_field = input_field|| dbVariantObj.input_field;
             dbVariantObj.warehouse_arr =
               warehouse_arr || dbVariantObj.warehouse_arr;
             dbVariantObj.minimum_order_quantity =
@@ -647,11 +648,13 @@ class ProductServices {
             quantity: { S: variant.quantity },
             sku: { S: variant.sku },
             variation: { S: variant.variation },
+            input_field: { S: variant.input_field },
             warehouse_arr: {
               L: variant.warehouse_arr.map((el) => ({
                 M: {
-                  address: { S: el.address },
-                  po_box: { S: el.po_box },
+                  address: { S: el.address ||""},
+                  po_box: { S: el.po_box ||""},
+                  quantity:{S:el?.quantity||""}
                 },
               })),
             },
@@ -751,12 +754,14 @@ class ProductServices {
           quantity: { S: quantity || "" },
           sku: { S: sku },
           variation: { S: variation || "" },
+          input_field:{S:input_field||""},
           warehouse_arr: {
             L:
               warehouse_arr?.map((el) => ({
                 M: {
                   address: { S: el?.address || "" },
                   po_box: { S: el?.po_box || "" },
+                  quantity: { S: el?.quantity|| "" },
                 },
               })) || [],
           },

@@ -46,9 +46,10 @@ export const addProductVariantschema = Joi.object({
   product_id: Joi.string().min(3).max(50).trim().required().label("product_id"),
   sku: Joi.string().min(3).max(50).required().label("sku"),
   variation: Joi.string().min(1).max(60).required().label("variation"),
+  input_field: Joi.number().min(1).max(60).required().label("input_field"),
   // product_id: Joi.string().min(3).max(50).required().label("product_id"),
   price: Joi.number().positive().required().label("price"),
-  quantity: Joi.number().positive().required().label("quantity"),
+  // quantity: Joi.number().positive().required().label("quantity"),
   compare_price_at: Joi.number()
     .positive()
     .required()

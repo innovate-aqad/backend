@@ -755,7 +755,6 @@ class UserServices {
           is_verified: { BOOL: false },
         },
       };
-
       console.log("docClient", "docccleint", params);
       await dynamoDBClient.send(new PutItemCommand(params));
       let obj = {
@@ -787,8 +786,13 @@ class UserServices {
           for (let el in req?.files) {
             for (let ele of req?.files[el]) {
               // console.log(ele, "eleleellel")
-              await deleteImageFromS3(ele?.filename);
-              await removefIle(ele?.filename, req.body.user_type);
+              try{
+                await deleteImageFromS3(ele?.filename,req.body.user_type);
+              }catch(err){}
+              try {
+                await removefIle(ele?.filename, req.body.user_type);
+              } catch (error) {
+              }
             }
           }
         }
@@ -1048,7 +1052,7 @@ class UserServices {
       );
 
       console.log(findData?.Items[0], "dinffdddaa", "findData");
-      if (findData?.Items[0]?.account_status != "activate") {
+      if (findData?.Items[0]?.account_status?.S != "activated") {
         return res.status(400).json({
           message: "This account de-activated",
           statusCode: 400,
