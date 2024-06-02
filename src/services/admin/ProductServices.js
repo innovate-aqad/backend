@@ -901,7 +901,8 @@ class ProductServices {
           warehouse_arr: {
             L: variant.warehouse_arr.map((el) => ({
               M: {
-                address: { S: el.S.address },
+                // address: { S: el.S.address },
+                quantity: { S: el.S.quantity },
                 po_box: { S: el.S.po_box },
               },
             })),

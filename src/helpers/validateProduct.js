@@ -56,7 +56,8 @@ export const addProductVariantschema = Joi.object({
     .label("compare_price_at"),
     warehouse_arr: Joi.array().items(
       Joi.object({
-        address: Joi.string().required().label("address"),
+        // address: Joi.string().required().label("address"),
+        quantity: Joi.string().required().label("quantity"),
         po_box: Joi.string().allow("", null).label("po_box"),
       })
     ).min(1).required().label("warehouse_arr"),
