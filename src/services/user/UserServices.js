@@ -367,7 +367,7 @@ class UserServices {
           : findData?.Items[0]?.trade_license?.S || "";
         if (req.files && req.files?.trade_license?.length) {
           let filePath = `./uploads/${user_type}/${findData?.Items[0]?.trade_license?.S}`;
-          console.log(filePath,"filepathhhhhhh")
+          console.log(filePath, "filepathhhhhhh")
           try {
             deleteImageFRomLocal(filePath);
           } catch (err) {
@@ -520,7 +520,7 @@ class UserServices {
               ":iban": { S: iban || "" },
               ":emirate_id_pic": { S: emirate_id_pic || "" },
               ":updated_at": { S: new Date().toISOString() },
-              ":term_and_condition": { S: term_and_condition||"inactive" },
+              ":term_and_condition": { S: term_and_condition || "inactive" },
             },
           };
           console.log(params, "apra slide 3");
@@ -787,9 +787,9 @@ class UserServices {
           for (let el in req?.files) {
             for (let ele of req?.files[el]) {
               // console.log(ele, "eleleellel")
-              try{
-                await deleteImageFromS3(ele?.filename,req.body.user_type);
-              }catch(err){}
+              try {
+                await deleteImageFromS3(ele?.filename, req.body.user_type);
+              } catch (err) { }
               try {
                 await removefIle(ele?.filename, req.body.user_type);
               } catch (error) {
@@ -1051,9 +1051,8 @@ class UserServices {
           },
         })
       );
-
       console.log(findData?.Items[0], "dinffdddaa", "findData");
-      if (findData?.Items[0]?.account_status?.S != "activated") {
+      if (findData?.Items[0]?.user_type?.S != "super_admin" && findData?.Items[0]?.account_status?.S != "activated") {
         return res.status(400).json({
           message: "This account de-activated",
           statusCode: 400,
@@ -1357,7 +1356,6 @@ class UserServices {
           .status(400)
           .json({ message: "Not authorise", statusCode: 400, success: false });
       }
-      // let get=await new
       const findData = await dynamoDBClient.send(
         new QueryCommand({
           TableName: "users",
