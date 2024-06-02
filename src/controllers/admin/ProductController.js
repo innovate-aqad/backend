@@ -62,7 +62,7 @@ class ProductController {
   async addProductVariants(req, res) {
     try {
       const { id } = req.body;
-      console.log(req.body, "req.bodyyyyyyyy =", "req.userData", "req.userdata  AAA  TT ",req.files);
+      console.log(req.body, "req.bodyyyyyyyy =", "req.userData", "req.userdata  AAA  TT ");
       if (req.userData?.user_type != 'vendor' && req.userData?.user_type != 'super_admin' && req.userData?.user_type != 'employee') {
         return res.status(400).json({ message: "Not auithorise to add product", statusCode: 400, success: false })
       }
