@@ -652,7 +652,7 @@ class ProductServices {
             warehouse_arr: {
               L: variant.warehouse_arr.map((el) => ({
                 M: {
-                  address: { S: el.address ||""},
+                  // address: { S: el.address ||""},
                   po_box: { S: el.po_box ||""},
                   quantity:{S:el?.quantity||""}
                 },
@@ -759,7 +759,7 @@ class ProductServices {
             L:
               warehouse_arr?.map((el) => ({
                 M: {
-                  address: { S: el?.address || "" },
+                  // address: { S: el?.address || "" },
                   po_box: { S: el?.po_box || "" },
                   quantity: { S: el?.quantity|| "" },
                 },
