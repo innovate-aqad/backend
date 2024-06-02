@@ -102,7 +102,7 @@ class UserServices {
         term_and_condition,
       } = req.body;
       console.log(req.body, " @@@  a  aaaaaa!@#!@#aa req.body");
-      // console.log(req.files, "req.filesssss")
+      console.log(req.files, "req.filesssss")
       email = email?.trim();
       let findData;
       if ((slide == 2 || slide == 3 || slide == 4) && doc_id == "") {
@@ -125,7 +125,7 @@ class UserServices {
         // console.log(findData, "findataaaaaaaa222222111");
       }
       console.log(
-        findData?.Items[0]?.profile_photo?.S,
+        findData?.Items[0],
         "findDatafindData22",
         findData
       );
@@ -367,6 +367,7 @@ class UserServices {
           : findData?.Items[0]?.trade_license?.S || "";
         if (req.files && req.files?.trade_license?.length) {
           let filePath = `./uploads/${user_type}/${findData?.Items[0]?.trade_license?.S}`;
+          console.log(filePath,"filepathhhhhhh")
           try {
             deleteImageFRomLocal(filePath);
           } catch (err) {
@@ -519,10 +520,10 @@ class UserServices {
               ":iban": { S: iban || "" },
               ":emirate_id_pic": { S: emirate_id_pic || "" },
               ":updated_at": { S: new Date().toISOString() },
-              ":term_and_condition": { S: term_and_condition },
+              ":term_and_condition": { S: term_and_condition||"inactive" },
             },
           };
-          // console.log(params, "apra slide 3");
+          console.log(params, "apra slide 3");
           await dynamoDBClient.send(new UpdateItemCommand(params));
           return res.status(200).json({
             message: "User data updated successfully",

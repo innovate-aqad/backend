@@ -53,7 +53,7 @@ class UserController {
   async register(req, res) {
     try {
       const { slide, user_type, doc_id, db_driver_details_array } = req.body;
-      console.log(req.body, "req.  bodyyyyyyyy before schema == yyyyy yyy yyyy");
+      // console.log(req.body, "req.  bodyyyyyyyy before schema == yyyyy yyy yyyy");
       if (slide == 1 && !doc_id && !doc_id?.length > 0) {
         let { error } = registerSchema.validate(req.body, options);
         if (error) {

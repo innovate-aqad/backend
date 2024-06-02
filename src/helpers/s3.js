@@ -50,8 +50,7 @@ const storage = multer.diskStorage({
     // console.log(req.body,"req.bodyyyyyyyyy")
 
     const { user_type } = req.body;
-    console.log(req.files, "imnulterrrrrrrrrrrrr");
-    console.log(req.body, "req bodddddddddy");
+    // console.log(req.files, "imnulterrrrrrrrrrrrr");
     let destination = "./uploads/";
     if (user_type == "vendor") {
       destination += "vendor/";
@@ -130,7 +129,7 @@ export const uploadImageToS3 = async (fileName, filePath, type) => {
       Body: fileContent,
       //   ACL: 'public-read' // Set the access control list for the object
     };
-    console.log(params, "paramsnsns");
+    // console.log(params, "paramsnsns");
     // const data = await s3.upload(params).promise();
     // Execute the PutObjectCommand
     const command = new PutObjectCommand(params);
