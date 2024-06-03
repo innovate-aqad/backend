@@ -10,9 +10,9 @@ export const OrderSchema = Joi.object({
           .min(1)
           .items(
             Joi.object({
-              variant_id: Joi.string().max(70),
-              product_id: Joi.string().max(70),
-              quantity: Joi.string().max(70),
+              variant_id: Joi.string().max(70).label("variant_id"),
+              product_id: Joi.string().max(70).label("product_id"),
+              quantity: Joi.number().positive().label("quantity"),//product title , price ,image
             })
           )
           .required(),

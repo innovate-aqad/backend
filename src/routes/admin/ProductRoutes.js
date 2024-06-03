@@ -10,6 +10,7 @@ const ProductRoutes = express.Router();
 ProductRoutes.post("/add", authorize, ProductControllerObj.addProduct);//main product
 ProductRoutes.get("/get", authorize, ProductControllerObj.get_data);
 ProductRoutes.get("/get_by_id", authorize, ProductControllerObj.get_data_by_id);
+ProductRoutes.get("/get_specific_data", authorize, ProductControllerObj.get_data_specific_only);
 ProductRoutes.delete(
   "/delete_product",
   authorize,
