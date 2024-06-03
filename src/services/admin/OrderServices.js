@@ -9,6 +9,7 @@ import {
   QueryCommand,
   GetItemCommand,
   DeleteItemCommand,
+  BatchGetItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
 
@@ -23,19 +24,8 @@ const dynamoDBClient = new DynamoDBClient({
 class orderServices {
   async add(req, res) {
     try {
-      let { order_details, id } = req.body;
-      // let categoryExist = await dynamoDBClient.send(new QueryCommand({
-      //   TableName: "order",
-      //   KeyConditionExpression: "id = :id",
-      //   ExpressionAttributeValues: {
-      //     ":id": { S: category_id }
-      //   }
-      // }))
-      // if (categoryExist?.Count == 0) {
-      //   return res.status(400).json({ message: "Category not found", statusCode: 400, success: false })
-      // } else if (categoryExist?.Items[0]?.status?.S != 'active') {
-      //   return res.status(400).json({ message: "Category is not active", statusCode: 400, success: false })
-      // }
+      let { order_detail, id } = req.body;
+      console.log(order_detail, "order_detailsorder_details");
 
       const timestamp = new Date().toISOString(); // Format timestamp as ISO string
 
@@ -107,21 +97,14 @@ class orderServices {
       } else {
         let randomNumber = Date.now() + Math.round(Math.random() * 1000000000);
         let vendor_id_arr = [];
-        for (let le of order_details) {
+        let product_id_arr = [];
+        for (let le of order_detail) {
           vendor_id_arr.push(le?.vendor_id);
+          for (let el of le?.detail) {
+            product_id_arr.push(el?.product_id);
+          }
         }
-
-        // const findEmailExist = await dynamoDBClient.send(
-        //   new QueryCommand({
-        //     TableName: "users",
-        //     // IndexName: "title", // replace with your GSI name
-        //     KeyConditionExpression: "id = :id",
-        //     ExpressionAttributeValues: {
-        //       ":id": { S: id },
-        //     },
-        //   })
-        // )
-        console.log(vendor_id_arr, "vendor_id_arr");
+        console.log(product_id_arr, "product_id_arr")
         const paramsOf = {
           RequestItems: {
             users: {
@@ -131,12 +114,40 @@ class orderServices {
             },
           },
         };
-
-        const result = await dynamoDBClient.batchGetItem(paramsOf).promise();
-        console.log(result, "result,@@@@@@@");
-        // The result object will contain the items fetched for each vendor_id
+        const command = new BatchGetItemCommand(paramsOf); 
+        const result = await dynamoDBClient.send(command);
         const items = result.Responses["users"];
-        console.log(items, "@@@@@@@@@@@@");
+        // console.log(items, "@@@@@@@@@@@@");
+        for (let le of items) {
+          if (le?.account_status?.S != "activated") {
+            return res
+              .status(400)
+              .json({
+                message: `This vendor account ${le?.name?.S} is not activate`,
+              });
+          }
+        }
+
+        const paramsOfProduct = {
+          RequestItems: {
+            products: {
+              Keys: product_id_arr.map((id) => ({
+                id: { S: id },
+              })),
+            },
+          },
+        };
+        const commandProduct = new BatchGetItemCommand(paramsOfProduct); 
+        const resultProduct = await dynamoDBClient.send(commandProduct);
+        const itemsProduct = resultProduct?.Responses["products"];
+        // console.log(itemsProduct,"itemsproduct@!@@ $");
+        
+for(let el of itemsProduct){
+  for(let le of el?.variation_arr?.L){
+    console.log(le?.M?.warehouse_arr?.L,"lelelle");
+    
+  }
+}
         return;
         if (findEmailExist.Count > 0) {
           return res.status(400).json({
