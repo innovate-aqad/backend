@@ -302,65 +302,24 @@ class ProductServices {
           },
         };
       }
-
-      // if (userType === "vendor") {
-      //   params.ExclusiveStartKey. created_by= {
-      //       S: req.userData.id, 
-      //     }
-      //   // params.FilterExpression = "created_by = :created_by";
-      //   // params.ExpressionAttributeValues = {
-      //   //   ":created_by": userId,
-      //   // };
-      // }
       if (userType === "vendor") {
-        if (!params.ExclusiveStartKey) {
-          params.ExclusiveStartKey = {};
-        }
-        params.ExclusiveStartKey.created_by = {
-          S: userId, // Filter based on the user's ID
+        params.FilterExpression = "created_by = :userId";
+        params.ExpressionAttributeValues = {
+          ":userId": { S: userId },
         };
       }
 
-      // if (req.query.LastEvaluatedKey) {
-      //   params.ExclusiveStartKey = JSON.parse(req.query.LastEvaluatedKey);
-      // }
-      console.log(params, "dynmosssssssssssssss");
+      // console.log(params, "dynmosssssssssssssss");
 
       const command = new ScanCommand(params);
       const data = await dynamoDBClient.send(command);
       const simplifiedData = data.Items.map((el) =>
         simplifyDynamoDBResponse(el)
       );
-
-      // const productsResult = new ScanCommand(params);
-      // const data = await dynamoDBClient.send(productsResult);
-
-      // const productsResult = await dynamoDB.send(new ScanCommand(params));
-      // const productsResult = await dynamoDBClient.send(new ScanCommand(params));
-
-      // const productsResult = await dynamoDBClient.send(new QueryCommand(params));
-
-      // const command = new GetItemCommand(params);
-      // let get=await dynamoDBClient2.send(command)
-      // console.log(data,"datadatadatadata");
       let LastEvaluatedKey;
       if (data.LastEvaluatedKey) {
         LastEvaluatedKey = data.LastEvaluatedKey?.id?.S;
       }
-
-      // const productIds = productsResult.Items.map((product) => product.id);
-      // Fetch product variants for all products using a single query
-      // const variantParams = {
-      //   TableName: "product_variant",
-      //   FilterExpression: "product_id IN (" + productIds.map(() => ":product_id").join(",") + ")",
-      //   ExpressionAttributeValues: productIds.reduce((acc, productId, index) => {
-      //     acc[`:product_id${index}`] = productId;
-      //     return acc;
-      //   }, {}),
-      // };
-      // const variantsResult = await dynamoDB.scan(variantParams).promise();
-
-      // Group variants by product ID
 
       res.status(200).json({
         message: "Fetch Data",

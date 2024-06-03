@@ -624,6 +624,7 @@ class UserServices {
                   M: {
                     brand: { S: el?.brand || "" },
                     number: { S: el?.number || "" },
+                    vehicleType: { S: el?.vehicleType || "" },
                   },
                 })) ||
                 findData?.Items[0]?.vehicle_details_array?.L ||
@@ -1254,6 +1255,7 @@ class UserServices {
           user_type: findData?.Items[0]?.user_type?.S,
           id: findData?.Items[0]?.id?.S,
           is_verified: findData?.Items[0]?.is_verified?.BOOL,
+          account_status: findData?.Items[0]?.account_status?.S,
         };
         let token = generateAccessToken(obj);
         let expiryDate = new Date();
@@ -1474,8 +1476,8 @@ class UserServices {
         IndexName: "created_by-index",
         KeyConditionExpression: "created_by = :created_by",
         ExpressionAttributeValues: {
-          ":created_by": { S: req.userData?.id },
         },
+        ":created_by": { S: req.userData?.id },
         Limit: limit,
         ScanIndexForward: false,
         Select: "ALL_ATTRIBUTES", // Retrieve all attributes
