@@ -4,7 +4,7 @@ import { authorize } from "../../middlewares/auth.js";
 import { educationImage, userImage } from "../../helpers/multer.js";
 import {  uploadCategory } from "../../helpers/s3.js";
 
-const CategoryRoutes = express.Router();
+const  CategoryRoutes = express.Router();
 
 CategoryRoutes.post(
   "/add",

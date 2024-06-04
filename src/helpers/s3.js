@@ -16,7 +16,11 @@ import multer from "multer";
 // // const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 // new version
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 // import { fromIni } from "@aws-sdk/credential-provider-ini";
 
@@ -46,8 +50,7 @@ const storage = multer.diskStorage({
     // console.log(req.body,"req.bodyyyyyyyyy")
 
     const { user_type } = req.body;
-    console.log(req.files, "imnulterrrrrrrrrrrrr");
-    console.log(req.body, "req bodddddddddy");
+    // console.log(req.files, "imnulterrrrrrrrrrrrr");
     let destination = "./uploads/";
     if (user_type == "vendor") {
       destination += "vendor/";
@@ -106,9 +109,17 @@ export const uploadProduct = multer({
 export const uploadImageToS3 = async (fileName, filePath, type) => {
   try {
     const fileContent = await fs.readFile(filePath);
-    let fileNameTemp = fileName
-    if (type == 'product') {
-      fileNameTemp = `vendor/product/${fileName}`
+    let fileNameTemp = fileName;
+    if (type == "product") {
+      fileNameTemp = `vendor/product/${fileName}`;
+    }else if(type=='vendor'){
+      fileNameTemp = `vendor/${fileName}`;
+    }else if(type=='logistic'){
+      fileNameTemp = `logistic/${fileName}`;
+    }else if(type=='seller'){
+      fileNameTemp = `seller/${fileName}`;
+    }else if(type=='employee'){
+      fileNameTemp = `employee/${fileName}`;
     }
     // Bucket name: aqad-documents
     // Location: me-central-1
@@ -118,7 +129,7 @@ export const uploadImageToS3 = async (fileName, filePath, type) => {
       Body: fileContent,
       //   ACL: 'public-read' // Set the access control list for the object
     };
-console.log(params,"paramsnsns")
+    // console.log(params, "paramsnsns");
     // const data = await s3.upload(params).promise();
     // Execute the PutObjectCommand
     const command = new PutObjectCommand(params);
@@ -134,15 +145,29 @@ console.log(params,"paramsnsns")
 // Function to delete a file from S3
 export const deleteImageFromS3 = async (
   fileName,
+  type,
   bucketName = "aqad-documents"
 ) => {
+  let fileNameTemp = fileName;
+  if (type == "product") {
+    fileNameTemp = `vendor/product/${fileName}`;
+  } else if (type == "vendor") {
+    fileNameTemp = `vendor/${fileName}`;
+  } else if (type == "seller") {
+    fileNameTemp = `seller/${fileName}`;
+  } else if (type == "logistic") {
+    fileNameTemp = `logistic/${fileName}`;
+  } else if (type == "employee") {
+    fileNameTemp = `employee/${fileName}`;
+  }
   try {
     const params = {
       Bucket: bucketName,
-      Key: fileName,
+      Key: fileNameTemp,
     };
-
-    const data = await s3.deleteObject(params).promise();
+    const command = new DeleteObjectCommand(params);
+    const data = await s3.send(command);
+    // const data = await s3.deleteObject(params).promise();
     console.log("File deleted successfully");
     return data; // Returns data about the deletion
   } catch (err) {
@@ -180,3 +205,17 @@ export const storeImageMetadata = async (fileName, imageUrl) => {
 //   .catch(err => {
 //     console.error('Error:', err);
 //   });
+
+export const deleteImageFRomLocal = async (filePath) => {
+  try {
+    try {
+      console.log("imagea", filePath, "fi cation");
+      //  fs.unlinkSync(filePath).then((el)=>console.log(el,"errroror")).catch((el)=>console.log(el,"elelel"));
+      await fs.unlink(filePath);
+    } catch (er) {
+      console.log(er, "asdads");
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};

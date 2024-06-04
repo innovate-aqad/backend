@@ -1,84 +1,25 @@
 import Joi from "joi";
 
 export const OrderSchema = Joi.object({
-  address_id: Joi.string()
-    .trim()
-    .custom((value, helpers) => {
-      if (parseFloat(value) < 0) {
-        return helpers.message("address_id cannot be negative");
-      }
-      return value;
-    })
-    .required()
-    .label("address id"),
-  country_code: Joi.string()
-    .trim()
-    .required()
-    .label("country code"),
-
-  variant_quantity: Joi.array()
+  order_detail: Joi.array()
     .min(1)
     .items(
       Joi.object({
-        variant_id: Joi.string()
-          .custom((value, helpers) => {
-            if (parseFloat(value) < 0) {
-              return helpers.message("variant_id cannot be negative");
-            }
-            return value;
-          })
-          .trim()
+        vendor_id: Joi.string().trim().required(),
+        detail: Joi.array()
+          .min(1)
+          .items(
+            Joi.object({
+              variant_id: Joi.string().max(70).label("variant_id"),
+              product_id: Joi.string().max(70).label("product_id"),
+              quantity: Joi.number().positive().label("quantity"),//product title , price ,image
+            })
+          )
           .required(),
-        quantity: Joi.number()
-          .custom((value, helpers) => {
-            if (parseFloat(value) < 0) {
-              return helpers.message("quantity cannot be negative");
-            }
-            return value;
-          })
-          .required(),
-        // thumbnail_url: Joi.string().label("thumbnail_img"),
-        // variant_name: Joi.string().label("variant_name"),
       })
     )
     .required()
-    .label("variant_quantity"),
-  coupon_id: Joi.string()
-    .trim()
-    .custom((value, helpers) => {
-      if (parseFloat(value) < 0) {
-        return helpers.message("coupon_id cannot be negative");
-      }
-      return value;
-    }),
-  sub_total: Joi.string()
-    .required()
-    .custom((value, helpers) => {
-      if (parseFloat(value) < 0) {
-        return helpers.message("Sub_total cannot be negative");
-      }
-      return value;
-    })
-    .label("sub_total"),
-  delivery_charges: Joi.string()
-    .required()
-    .custom((value, helpers) => {
-      if (parseFloat(value) < 0) {
-        return helpers.message("delivery_charges cannot be negative");
-      }
-      return value;
-    })
-    .label("delivery_charges  "),
-  payment_method: Joi.string()
-    .valid("Cash on Delivery", "Paypal", "Stripe", "Razorpay")
-    .required()
-    .label("payment_method"),
-  payment_status: Joi.string()
-    .valid("complete", "failed", "pending")
-    .label("payment_status"),
-  status: Joi.string()
-    .valid("new", "processing", "delivered", "cancelled", "returned")
-    .label("status"),
+    .label("order_detail"),
 });
 
 export const UpdateOrderSchema = Joi.object({
@@ -92,21 +33,10 @@ export const UpdateOrderSchema = Joi.object({
     })
     .required()
     .label("order id"),
-  card_details: Joi.string()
-    .trim()
-    .required()
-    .label("card_details"),
-  card_data: Joi.string()
-    .min(1)
-    .required()
-    .label("card_data"),
-  txn_id: Joi.string()
-    .trim()
-    .required()
-    .label("txn_id"),
-  delivery_instruction: Joi.string()
-    .trim()
-    .label("delivery_instruction"),
+  card_details: Joi.string().trim().required().label("card_details"),
+  card_data: Joi.string().min(1).required().label("card_data"),
+  txn_id: Joi.string().trim().required().label("txn_id"),
+  delivery_instruction: Joi.string().trim().label("delivery_instruction"),
   payment_status: Joi.string()
     .trim()
     .valid("complete", "failed", "pending")
@@ -125,11 +55,7 @@ export const update_order_status_schema = Joi.object({
     })
     .required()
     .label("order id"),
-  status: Joi.string()
-    .trim()
-    .valid("cancelled")
-    .required()
-    .label("status"),
+  status: Joi.string().trim().valid("cancelled").required().label("status"),
 });
 
 export const request_return_schema = Joi.object({
@@ -143,10 +69,7 @@ export const request_return_schema = Joi.object({
     })
     .required()
     .label("order id"),
-  status: Joi.string()
-    .trim()
-    .required()
-    .label("status"),
+  status: Joi.string().trim().required().label("status"),
 });
 
 export const cancel_order_schema = Joi.object({
@@ -174,14 +97,8 @@ export const UpdateDeliveryDateSchema = Joi.object({
     })
     .required()
     .label("order id"),
-  delivery_date: Joi.date()
-    .required()
-    .min(new Date())
-    .label("delivery_date"),
-  shipping_date: Joi.date()
-    .required()
-    .min(new Date())
-    .label("shipping_date"),
+  delivery_date: Joi.date().required().min(new Date()).label("delivery_date"),
+  shipping_date: Joi.date().required().min(new Date()).label("shipping_date"),
   out_for_delivery_date: Joi.date()
     .required()
     .min(new Date())
@@ -225,8 +142,5 @@ export const createPaymentIntentSchema = Joi.object({
     })
     .required()
     .label("amount"),
-  currency: Joi.string()
-    .trim()
-    .required()
-    .label("currency"),
+  currency: Joi.string().trim().required().label("currency"),
 });

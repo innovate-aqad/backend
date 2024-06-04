@@ -46,16 +46,18 @@ export const addProductVariantschema = Joi.object({
   product_id: Joi.string().min(3).max(50).trim().required().label("product_id"),
   sku: Joi.string().min(3).max(50).required().label("sku"),
   variation: Joi.string().min(1).max(60).required().label("variation"),
+  input_field: Joi.number().min(1).max(60).required().label("input_field"),
   // product_id: Joi.string().min(3).max(50).required().label("product_id"),
   price: Joi.number().positive().required().label("price"),
-  quantity: Joi.number().positive().required().label("quantity"),
+  // quantity: Joi.number().positive().required().label("quantity"),
   compare_price_at: Joi.number()
     .positive()
     .required()
     .label("compare_price_at"),
     warehouse_arr: Joi.array().items(
       Joi.object({
-        address: Joi.string().required().label("address"),
+        // address: Joi.string().required().label("address"),
+        quantity: Joi.string().required().label("quantity"),
         po_box: Joi.string().allow("", null).label("po_box"),
       })
     ).min(1).required().label("warehouse_arr"),
@@ -80,6 +82,16 @@ export const editProductchema = Joi.object({
 export const addProductVariantchema = Joi.object({
   product_id: Joi.string().required().label("Product id"),
   color_id: Joi.string().required().label("color id"),
+});
+
+export const deleteVariantImagechema = Joi.object({
+  product_id: Joi.string().max(50).required().label("Product id"),
+  variant_id: Joi.string().max(50).required().label("variant_id"),
+  image: Joi.string().max(200) .required().label("image_name"),
+});
+
+export const getProductByIdchema = Joi.object({
+  product_id: Joi.string().max(90).required().label("Product id"),
 });
 
 export const editProductVariantchema = Joi.object({

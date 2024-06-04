@@ -12,6 +12,8 @@ import {
   GetSubUserSchema,
   AddSuperUserSchema,
   assignRoleToSubUserSchema,
+  verifyAccountSchema,
+  AccountDeactivateOrActiveSchema,
 } from "../../helpers/validateUser.js";
 import bcrypt from "bcrypt";
 import UserServicesObj from "../../services/user/UserServices.js";
@@ -32,7 +34,6 @@ const options = {
 };
 
 class UserController {
-
   async super_admin(req, res) {
     try {
       console.log(req.body, "req.bodyyyyyyyyyy")
@@ -52,7 +53,7 @@ class UserController {
   async register(req, res) {
     try {
       const { slide, user_type, doc_id, db_driver_details_array } = req.body;
-      console.log(req.body, "req.  bodyyyyyyyy before schema == yyyyy yyy yyyy");
+      // console.log(req.body, "req.  bodyyyyyyyy before schema == yyyyy yyy yyyy");
       if (slide == 1 && !doc_id && !doc_id?.length > 0) {
         let { error } = registerSchema.validate(req.body, options);
         if (error) {
@@ -62,7 +63,8 @@ class UserController {
             statusCode: 400,
           });
         }
-      }//changes
+      }
+      // changes
       //v a t _ c e r t i f i c a t e
       if (
         (user_type == "vendor" && slide == 3) ||
@@ -81,7 +83,7 @@ class UserController {
               success: false,
             });
           } else {
-            uploadImageToS3(name, req.files?.vat_certificate[0]?.path);
+            // uploadImageToS3(name, req.files?.vat_certificate[0]?.path);
           }
         } else {
           // console.log(req.body, "req.bodyyyyyyyyyyy", req.files, "asas req.files")
@@ -112,7 +114,7 @@ class UserController {
               success: false,
             });
           } else {
-            uploadImageToS3(name, req.files?.trade_license[0]?.path);
+            // uploadImageToS3(name, req.files?.trade_license[0]?.path);
           }
         } else {
           if (user_type == "logistic" && slide == 3 && !req.body.db_trade_license) {
@@ -142,7 +144,7 @@ class UserController {
               success: false,
             });
           } else {
-            uploadImageToS3(name, req.files?.cheque_scan[0]?.path);
+            // uploadImageToS3(name, req.files?.cheque_scan[0]?.path);
           }
         } else {
           // if (user_type == "logistic" && slide == 3) {
@@ -172,7 +174,7 @@ class UserController {
               success: false,
             });
           } else {
-            uploadImageToS3(name, req.files?.emirate_id_pic[0]?.path);
+            // uploadImageToS3(name, req.files?.emirate_id_pic[0]?.path);
           }
         }
       }
@@ -193,7 +195,7 @@ class UserController {
           });
         } else {
           // console.log("aaaaaaaaaaaaaaa   ",req.files?.profile_photo[0]?.path)
-          uploadImageToS3(name, req.files?.profile_photo[0]?.path);
+          // uploadImageToS3(name, req.files?.profile_photo[0]?.path);
         }
       } else {
         if (user_type == "employee" && slide == 1) {
@@ -218,7 +220,7 @@ class UserController {
             success: false,
           });
         } else {
-          uploadImageToS3(name, req.files?.residence_visa[0]?.path);
+          // uploadImageToS3(name, req.files?.residence_visa[0]?.path);
         }
       } else if (
         req.files &&
@@ -249,7 +251,7 @@ class UserController {
             success: false,
           });
         } else {
-          uploadImageToS3(name, req.files?.passport[0]?.path);
+          // uploadImageToS3(name, req.files?.passport[0]?.path);
         }
       } else if (
         req.files &&
@@ -263,7 +265,7 @@ class UserController {
           success: false,
         });
       }
-      //=======================================================slide 4 and user_type == logistic
+      //=======================slide 4 and user_type == logistic
       // driver_images
       //
       // console.log(req.files,"poiuyt req.files")
@@ -284,7 +286,7 @@ class UserController {
               success: false,
             });
           } else {
-            uploadImageToS3(el?.filename, el?.path);
+            // uploadImageToS3(el?.filename, el?.path);
           }
         }
       }
@@ -315,7 +317,7 @@ class UserController {
               success: false,
             });
           } else {
-            uploadImageToS3(name, el?.path);
+            // uploadImageToS3(name, el?.path);
           }
         }
       } else if (!db_driver_details_array?.length &&
@@ -337,8 +339,6 @@ class UserController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
-
 
   async getByEmail(req, res) {
     try {
@@ -370,7 +370,6 @@ class UserController {
           statusCode: 400,
         });
       }
-
       await UserServicesObj.sendOtpEmail(req, res);
     } catch (err) {
       return res
@@ -389,7 +388,6 @@ class UserController {
           statusCode: 400,
         });
       }
-
       await UserServicesObj.verifyEmailWithOtpCheck(req, res);
     } catch (err) {
       return res
@@ -410,7 +408,6 @@ class UserController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
 
   // add sub_user created
   async add_sub_user(req, res) {
@@ -452,7 +449,6 @@ class UserController {
     }
   }
 
-
   //for super_admin fetch all user_type 
   async get_sub_user(req, res) {
     try {
@@ -469,7 +465,6 @@ class UserController {
       return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
     }
   }
-
 
   async delete_sub_user(req, res) {
     try {
@@ -557,6 +552,40 @@ class UserController {
           .json({ message: error.details[0]?.message, success: false });
       }
       UserServicesObj.sendForgotPasswordEmail(req, res);
+    } catch (err) {
+      // console.log(err, "error user contrl");
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  async verify_user_account(req, res) {
+    try {
+      let { error } = verifyAccountSchema.validate(req?.body, options);
+      if (error) {
+        return res
+          .status(400)
+          .json({ message: error.details[0]?.message, success: false });
+      }
+      UserServicesObj.verifyUserAccount(req, res);
+    } catch (err) {
+      // console.log(err, "error user contrl");
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  async User_account_deactivate_or_activate(req, res) {
+    try {
+      let { error } = AccountDeactivateOrActiveSchema.validate(req?.body, options);
+      if (error) {
+        return res
+          .status(400)
+          .json({ message: error.details[0]?.message, success: false });
+      }
+      UserServicesObj.UserAccountDeactivateOrActivate(req, res);
     } catch (err) {
       // console.log(err, "error user contrl");
       return res

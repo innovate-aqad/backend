@@ -96,6 +96,13 @@ class CategoryServices {
             ":updated_at": { S: new Date().toISOString() },
           },
         };
+      //   {
+      //     "title":"Baby Productss",
+      //     // "title":"Household Good",
+      // "status":"active"
+      
+      // // ,"id":"cbc232588c50403985d69239c4b9657a"
+      // }
         const findExist = await dynamoDBClient.send(
           new QueryCommand({
             TableName: "category",

@@ -25,3 +25,7 @@ export const editRoleSchema = Joi.object({
     .required()
     .label("status"),
 });
+
+export const deleteRoleSchema = Joi.object({
+  id: Joi.string().max(40).required().label("id"),
+});

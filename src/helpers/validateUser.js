@@ -131,87 +131,71 @@ export const registerSchema = Joi.object({
   //     otherwise: Joi.array().items(Joi.string()).optional(),
   //   }
   // ),
-
 });
 
 export const getDataByEmailSchema = Joi.object({
   email: Joi.string()
     .trim()
     .required()
-    .email({ tlds: { allow: false } }).label("Email"),
-
+    .email({ tlds: { allow: false } })
+    .label("Email"),
 });
 
 export const VerifyEmailWithOtpSchema = Joi.object({
   email: Joi.string()
     .trim()
     .required()
-    .email({ tlds: { allow: false } }).label("Email"),
-  otp: Joi.number().positive()
-    .required()
-    .label("otp"),
-
+    .email({ tlds: { allow: false } })
+    .label("Email"),
+  otp: Joi.number().positive().required().label("otp"),
 });
 
 export const AddSubUserSchema = Joi.object({
   email: Joi.string()
     .trim()
     .required()
-    .email({ tlds: { allow: false } }).label("Email"),
-  name: Joi.string()
-    .trim().min(3).max(40)
+    .email({ tlds: { allow: false } })
+    .label("Email"),
+  name: Joi.string().trim().min(3).max(40).required().label("name"),
+  role: Joi.string().trim().min(3).max(50).required().label("role"),
+  phone: Joi.string()
+    .trim()
     .required()
-    .label("name"),
-  role: Joi.string()
-    .trim().min(3).max(50)
-    .required()
-    .label("role"),
-  phone: Joi.string().trim().required().regex(phonePattern).messages({
-    "string.pattern.base":
-      "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
-  }).label("phone"),
+    .regex(phonePattern)
+    .messages({
+      "string.pattern.base":
+        "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
+    })
+    .label("phone"),
 });
 
 export const assignRoleToSubUserSchema = Joi.object({
-  user_id: Joi.string()
-    .trim()
-    .required().label("user_id"),
-  role_id: Joi.string()
-    .trim().max(40)
-    .required()
-    .label("role_id"),
-  });
+  user_id: Joi.string().trim().required().label("user_id"),
+  role_id: Joi.string().trim().max(40).required().label("role_id"),
+});
 
 export const AddSuperUserSchema = Joi.object({
   email: Joi.string()
     .trim()
     .required()
-    .email({ tlds: { allow: false } }).label("Email"),
-  name: Joi.string()
-    .trim().min(3).max(40)
+    .email({ tlds: { allow: false } })
+    .label("Email"),
+  name: Joi.string().trim().min(3).max(40).required().label("name"),
+  phone: Joi.string()
+    .trim()
     .required()
-    .label("name"),
-  phone: Joi.string().trim().required().regex(phonePattern).messages({
-    "string.pattern.base":
-      "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
-  }).label("phone"),
-  
+    .regex(phonePattern)
+    .messages({
+      "string.pattern.base":
+        "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
+    })
+    .label("phone"),
 });
 
 export const GetSubUserSchema = Joi.object({
-  page: Joi.number().positive()
-    .label("phone"),
-  limit: Joi.number().positive()
-    .label("limit"),
+  page: Joi.number().positive().label("phone"),
+  limit: Joi.number().positive().label("limit"),
 });
-
-
-
-
-
-
-
-
 
 export const registerAdminSchema = Joi.object({
   name: Joi.string().min(3).max(25).trim().required().label("Full Name"),
@@ -288,6 +272,16 @@ export const loginWithOtpSchema = Joi.object({
 export const statusChangeSchema = Joi.object({
   id: Joi.number().required().label("id"),
   status: Joi.string().required().valid("active", "inactive").label("status"),
+});
+// , status
+export const verifyAccountSchema = Joi.object({
+  user_id: Joi.string().max(50).required().label("id"),
+  status: Joi.boolean().required().label("status"),
+});
+
+export const AccountDeactivateOrActiveSchema = Joi.object({
+  user_id: Joi.string().max(50).required().label("id"),
+  status: Joi.string().required().valid("deactivated",'activated').label("status"),
 });
 export const editAdminSchema = Joi.object({
   id: Joi.number().required().label("id"),
