@@ -43,7 +43,7 @@ class PermissionServices {
       };
       const batchGetCommand = new BatchGetItemCommand(batchGetParams);
       const data = await dynamoDBClient.send(batchGetCommand);
-// console.log(data,"data............")
+      // console.log(data,"data............")
       const fetchedItems = data.Responses["api_endpoint"];
       const fetchedIds = new Set(fetchedItems.map(item => item.id.S));
       const missingIds = allRouteIds.filter(routeId => !fetchedIds.has(routeId));
@@ -56,7 +56,7 @@ class PermissionServices {
           statusCode: 400,
           success: false,
         });
-        return 
+        return
       }
       if (id) {
         let findData = await dynamoDBClient.send(
@@ -175,9 +175,11 @@ class PermissionServices {
   // }
 
   //get all data 
-  
+
   async getAllData(req, res) {
     try {
+      console.log(req.userData?.user_type , "req.userData?.user_type  @#@")
+      req.userData.user_type ='seller'
       const params = {
         TableName: "permission",
       };
@@ -195,6 +197,9 @@ class PermissionServices {
       for (let el of getAll.Items) {
         let get1 = simplifyDynamoDBResponse(el)
         get.push(get1)
+      }
+      if (req.userData?.user_type == 'vendor' || req.userData?.user_type == 'seller') {
+        get = get?.filter((el) => el?.title?.toLowerCase()?.includes('product') || el?.title?.toLowerCase()?.includes('order') || el?.title?.toLowerCase()?.includes('inventory'))
       }
       return res.status(200).json({
         message: "Fetch data",
