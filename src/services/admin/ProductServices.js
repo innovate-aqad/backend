@@ -408,7 +408,6 @@ class ProductServices {
       // console.log(simplifiedData, "simplifiedDatasimplifiedDatasimplifiedData", uniqueCategories,"dataOfdataOf",dataOf)
       for (let le of simplifiedData) {
         let findCategory = dataOf?.find((ele) => ele?.id?.S == le?.category_id)
-
         if (findCategory) {
           le.categoryName = findCategory?.title?.S
         }
@@ -436,7 +435,6 @@ class ProductServices {
   async get_cateory_product_count_(req, res) {
     try {
       console.log(req.userData.id, "req.userData.id ", req.userData.user_type)
-      req.userData.user_type = 'vendor'
       const params = {
         TableName: "products",
         ProjectionExpression: "category_id, id",
@@ -449,6 +447,10 @@ class ProductServices {
       }
       const command = new ScanCommand(params);
       const data = await dynamoDBClient.send(command);
+      console.log(data, "Dataaaaaaaaaaa")
+      if (data && data?.Count == 0) {
+        return res.status(400).json({ message: "Product not found", statusCode: 400, success: false })
+      }
       let obj = {};
       let uniqueCategories = [];
       // console.log(data?.Items,"data items @#",req.userData);
