@@ -443,7 +443,7 @@ class ProductServices {
             Keys: uniqueCategories.map((id) => ({
               id: { S: id },
             })),
-            ProjectionExpression: "title,id,image",
+            ProjectionExpression: "title,id,category_image",
           },
         },
       };
@@ -455,6 +455,7 @@ class ProductServices {
         return {
           id: item.id.S,
           title: item.title.S,
+          category_image: item?.category_image?.S,
         };
       });
       for (let el of simpleArray) {
@@ -462,6 +463,8 @@ class ProductServices {
           el.productCount = obj[el.id];
         }
       }
+      // id": "",
+      //       "title": "",
       res.status(200).json({
         message: "Fetch Data",
         data: simpleArray,
