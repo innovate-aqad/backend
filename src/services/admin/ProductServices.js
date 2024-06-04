@@ -379,15 +379,15 @@ class ProductServices {
           ":userId": { S: userId },
         };
       }
-      console.log("obj:", params, "wwwwwwwwwwwwww@@@@ !!!!!!! w");
-      const result = await dynamoDB.scan(params).promise();
       console.log(result,"reeeeeeeeeeee");
       const command = new ScanCommand(params);
       const data = await dynamoDBClient.send(command);
-
+      console.log(data, "data @@@@ !!!!! ");
+      // previous version of aws 
+      console.log("obj:", params, "wwwwwwwwwwwwww@@@@ !!!!!!! w");
+      const result = await dynamoDB.scan(params).promise();
       // const command = new QueryCommand(params);
       // const data = await dynamoDBClient.send(command);
-      console.log(data, "data @@@@ !!!!! ");
       const simplifiedData = data.Items.map((el) =>
         simplifyDynamoDBResponse(el)
       );
