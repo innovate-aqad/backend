@@ -126,6 +126,16 @@ class ProductController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
+  async get_cateory_product_count(req, res) {
+    try {
+      await ProductServicesObj.get_cateory_product_count_(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
   async get_data_by_id(req, res) {
     try {
       let { error } = getProductByIdchema.validate(req.query, options);

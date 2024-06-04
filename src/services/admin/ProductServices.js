@@ -8,16 +8,26 @@ import {
   DeleteItemCommand,
   QueryCommand,
   TransactGetItemsCommand,
-  GetItemCommand, BatchGetItemCommand
+  GetItemCommand,
+  BatchGetItemCommand,
 } from "@aws-sdk/client-dynamodb";
-
+import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 import AWS from "aws-sdk";
 import fs from "fs";
+import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
 import {
-  simplifyDynamoDBResponse,
-} from "../../helpers/datafetch.js";
-import { deleteImageFRomLocal, deleteImageFromS3, uploadImageToS3 } from "../../helpers/s3.js";
+  deleteImageFRomLocal,
+  deleteImageFromS3,
+  uploadImageToS3,
+} from "../../helpers/s3.js";
+AWS.config.update({
+  region: process.env.Aws_region,
+  credentials: {
+    accessKeyId: process.env.Aws_accessKeyId,
+    secretAccessKey: process.env.Aws_secretAccessKey,
+  },
+});
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const dynamoDBClient = new DynamoDBClient({
@@ -27,6 +37,10 @@ const dynamoDBClient = new DynamoDBClient({
     secretAccessKey: process.env.Aws_secretAccessKey,
   },
 });
+const dynamoDBClient2 = new DynamoDBClient({
+  region: process.env.Aws_region,
+});
+
 class ProductServices {
   async add(req, res) {
     try {
@@ -308,8 +322,7 @@ class ProductServices {
           ":userId": { S: userId },
         };
       }
-
-      // console.log(params, "dynmosssssssssssssss");
+      console.log(params, "dynmosssssssssssssss");
 
       const command = new ScanCommand(params);
       const data = await dynamoDBClient.send(command);
@@ -336,7 +349,8 @@ class ProductServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
-  
+
+  //product with pagination
   async get_dataOf_specifc(req, res) {
     try {
       const pageSize = parseInt(req.query?.pageSize) || 10;
@@ -346,14 +360,18 @@ class ProductServices {
       const params = {
         TableName: "products",
         Limit: pageSize,
-        ProjectionExpression: "category_id, sub_category_id, title, universal_standard_code, variation_arr, id"
+        ProjectionExpression:
+          "category_id, sub_category_id, title, universal_standard_code, variation_arr, id,created_by,created_at",
+        // ScanIndexForward: true,
       };
+      // // Pagination logic
       if (req.query.LastEvaluatedKey) {
         params.ExclusiveStartKey = {
           id: {
             S: req.query.LastEvaluatedKey,
           },
         };
+        // params.ExclusiveStartKey = JSON.parse(req.query.LastEvaluatedKey);
       }
       if (userType === "vendor") {
         params.FilterExpression = "created_by = :userId";
@@ -361,15 +379,62 @@ class ProductServices {
           ":userId": { S: userId },
         };
       }
+      console.log("obj:", params, "wwwwwwwwwwwwww@@@@ !!!!!!! w");
+      const result = await dynamoDB.scan(params).promise();
+      console.log(result,"reeeeeeeeeeee");
       const command = new ScanCommand(params);
       const data = await dynamoDBClient.send(command);
+
+      // const command = new QueryCommand(params);
+      // const data = await dynamoDBClient.send(command);
+      console.log(data, "data @@@@ !!!!! ");
       const simplifiedData = data.Items.map((el) =>
         simplifyDynamoDBResponse(el)
       );
-      const uniqueCategories = [];
-      simplifiedData.forEach(item => {
-        if (!uniqueCategories?.includes(item.category_id)) {
-          uniqueCategories.push(item.category_id)
+      let LastEvaluatedKey;
+      if (data.LastEvaluatedKey) {
+        LastEvaluatedKey = data.LastEvaluatedKey?.id?.S;
+      }
+      res.status(200).json({
+        message: "Fetch Data",
+        // dataOf,
+        data: simplifiedData,
+        LastEvaluatedKey,
+        statusCode: 200,
+        success: true,
+      });
+      return;
+    } catch (err) {
+      console.error(err, "erroror");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
+  //fetch all cateogry of vendor with all product count
+  async get_cateory_product_count_(req, res) {
+    try {
+      const params = {
+        TableName: "products",
+        ProjectionExpression: "category_id, id",
+      };
+      if (req.userData.user_type == "vendor") {
+        params.FilterExpression = "created_by = :userId";
+        params.ExpressionAttributeValues = {
+          ":userId": { S: req.userData.id },
+        };
+      }
+      const command = new ScanCommand(params);
+      const data = await dynamoDBClient.send(command);
+      let obj = {};
+      let uniqueCategories = [];
+      // console.log(data?.Items,"data items @#",req.userData);
+      data.Items.map((el) => {
+        if (obj[el.category_id?.S]) {
+          obj[el.category_id?.S] = obj[el.category_id?.S] + 1;
+        } else {
+          obj[el.category_id?.S] = 1;
+          uniqueCategories.push(el.category_id?.S);
         }
       });
       const paramsOf = {
@@ -378,20 +443,28 @@ class ProductServices {
             Keys: uniqueCategories.map((id) => ({
               id: { S: id },
             })),
+            ProjectionExpression: "title,id,image",
           },
         },
       };
       const commandOf = new BatchGetItemCommand(paramsOf);
       const result = await dynamoDBClient.send(commandOf);
-      let dataOf = result?.Responses?.category
-      let LastEvaluatedKey;
-      if (data.LastEvaluatedKey) {
-        LastEvaluatedKey = data.LastEvaluatedKey?.id?.S;
+      let dataOf = result?.Responses?.category;
+
+      let simpleArray = dataOf.map((item) => {
+        return {
+          id: item.id.S,
+          title: item.title.S,
+        };
+      });
+      for (let el of simpleArray) {
+        if (obj[el.id]) {
+          el.productCount = obj[el.id];
+        }
       }
       res.status(200).json({
-        message: "Fetch Data", dataOf,
-        data: simplifiedData,
-        LastEvaluatedKey,
+        message: "Fetch Data",
+        data: simpleArray,
         statusCode: 200,
         success: true,
       });
@@ -415,8 +488,8 @@ class ProductServices {
             ":id": { S: product_id },
           },
         })
-      )
-      console.log(findProductData, "findproduct dataa")
+      );
+      console.log(findProductData, "findproduct dataa");
       const simplifiedData = findProductData.Items.map((el) =>
         simplifyDynamoDBResponse(el)
       );
@@ -537,15 +610,13 @@ class ProductServices {
       productImagesArray = productImagesArray?.flatMap((el) => el);
       for (let el of productImagesArray) {
         // console.log(el?.M?.image?.S, "aaaaa");
-        let filePath = `./uploads/vendor/product/${el?.M?.image?.S}`
+        let filePath = `./uploads/vendor/product/${el?.M?.image?.S}`;
         try {
           deleteImageFRomLocal(filePath);
-        } catch (err) {
-        }
+        } catch (err) {}
         try {
-
           deleteImageFromS3(el?.M?.image?.S, "product");
-        } catch (err) { }
+        } catch (err) {}
       }
       await dynamoDBClient.send(new DeleteItemCommand(params));
       return res.status(200).json({
@@ -568,7 +639,8 @@ class ProductServices {
         status,
         sku,
         id,
-        variation, input_field,
+        variation,
+        input_field,
         warehouse_arr,
         product_id,
         price,
@@ -581,7 +653,7 @@ class ProductServices {
         if (!product_id) {
           if (req.files.product_images_arr) {
             for (let el of req.files?.product_images_arr) {
-              deleteImageFRomLocal(el?.path)
+              deleteImageFRomLocal(el?.path);
             }
           }
           return res.status(400).json({
@@ -602,7 +674,7 @@ class ProductServices {
         if (findProductData?.Count == 0) {
           if (req.files.product_images_arr) {
             for (let el of req.files?.product_images_arr) {
-              deleteImageFRomLocal(el?.path)
+              deleteImageFRomLocal(el?.path);
             }
           }
           return res.status(400).json({
@@ -652,7 +724,7 @@ class ProductServices {
         if (!dbVariantObj?.id) {
           if (req.files.product_images_arr) {
             for (let el of req.files?.product_images_arr) {
-              deleteImageFRomLocal(el?.path)
+              deleteImageFRomLocal(el?.path);
             }
           }
           return res.status(400).json({
@@ -680,7 +752,7 @@ class ProductServices {
                 M: {
                   // address: { S: el.address ||""},
                   po_box: { S: el.po_box || "" },
-                  quantity: { S: el?.quantity || "" }
+                  quantity: { S: el?.quantity || "" },
                 },
               })),
             },
@@ -712,7 +784,7 @@ class ProductServices {
         await dynamoDBClient.send(new UpdateItemCommand(updateParams));
         if (req.files.product_images_arr) {
           for (let el of req.files?.product_images_arr) {
-            console.log(el, "elel")
+            console.log(el, "elel");
             uploadImageToS3(el?.filename, el?.path, "product");
           }
         }
@@ -735,7 +807,7 @@ class ProductServices {
         if (findExist.Count == 0) {
           if (req.files.product_images_arr) {
             for (let el of req.files?.product_images_arr) {
-              deleteImageFRomLocal(el?.path)
+              deleteImageFRomLocal(el?.path);
             }
           }
           return res.status(400).json({
@@ -758,7 +830,7 @@ class ProductServices {
               ) {
                 if (req.files.product_images_arr) {
                   for (let el of req.files?.product_images_arr) {
-                    deleteImageFRomLocal(el?.path)
+                    deleteImageFRomLocal(el?.path);
                   }
                 }
                 return res.status(400).json({
@@ -822,7 +894,7 @@ class ProductServices {
         await dynamoDBClient.send(new UpdateItemCommand(updateParams));
         if (req.files.product_images_arr) {
           for (let el of req.files?.product_images_arr) {
-            console.log(el, "elel")
+            console.log(el, "elel");
             uploadImageToS3(el?.filename, el?.path, "product");
           }
         }
@@ -836,7 +908,7 @@ class ProductServices {
     } catch (err) {
       if (req.files.product_images_arr) {
         for (let el of req.files?.product_images_arr) {
-          deleteImageFRomLocal(el?.path)
+          deleteImageFRomLocal(el?.path);
         }
       }
       console.log(err, "errorororro");
@@ -909,10 +981,10 @@ class ProductServices {
           console.log(el?.M?.image?.S, "el?.M?.image");
           try {
             deleteImageFRomLocal(el?.M?.image?.S, "product");
-          } catch (er) { }
+          } catch (er) {}
           try {
             // deleteImageFromS3(el?.M?.image?.S, "product");
-          } catch (Er) { }
+          } catch (Er) {}
         }
       }
       const updatedDbVariant = updatedVariants?.map((variant) => ({
@@ -978,7 +1050,7 @@ class ProductServices {
 
   async delete_variant_image_data(req, res) {
     try {
-      let { product_id, variant_id, image } = req.query
+      let { product_id, variant_id, image } = req.query;
       let findProductData = await dynamoDBClient.send(
         new QueryCommand({
           TableName: "products",
@@ -987,49 +1059,58 @@ class ProductServices {
             ":id": { S: product_id },
           },
         })
-      )
+      );
       if (findProductData && findProductData?.Count == 0) {
-        return res.status(400).json({ message: "Product not found", statusCode: 400, success: false })
+        return res.status(400).json({
+          message: "Product not found",
+          statusCode: 400,
+          success: false,
+        });
       }
       let checkProductImage = findProductData?.Items[0]?.variation_arr?.L;
       let productImagesArray = checkProductImage.map((item) => item.M);
       // console.log(productImagesArray[0]?.product_images_arr?.L,"productImagesArray productImagesArray ")
-      productImagesArray.forEach(variant => {
+      productImagesArray.forEach((variant) => {
         if (variant?.id?.S === variant_id) {
           variant.product_images_arr.L = variant.product_images_arr.L.filter(
-            elem => elem.M.image.S !== image
+            (elem) => elem.M.image.S !== image
           );
         }
       });
-      const updatedVariationArr = productImagesArray.map(item => ({
+      const updatedVariationArr = productImagesArray.map((item) => ({
         M: item,
       }));
 
       console.log(productImagesArray, "oductayproductImagesArray");
 
       const params = {
-        TableName: 'products',
+        TableName: "products",
         Key: {
           id: { S: product_id },
         },
-        UpdateExpression: 'set variation_arr = :varArr',
+        UpdateExpression: "set variation_arr = :varArr",
         ExpressionAttributeValues: {
-          ':varArr': { L: updatedVariationArr },
+          ":varArr": { L: updatedVariationArr },
         },
       };
       const updateCommand = new UpdateItemCommand(params);
       await dynamoDBClient.send(updateCommand);
-      let filePath = `./uploads/vendor/product/${image}`
+      let filePath = `./uploads/vendor/product/${image}`;
       try {
         deleteImageFRomLocal(filePath);
-      } catch (er) { }
+      } catch (er) {}
       try {
         deleteImageFromS3(image, "product");
-      } catch (er) {
-      }
-      return res.status(400).json({ message: "Image deleted successfully", statusCode: 400, success: false })
+      } catch (er) {}
+      return res.status(400).json({
+        message: "Image deleted successfully",
+        statusCode: 400,
+        success: false,
+      });
     } catch (err) {
-      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
 }
