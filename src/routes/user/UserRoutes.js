@@ -2,7 +2,7 @@ import express from "express";
 import UserControllerObj from "../../controllers/user/UserController.js";
 import { authorize } from "../../middlewares/auth.js";
 import { educationImage, userImage } from "../../helpers/multer.js";
-import { upload } from "../../helpers/s3.js";
+import { upload, upload_for_sub_user } from "../../helpers/s3.js";
 
 const UserRoutes = express.Router();
 
@@ -59,7 +59,17 @@ UserRoutes.get("/verfy_otp_with_email", UserControllerObj.verifyEmailWithOtp);
 UserRoutes.post("/login", UserControllerObj.login);
 UserRoutes.post("/login_with_otp", UserControllerObj.login_with_otp);
 UserRoutes.get("/get_data", authorize, UserControllerObj.get_data); //logged in data
-UserRoutes.post("/add_sub_user", authorize, UserControllerObj.add_sub_user); //vendor , seller, logistic ->sub_user
+UserRoutes.post(
+  "/add_sub_user",
+  authorize,
+  upload_for_sub_user.fields([
+    {
+      name: "profile_photo",
+      maxCount: 1,
+    },
+  ]),
+  UserControllerObj.add_sub_user
+); //vendor , seller, logistic ->sub_user
 UserRoutes.get("/get_sub_user", authorize, UserControllerObj.get_sub_user);
 UserRoutes.delete(
   "/delete_sub_user",

@@ -5,14 +5,11 @@ function checkFileSignature(buffer) {
     "89504E470D0A1A0A": "PNG",
     FFD8FFE0: "JPEG",
     FFD8FF: "JPG",
-    "52494646": "WEBP",
-    "25504446": "PDF",
+    52494646: "WEBP",
+    25504446: "PDF",
     // Add more file signatures as needed
   };
-  const hexSignature = buffer
-    .slice(0, 8)
-    .toString("hex")
-    .toUpperCase();
+  const hexSignature = buffer.slice(0, 8).toString("hex").toUpperCase();
 
   for (const signature in fileSignatures) {
     if (hexSignature.startsWith(signature)) {
@@ -24,7 +21,7 @@ function checkFileSignature(buffer) {
 const maxSize = 500 * 1024;
 export async function ImageFileCheck(name, data, size) {
   try {
-    console.log(name, "name", data, "aaData", size, "sizeee")
+    console.log(name, "name", data, "aaData", size, "sizeee");
     let filePath = `./uploads/${name}`;
     if (data == "employee") {
       filePath = `./uploads/employee/${name}`;
@@ -36,30 +33,46 @@ export async function ImageFileCheck(name, data, size) {
       filePath = `./uploads/vendor/${name}`;
     } else if (data == "product_add") {
       filePath = `./uploads/vendor/product/${name}`;
-    } else if(data=='category'){
+    } else if (data == "category") {
       filePath = `./uploads/category/${name}`;
-    }else {
+    } else if (data == "vendor_user") {
+      filePath = `./uploads/vendor/sub_user/${name}`;
+    } else {
       filePath = `./uploads/other/${name}`;
     }
     let check = fs.readFileSync(filePath);
     // console.log(check, "aaaaaaa cechck ")
     if (check) {
       const filetype = checkFileSignature(check);
-      if (filetype == "PNG" || filetype == "JPEG" || filetype == "WEBP") {
+      if (
+        filetype == "PNG" ||
+        filetype == "JPEG" ||
+        filetype == "WEBP" ||
+        filetype == "JPG" ||
+        filetype == "PDF"
+      ) {
         if (size > maxSize) {
           // console.log(size,maxSize,"sssssssssss")
-          await fs.unlinkSync(filePath);
+          try {
+            await fs.unlinkSync(filePath);
+          } catch (er) {
+            console.log(er);
+          }
           return "invalid file";
         } else {
           return "valid file";
         }
       } else if (filetype == null) {
-        await fs.unlinkSync(filePath);
+        try {
+          await fs.unlinkSync(filePath);
+        } catch (err) {
+          console.log(err);
+        }
         return "invalid file";
       }
     }
   } catch (err) {
-    console.log(err, "while chacking file ")
+    console.log(err, "while chacking file ");
   }
 }
 

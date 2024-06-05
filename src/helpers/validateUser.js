@@ -157,13 +157,12 @@ export const AddSubUserSchema = Joi.object({
     .email({ tlds: { allow: false } })
     .label("Email"),
   name: Joi.string().trim().min(3).max(40).required().label("name"),
-  // role: Joi.string().trim().min(3).max(50).required().label("role"),
-  role: Joi.array()
-        .items(Joi.string())
-        .min(1)
-        .max(10)
-        .required()
-        .label("role "),
+  permission: Joi.array()
+    .items(Joi.string())
+    .min(1)
+    .max(100)
+    .required()
+    .label("permission"),
   phone: Joi.string()
     .trim()
     .required()
@@ -287,7 +286,10 @@ export const verifyAccountSchema = Joi.object({
 
 export const AccountDeactivateOrActiveSchema = Joi.object({
   user_id: Joi.string().max(50).required().label("id"),
-  status: Joi.string().required().valid("deactivated",'activated').label("status"),
+  status: Joi.string()
+    .required()
+    .valid("deactivated", "activated")
+    .label("status"),
 });
 export const editAdminSchema = Joi.object({
   id: Joi.number().required().label("id"),
