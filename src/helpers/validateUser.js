@@ -276,7 +276,7 @@ export const loginWithOtpSchema = Joi.object({
 
 export const statusChangeSchema = Joi.object({
   id: Joi.string().max(60).required().label("id"),
-  status: Joi.string().required().valid("active", "inactive").label("status"),
+  account_status: Joi.string().required().valid("activated", "deactivated").label("status"),
 });
 
 export const delete_sub_user_schema = Joi.object({
@@ -284,7 +284,6 @@ export const delete_sub_user_schema = Joi.object({
 });
 
 
-// , status
 export const verifyAccountSchema = Joi.object({
   user_id: Joi.string().max(50).required().label("id"),
   status: Joi.boolean().required().label("status"),
