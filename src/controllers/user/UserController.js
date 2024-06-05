@@ -20,7 +20,7 @@ import UserServicesObj from "../../services/user/UserServices.js";
 import jwt from "jsonwebtoken";
 import { environmentVars } from "../../config/environmentVar.js";
 import UserModel from "../../models/UserModel.js";
-import { storeImageMetadata, uploadImageToS3 } from "../../helpers/s3.js";
+import { deleteImageFRomLocal, storeImageMetadata, uploadImageToS3 } from "../../helpers/s3.js";
 import UploadsDocumentModel from "../../models/UploadsDocumentModel.js";
 import docClient from "../../config/dbConfig.js";
 import vendorOnBoardModel from "../../models/VendorOnBoard.js";
@@ -421,6 +421,24 @@ class UserController {
             statusCode: 400,
           });
         }
+      }
+      if(req.files.profile_photo){
+        for (let el of req.files.profile_photo) {
+          let get = await ImageFileCheck(el?.filename, 'vendor_user', el?.size);
+          if (get == "invalid file") {
+          return res.status(400).json({
+            message:
+              "Image must be png or jpeg or webp file and size must be less than 500 kb",
+            statusCode: 400,
+            success: false,
+          });
+        } else {
+         let filePath = `./uploads/${req.body.user_type}/sub_user/${el?.filename}`;
+          try{deleteImageFRomLocal(filePath)
+          }catch(er){console.log(er)}
+          // uploadImageToS3(el?.filename, el?.path);
+        }
+      }
       }
       await UserServicesObj.addSubUser(req, res);
     } catch (err) {
