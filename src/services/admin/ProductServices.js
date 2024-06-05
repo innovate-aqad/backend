@@ -353,53 +353,73 @@ class ProductServices {
   //product with pagination
   async get_dataOf_specifc(req, res) {
     try {
-      const pageSize = parseInt(req.query?.pageSize) || 10;
+      // const pageSize = parseInt(req.query?.pageSize) || 10;
       const userType = req.userData.user_type;
       const userId = req.userData.id;
-
+      console.log(userType, "userTypeeeeeee", userId, "a@@@@@@")
       const params = {
         TableName: "products",
-        Limit: pageSize,
+        // Limit: pageSize,
         ProjectionExpression:
           "category_id, sub_category_id, title, universal_standard_code, variation_arr, id,created_by,created_at",
         // ScanIndexForward: true,
       };
       // // Pagination logic
-      if (req.query.LastEvaluatedKey) {
-        params.ExclusiveStartKey = {
-          id: {
-            S: req.query.LastEvaluatedKey,
-          },
-        };
-        // params.ExclusiveStartKey = JSON.parse(req.query.LastEvaluatedKey);
-      }
+      // if (req.query.LastEvaluatedKey) {
+      //   params.ExclusiveStartKey = {
+      //     id: {
+      //       S: req.query.LastEvaluatedKey,
+      //     },
+      //   };
+      //   // params.ExclusiveStartKey = JSON.parse(req.query.LastEvaluatedKey);
+      // }
       if (userType === "vendor") {
         params.FilterExpression = "created_by = :userId";
         params.ExpressionAttributeValues = {
           ":userId": { S: userId },
         };
       }
-      console.log(result,"reeeeeeeeeeee");
       const command = new ScanCommand(params);
       const data = await dynamoDBClient.send(command);
-      console.log(data, "data @@@@ !!!!! ");
-      // previous version of aws 
-      console.log("obj:", params, "wwwwwwwwwwwwww@@@@ !!!!!!! w");
-      const result = await dynamoDB.scan(params).promise();
-      // const command = new QueryCommand(params);
-      // const data = await dynamoDBClient.send(command);
-      const simplifiedData = data.Items.map((el) =>
-        simplifyDynamoDBResponse(el)
+
+      let uniqueCategories = [];
+      let simplifiedData = data.Items.map((el) => simplifyDynamoDBResponse(el)
+
       );
-      let LastEvaluatedKey;
-      if (data.LastEvaluatedKey) {
-        LastEvaluatedKey = data.LastEvaluatedKey?.id?.S;
+      data.Items.map((el) => {
+        if (!uniqueCategories?.includes(el?.category_id?.S)) {
+          uniqueCategories.push(el?.category_id?.S)
+        }
       }
+      );
+      const paramsOf = {
+        RequestItems: {
+          category: {
+            Keys: uniqueCategories.map((id) => ({
+              id: { S: id },
+            })),
+            ProjectionExpression: "title,id",
+          },
+        },
+      };
+      const commandOf = new BatchGetItemCommand(paramsOf);
+      const result = await dynamoDBClient.send(commandOf);
+      let dataOf = result?.Responses?.category;
+      // console.log(simplifiedData, "simplifiedDatasimplifiedDatasimplifiedData", uniqueCategories,"dataOfdataOf",dataOf)
+      for (let le of simplifiedData) {
+        let findCategory = dataOf?.find((ele) => ele?.id?.S == le?.category_id)
+        if (findCategory) {
+          le.categoryName = findCategory?.title?.S
+        }
+      }
+      // let LastEvaluatedKey;
+      // if (data.LastEvaluatedKey) {
+      //   LastEvaluatedKey = data.LastEvaluatedKey?.id?.S;
+      // }
       res.status(200).json({
         message: "Fetch Data",
-        // dataOf,
         data: simplifiedData,
-        LastEvaluatedKey,
+        // LastEvaluatedKey,
         statusCode: 200,
         success: true,
       });
@@ -414,6 +434,7 @@ class ProductServices {
   //fetch all cateogry of vendor with all product count
   async get_cateory_product_count_(req, res) {
     try {
+      console.log(req.userData.id, "req.userData.id ", req.userData.user_type)
       const params = {
         TableName: "products",
         ProjectionExpression: "category_id, id",
@@ -426,6 +447,10 @@ class ProductServices {
       }
       const command = new ScanCommand(params);
       const data = await dynamoDBClient.send(command);
+      console.log(data, "Dataaaaaaaaaaa")
+      if (data && data?.Count == 0) {
+        return res.status(400).json({ message: "Product not found", statusCode: 400, success: false })
+      }
       let obj = {};
       let uniqueCategories = [];
       // console.log(data?.Items,"data items @#",req.userData);
@@ -463,8 +488,6 @@ class ProductServices {
           el.productCount = obj[el.id];
         }
       }
-      // id": "",
-      //       "title": "",
       res.status(200).json({
         message: "Fetch Data",
         data: simpleArray,
@@ -616,10 +639,10 @@ class ProductServices {
         let filePath = `./uploads/vendor/product/${el?.M?.image?.S}`;
         try {
           deleteImageFRomLocal(filePath);
-        } catch (err) {}
+        } catch (err) { }
         try {
           deleteImageFromS3(el?.M?.image?.S, "product");
-        } catch (err) {}
+        } catch (err) { }
       }
       await dynamoDBClient.send(new DeleteItemCommand(params));
       return res.status(200).json({
@@ -984,10 +1007,10 @@ class ProductServices {
           console.log(el?.M?.image?.S, "el?.M?.image");
           try {
             deleteImageFRomLocal(el?.M?.image?.S, "product");
-          } catch (er) {}
+          } catch (er) { }
           try {
             // deleteImageFromS3(el?.M?.image?.S, "product");
-          } catch (Er) {}
+          } catch (Er) { }
         }
       }
       const updatedDbVariant = updatedVariants?.map((variant) => ({
@@ -1101,10 +1124,10 @@ class ProductServices {
       let filePath = `./uploads/vendor/product/${image}`;
       try {
         deleteImageFRomLocal(filePath);
-      } catch (er) {}
+      } catch (er) { }
       try {
         deleteImageFromS3(image, "product");
-      } catch (er) {}
+      } catch (er) { }
       return res.status(400).json({
         message: "Image deleted successfully",
         statusCode: 400,

@@ -45,6 +45,7 @@ class PermissionServices {
       const batchGetCommand = new BatchGetItemCommand(batchGetParams);
       const data = await dynamoDBClient.send(batchGetCommand);
       // console.log(data,"data............")
+      // console.log(data,"data............")
       const fetchedItems = data.Responses["api_endpoint"];
       const fetchedIds = new Set(fetchedItems.map((item) => item.id.S));
       const missingIds = allRouteIds.filter(
@@ -205,6 +206,8 @@ class PermissionServices {
 
   async getAllData(req, res) {
     try {
+      console.log(req.userData?.user_type, "req.userData?.user_type  @#@");
+      req.userData.user_type = "seller";
       const params = {
         TableName: "permission",
       };
