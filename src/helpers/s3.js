@@ -74,6 +74,24 @@ export const upload = multer({
   storage: storage,
 });
 
+const storage_for_sub_user = multer.diskStorage({
+  destination: function (req, file, cb) {
+
+    const { user_type } = req.userData;
+    // console.log(req.files, "imnulterrrrrrrrrrrrr");
+    let destination = `./uploads/${user_type}/sub_user`;
+    
+    cb(null, destination);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+export const upload_for_sub_user = multer({
+  storage: storage_for_sub_user,
+});
+
 //category-images add or edit
 const categoryStorage = multer.diskStorage({
   destination: function (req, file, cb) {

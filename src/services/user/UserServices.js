@@ -6,11 +6,9 @@ import {
   encryptStringWithKey,
   sendEmailUser,
 } from "../../helpers/common.js";
-import { Op, where } from "sequelize";
 import { environmentVars } from "../../config/environmentVar.js";
 import { generateAccessToken } from "../../helpers/validateUser.js";
 import jwt from "jsonwebtoken";
-import docClient from "../../config/dbConfig.js";
 import Sequence from "../../models/SequenceModel.js";
 import {
   DynamoDBClient,
@@ -19,10 +17,11 @@ import {
   UpdateItemCommand,
   QueryCommand,
   DeleteItemCommand,
+  BatchGetItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
+
 // import AWS from "aws-sdk";
-import formidable from "formidable";
 import {
   pinePointServices,
   sendEmailOtp,
@@ -102,7 +101,7 @@ class UserServices {
         term_and_condition,
       } = req.body;
       console.log(req.body, " @@@  a  aaaaaa!@#!@#aa req.body");
-      console.log(req.files, "req.filesssss")
+      console.log(req.files, "req.filesssss");
       email = email?.trim();
       let findData;
       if ((slide == 2 || slide == 3 || slide == 4) && doc_id == "") {
@@ -124,11 +123,7 @@ class UserServices {
         );
         // console.log(findData, "findataaaaaaaa222222111");
       }
-      console.log(
-        findData?.Items[0],
-        "findDatafindData22",
-        findData
-      );
+      console.log(findData?.Items[0], "findDatafindData22", findData);
       // return
       if (findData?.Count > 0 && slide == 1) {
         let profile_photo = findData?.Items[0]?.profile_photo?.S;
@@ -367,7 +362,7 @@ class UserServices {
           : findData?.Items[0]?.trade_license?.S || "";
         if (req.files && req.files?.trade_license?.length) {
           let filePath = `./uploads/${user_type}/${findData?.Items[0]?.trade_license?.S}`;
-          console.log(filePath, "filepathhhhhhh")
+          console.log(filePath, "filepathhhhhhh");
           try {
             deleteImageFRomLocal(filePath);
           } catch (err) {
@@ -790,11 +785,10 @@ class UserServices {
               // console.log(ele, "eleleellel")
               try {
                 await deleteImageFromS3(ele?.filename, req.body.user_type);
-              } catch (err) { }
+              } catch (err) {}
               try {
                 await removefIle(ele?.filename, req.body.user_type);
-              } catch (error) {
-              }
+              } catch (error) {}
             }
           }
         }
@@ -1053,7 +1047,10 @@ class UserServices {
         })
       );
       console.log(findData?.Items[0], "dinffdddaa", "findData");
-      if (findData?.Items[0]?.user_type?.S != "super_admin" && findData?.Items[0]?.account_status?.S != "activated") {
+      if (
+        findData?.Items[0]?.user_type?.S != "super_admin" &&
+        findData?.Items[0]?.account_status?.S != "activated"
+      ) {
         return res.status(400).json({
           message: "This account de-activated",
           statusCode: 400,
@@ -1397,6 +1394,370 @@ class UserServices {
     }
   }
 
+  // async addSubUser(req, res) {
+  //   try {
+  //     let { email,
+  //       name,
+  //       role,
+  //       phone, doc_id } = req.body
+  //     let findData;
+  //     if (doc_id != '' && doc_id) {
+  //       findData = await dynamoDBClient.send(
+  //         new QueryCommand({
+  //           TableName: "users",
+  //           KeyConditionExpression: "id = :id",
+  //           ExpressionAttributeValues: {
+  //             ":id": { S: doc_id },
+  //           },
+  //         })
+  //       );
+  //     } else {
+  //       const findEmailExist = await dynamoDBClient.send(
+  //         new QueryCommand({
+  //           TableName: "users",
+  //           IndexName: "email",
+  //           KeyConditionExpression: "email = :email",
+  //           ExpressionAttributeValues: {
+  //             ":email": { S: email },
+  //           },
+  //         })
+  //       );
+  //       // console.log(findEmailExist, "@@@!!!  email check ");
+  //       if (findEmailExist.Count > 0) {
+  //         // if (
+  //         //   req.files &&
+  //         //   req.files?.profile_photo?.length &&
+  //         //   req.files?.profile_photo?.length > 0
+  //         // ) {
+  //         //   try {
+  //         //     deleteImageFRomLocal(req.files?.profile_photo[0]?.path);
+  //         //   } catch (err) {
+  //         //     console.error(err, "deleteImageFRomLocal");
+  //         //   }
+  //         // }
+  //         return res.status(400).json({
+  //           success: false,
+  //           message: "Email already exist!",
+  //           statusCode: 400,
+  //         });
+  //       }
+  //       if (phone) {
+  //         const findPhoneExist = await dynamoDBClient.send(
+  //           new QueryCommand({
+  //             TableName: "users",
+  //             IndexName: "phone", // replace with your GSI name
+  //             KeyConditionExpression: "phone = :phone",
+  //             ExpressionAttributeValues: {
+  //               ":phone": { S: phone },
+  //             },
+  //           })
+  //         );
+  //         if (findPhoneExist.Count > 0) {
+  //           // if (
+  //           //   req.files &&
+  //           //   req.files?.profile_photo?.length &&
+  //           //   req.files?.profile_photo?.length > 0
+  //           // ) {
+  //           //   try {
+  //           //     deleteImageFRomLocal(req.files?.profile_photo[0]?.path);
+  //           //   } catch (err) {
+  //           //     console.error(err, "deleteImageFRomLocal");
+  //           //   }
+  //           // }
+  //           return res.status(400).json({
+  //             success: false,
+  //             message: "Phone number already exists!",
+  //             statusCode: 400,
+  //           });
+  //         }
+  //       }
+  //       let salt = environmentVars.salt;
+  //       let randomPassword = encryptStringWithKey(
+  //         req.body.email.toLowerCase()?.slice(0, 6)
+  //       );
+  //       // console.log(randomPassword, "randomPasswordrandomPassword");
+  //       let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+
+  //       let id = uuidv4();
+  //       id = id?.replace(/-/g, "");
+
+  //       // let profile_photo;
+  //       // if (req.files && req.files?.profile_photo?.length) {
+  //       //   profile_photo = req.files?.profile_photo[0]?.filename;
+  //       // }
+  //       let user_type = 'vendor_sub_user'
+  //       if (req.userData.user_type == 'seller') { user_type = 'seller_sub_user' }
+  //       const params = {
+  //         TableName: "users",
+  //         Item: {
+  //           // profile_photo: { S: profile_photo || "" },
+  //           id: { S: id },
+  //           name: { S: name },
+  //           email: { S: email },
+  //           phone: { S: phone || "" },
+  //           // dob: { S: dob || "" },
+  //           user_type: { S: user_type },
+  //           role: {
+  //             L: role?.map((el) => ({
+  //               S: el
+  //             })) || []
+  //           },
+  //           // ":driver_details_array": {
+  //           //   L:
+  //           //     driver_details_array?.map((el) => ({
+  //           //       M: {
+  //           //         name: { S: el?.name },
+  //           //         drive_image: { S: el?.drive_image },
+  //           //         driving_license: { S: el?.driving_license },
+  //           //         driving_license_number: { S: el?.driving_license_number },
+  //           //       },
+  //           //     })) ||
+  //           //     findData?.Items[0]?.driver_details_array?.L ||
+  //           //     [],
+  //           // },
+  //           country: { S: country || "" },
+  //           password: { S: hashPassword },
+  //           created_at: { S: new Date().toISOString() },
+  //           updated_at: { S: new Date().toISOString() },
+  //           account_status: { S: "activated" },
+  //           is_verified: { BOOL: false },
+  //         },
+  //       };
+  //       console.log("docClient", "docccleint", params);
+  //       await dynamoDBClient.send(new PutItemCommand(params));
+  //       let obj = {
+  //         email,
+  //         randomPassword,
+  //         name,
+  //       };
+  //       sendPasswordViaEmailOf(obj);
+  //       if (req.files?.profile_photo && req.files?.profile_photo[0]?.filename) {
+  //         try {
+  //           uploadImageToS3(
+  //             req.files?.profile_photo[0]?.filename,
+  //             req.files?.profile_photo[0]?.path,
+  //             user_type
+  //           );
+  //         } catch (er) {
+  //           console.error(er, "uploadImageToS3 ");
+  //         }
+  //       }
+  //       return res.status(201).json({
+  //         message: "User register successfully",
+  //         statusCode: 201,
+  //         success: true,
+  //         data: { id },
+  //       });
+  //     }
+
+  //   } catch (err) {
+  //     return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+  //   }
+  // }
+
+  async addSubUser(req, res) {
+    try {
+      let { email, phone, name, country, doc_id, permission } = req.body;
+      const paramsOf = {
+        RequestItems: {
+          permission: {
+            Keys: permission.map((id) => ({
+              id: { S: id },
+            })),
+            ProjectionExpression: "title, id, backend_routes, frontend_routes",
+          },
+        },
+      };
+      const commandOf = new BatchGetItemCommand(paramsOf);
+      const result = await dynamoDBClient.send(commandOf);
+      let dataOf = result?.Responses?.permission;
+      // console.log(dataOf, "dataofffffff");
+      if (dataOf?.length == 0) {
+        return res.status(400).json({
+          message: "In-valid permission",
+          status: 400,
+          success: false,
+        });
+      }
+      let invalid_permission_arr = [];
+      for (let le of permission) {
+        // console.log(le, "lelelelele");
+        let findPermissionObj = dataOf?.find((el) => el?.id?.S == le);
+        if (!findPermissionObj) {
+          invalid_permission_arr.push(le);
+        }
+      }
+      if (invalid_permission_arr && invalid_permission_arr?.length > 0) {
+        return res
+          .status(400)
+          .json({
+            message: `This permission ${invalid_permission_arr} are not exist`,
+            statusCode: 400,
+            success: false,
+          });
+      }
+      if (doc_id) {
+        const findEmailExist = await dynamoDBClient.send(
+          new QueryCommand({
+            TableName: "users",
+            // IndexName: "email",
+            KeyConditionExpression: "id= :id",
+            // ProjectionExpression: "email, phone, id",
+            ExpressionAttributeValues: {
+              ":id": { S: doc_id },
+            },
+          })
+        );
+        if (findEmailExist && findEmailExist?.Count == 0) {
+          return res.status(404).json({
+            message: "Data not found",
+            statuscode: 404,
+            success: false,
+          });
+        }
+        let profile_photo=req.files.profile_photo[0]?.filename|| findEmailExist?.Items[0]?.profile_photo?.S||  ""
+        // console.log(findEmailExist ?.Items[0]?.,"aa")
+        const params = {
+          TableName: "users",
+          Key: { id: { S: doc_id } },
+          UpdateExpression:
+            "SET #name = :name, #phone = :phone, #permission =:permission, #country= :country , #updated_at=:updated_at, #profile_photo=:profile_photo",
+          ExpressionAttributeNames: {
+            "#name": "name",
+            "#phone": "phone",
+            "#permission": "permission",
+            "#country": "country",
+            "#updated_at": "updated_at",
+            "#profile_photo": "profile_photo",
+          },
+          ExpressionAttributeValues: {
+            ":name": { S: name || findEmailExist?.Items[0]?.name?.S },
+            ":phone": { S: phone || findEmailExist?.Items[0]?.phone?.S || "" },
+            ":permission": {
+              L:
+              permission?.map((el) => ({
+                  S: el,
+                })) ||
+                findEmailExist?.Items[0]?.permission?.L ||
+                [],
+            },
+            ":country": {
+              S: country || findEmailExist?.Items[0]?.country?.S || "",
+            },
+            ":updated_at": { S: new Date().toISOString() },
+            ":profile_photo":{S:profile_photo||""}
+          },
+        };
+        console.log(params, "apramnsnssnsm");
+        await dynamoDBClient.send(new UpdateItemCommand(params));
+        return res.status(200).json({
+          message: "User's details update successfully",
+          statusCode: 200,
+          success: true,
+        });
+      }
+
+      const findEmailExist = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          IndexName: "email", // Replace with your GSI name for email
+          KeyConditionExpression: "email = :email",
+          ProjectionExpression: "email, phone, id",
+          ExpressionAttributeValues: {
+            ":email": { S: email },
+          },
+        })
+      );
+      if (findEmailExist.Count > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exists!",
+          statusCode: 400,
+        });
+      }
+      const findPhoneExist = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          IndexName: "phone", // Replace with your GSI name for phone like phone-index
+          KeyConditionExpression: "phone = :phone",
+          ProjectionExpression: "email, phone, id",
+          ExpressionAttributeValues: {
+            ":phone": { S: phone },
+          },
+        })
+      );
+      if (findPhoneExist.Count > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Phone number already exists!",
+          statusCode: 400,
+        });
+      }
+      // console.log(req.userData, "aaaaaassssdffgklsdj", "findUserExist", "fnd", "findUserExist?.Items", "asdsd")
+      let user_type = "vendor_user";
+      if (req.userData?.user_type == "logistic") {
+        user_type = "logistic_user";
+      } else if (req.userData?.user_type == "seller") {
+        user_type = "seller_user";
+      }
+
+      let salt = environmentVars.salt;
+      let randomPassword = encryptStringWithKey(
+        email.toLowerCase()?.slice(0, 6)
+      );
+      // console.log(randomPassword, "randomPasswordrandomPassword");
+      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+
+      let id = uuidv4();
+      id = id?.replace(/-/g, "");
+      console.log(permission, "wesd");
+
+      const params = {
+        TableName: "users",
+        Item: {
+          id: { S: id },
+          name: { S: name || "" },
+          email: { S: email || "" },
+          phone: { S: phone || "" },
+          user_type: { S: user_type },
+          country: { S: country || "" },
+          password: { S: hashPassword },
+          created_by: { S: req.userData?.id },
+          profile_photo:{S: req.files?.profile_photo? req.files?.profile_photo[0]?.filename:""},
+          permission: {
+            L:
+            permission?.map((el) => ({
+                S: el,
+              })) ||
+              findEmailExist?.Items[0]?.permission?.L ||
+              [],
+          },
+          created_at: { S: new Date().toISOString() },
+          updated_at: { S: new Date().toISOString() },
+        },
+      };
+
+      // console.log("user_type", "docccleint", params);
+      let userData = await dynamoDBClient.send(new PutItemCommand(params));
+      let obj = {
+        email,
+        randomPassword,
+        name,
+      };
+      sendPasswordViaEmailOf(obj);
+      res.status(201).json({
+        message: "User added successfully",
+        statusCode: 200,
+        success: true,
+      });
+    } catch (err) {
+      console.error(err, "error ");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
+
   async role_id_assign_to_user(req, res) {
     try {
       let { user_id, role_id } = req.body;
@@ -1470,19 +1831,20 @@ class UserServices {
       page = parseInt(page) || 1;
       limit = parseInt(limit) || 10;
       const offset = (page - 1) * limit;
-
+console.log(req.userData?.id,"req.userData?.idreq.userData?.id");
       const queryParams = {
         TableName: "users",
         IndexName: "created_by-index",
         KeyConditionExpression: "created_by = :created_by",
         ExpressionAttributeValues: {
+          ":created_by": { S: req.userData?.id } // Assuming req.userData?.id is a string
         },
-        ":created_by": { S: req.userData?.id },
         Limit: limit,
         ScanIndexForward: false,
         Select: "ALL_ATTRIBUTES", // Retrieve all attributes
         Count: true,
       };
+      
       if (offset > 0) {
         // If offset is greater than 0, set ExclusiveStartKey to start from the correct position
         if (lastEvaluatedKey) {
