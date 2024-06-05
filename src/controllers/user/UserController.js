@@ -14,6 +14,8 @@ import {
   assignRoleToSubUserSchema,
   verifyAccountSchema,
   AccountDeactivateOrActiveSchema,
+  delete_sub_user_schema,
+  statusChangeSchema,
 } from "../../helpers/validateUser.js";
 import bcrypt from "bcrypt";
 import UserServicesObj from "../../services/user/UserServices.js";
@@ -486,15 +488,32 @@ class UserController {
 
   async delete_sub_user(req, res) {
     try {
-      // let { error } = GetSubUserSchema.validate(req.body, options);
-      // if (error) {
-      //   return res.status(400).json({
-      //     message: error.details[0]?.message,
-      //     success: false,
-      //     statusCode: 400,
-      //   });
-      // }
+      // 
+      let { error } = delete_sub_user_schema.validate(req.query, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
       await UserServicesObj.delete_user(req, res);
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
+    }
+  }
+
+  async status_sub_user(req, res) {
+    try {
+      let { error } = statusChangeSchema.validate(req.query, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+      await UserServicesObj.change_status_user(req, res);
     } catch (err) {
       return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
     }
