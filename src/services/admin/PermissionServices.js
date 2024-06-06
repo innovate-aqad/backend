@@ -207,7 +207,7 @@ class PermissionServices {
   async getAllData(req, res) {
     try {
       console.log(req.userData?.user_type, "req.userData?.user_type  @#@");
-      req.userData.user_type = "seller";
+      // req.userData.user_type = 'seller'
       const params = {
         TableName: "permission",
       };

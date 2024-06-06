@@ -275,10 +275,15 @@ export const loginWithOtpSchema = Joi.object({
 });
 
 export const statusChangeSchema = Joi.object({
-  id: Joi.number().required().label("id"),
-  status: Joi.string().required().valid("active", "inactive").label("status"),
+  id: Joi.string().max(60).required().label("id"),
+  account_status: Joi.string().required().valid("activated", "deactivated").label("status"),
 });
-// , status
+
+export const delete_sub_user_schema = Joi.object({
+  id: Joi.string().max(60).required().label("id"),
+});
+
+
 export const verifyAccountSchema = Joi.object({
   user_id: Joi.string().max(50).required().label("id"),
   status: Joi.boolean().required().label("status"),
