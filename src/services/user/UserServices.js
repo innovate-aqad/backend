@@ -785,10 +785,10 @@ class UserServices {
               // console.log(ele, "eleleellel")
               try {
                 await deleteImageFromS3(ele?.filename, req.body.user_type);
-              } catch (err) { }
+              } catch (err) {}
               try {
                 await removefIle(ele?.filename, req.body.user_type);
-              } catch (error) { }
+              } catch (error) {}
             }
           }
         }
@@ -961,7 +961,7 @@ class UserServices {
           },
         })
       );
-      console.log(find, "Asdad", find?.Items[0]);
+      // console.log(find, "Asdad", find?.Items[0]);
       if (find && find?.Count > 0) {
         let otpDb = find?.Items[0]?.otp?.S;
         let creationTime = parseInt(find?.Items[0]?.creationTime?.S, 10);
@@ -1089,10 +1089,20 @@ class UserServices {
             success: false,
           });
         }
+        // const find = await dynamoDBClient.send(
+        //   new ScanCommand({
+        //     TableName: "userOtp",
+        //     FilterExpression: "email = :email",
+        //     ExpressionAttributeValues: {
+        //       ":email": { S: email },
+        //     },
+        //   })
+        // );
         const find = await dynamoDBClient.send(
-          new ScanCommand({
+          new QueryCommand({
             TableName: "userOtp",
-            FilterExpression: "email = :email",
+            IndexName: "email", // replace with your GSI name
+            KeyConditionExpression: "email = :email",
             ExpressionAttributeValues: {
               ":email": { S: email },
             },
@@ -1139,7 +1149,7 @@ class UserServices {
           statusCode: 200,
           success: true,
         });
-    } else {
+      } else {
         // console.log("enddddd");
         return res
           .status(400)
@@ -1191,7 +1201,8 @@ class UserServices {
               statusCode: 400,
               success: false,
             });
-          } else if (otpDb != otp) {
+          } else
+           if (otpDb != otp) {
             return res.status(400).json({
               message: "In-valid otp",
               statusCode: 400,
@@ -1205,7 +1216,10 @@ class UserServices {
             success: false,
           });
         }
+        let unique_token_id = uuidv4();
+        unique_token_id= unique_token_id?.replace(/-/g, "");
         let obj = {
+          unique_token_id,
           name: findData?.Items[0]?.name?.S,
           email: findData?.Items[0]?.email?.S,
           user_type: findData?.Items[0]?.user_type?.S,
@@ -1213,10 +1227,112 @@ class UserServices {
           is_verified: findData?.Items[0]?.is_verified?.BOOL,
           account_status: findData?.Items[0]?.account_status?.S,
         };
+
+        if (
+          obj?.user_type != "vendor" &&
+          obj?.user_type != "seller" &&
+          obj?.user_type != "logistic" &&
+          obj?.user_type != "super_admin"
+        ) {
+          let get = [];
+          let permission_raw_arr = [];
+          if (
+            findData?.Items[0] &&
+            findData?.Items[0]?.permission &&
+            findData?.Items[0]?.permission?.L
+          ) {
+            // console.log(
+            //   findData?.Items[0]?.permission?.L,
+            //   "findData?.Items[0]?.permission?.L"
+            // );
+            let getOf = simplifyDynamoDBResponse(
+              findData?.Items[0]?.permission?.L
+            );
+            get = Object.values(getOf);
+            // console.log(get, "findDataL!@!", typeof get);
+          }
+          let api_endpoint_arr = [];
+          if (get) {
+            const paramsOf = {
+              RequestItems: {
+                permission: {
+                  Keys: get?.map((id) => ({
+                    id: { S: id },
+                  })),
+                  ProjectionExpression:
+                    "backend_routes,title,id,frontend_routes",
+                },
+              },
+            };
+            const commandOf = new BatchGetItemCommand(paramsOf);
+            const result = await dynamoDBClient.send(commandOf);
+            let dataOf = result?.Responses?.permission;
+            if (dataOf && dataOf) {
+              for (let el of dataOf) {
+                let get = simplifyDynamoDBResponse(el);
+                permission_raw_arr.push(get);
+                // console.log(get, "@@@@ @@ @  @@ @  !!!!!GETGegtetg");
+                get?.backend_routes?.forEach((el) => api_endpoint_arr.push(el));
+                get?.frontend_routes?.forEach((el) =>
+                  api_endpoint_arr.push(el)
+                );
+              }
+            }
+          }
+          if (api_endpoint_arr && api_endpoint_arr.length) {
+            api_endpoint_arr = new Set([...api_endpoint_arr]);
+            api_endpoint_arr = [...api_endpoint_arr];
+          }
+          if (api_endpoint_arr && api_endpoint_arr.length) {
+            const paramsOfAndPoint = {
+              RequestItems: {
+                api_endpoint: {
+                  Keys: api_endpoint_arr.map((id) => ({
+                    id: { S: id },
+                  })),
+                },
+              },
+            };
+            const commandOfApiEndpoint = new BatchGetItemCommand(
+              paramsOfAndPoint
+            );
+            const result = await dynamoDBClient.send(commandOfApiEndpoint);
+            let dataOf = result?.Responses?.api_endpoint;
+            let temp = {};
+            for (let el of dataOf) {
+              if (temp[el?.type?.S]) {
+                temp[el?.type?.S].push({
+                  id: el?.id?.S,
+                  title: el?.title?.S,
+                  type: el?.type?.S,
+                });
+              } else {
+                temp[el?.type?.S] = [
+                  { id: el?.id?.S, title: el?.title?.S, type: el?.type?.S },
+                ];
+              }
+            }
+            obj.permission = temp;
+            obj.permission_raw_arr = permission_raw_arr;
+          }
+        }
         let token = generateAccessToken(obj);
         let expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 days
         // expiryDate.setTime(expiryDate.getTime() + (60 * 1000)); // Current time + 1 minute
+      
+        const updateParams = {
+          TableName: "users",
+          Key: {
+            id: { S: obj?.id }, // Replace with actual product ID
+          },
+          UpdateExpression: "SET unique_token_id = :unique_token_id",
+          ExpressionAttributeValues: {
+            ":unique_token_id": { S: unique_token_id },
+          },
+          ReturnValues: "UPDATED_NEW",
+        };
+        await dynamoDBClient.send(new UpdateItemCommand(updateParams));
         res
           .cookie("_token", token, {
             httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
@@ -1235,6 +1351,8 @@ class UserServices {
               token: token,
               is_verified: obj?.is_verified,
               account_status: obj?.account_status,
+              permission: obj?.permission || [],
+              permission_raw_arr: obj?.permission_raw_arr || [],
             },
           });
       } else {
@@ -1306,6 +1424,26 @@ class UserServices {
     }
   }
 
+  async user_logout_data(req,res){
+    try{
+      const updateParams = {
+        TableName: "users",
+        Key: {
+          id: { S: req.userData?.id }, // Replace with actual product ID
+        },
+        UpdateExpression: "SET unique_token_id = :unique_token_id",
+        ExpressionAttributeValues: {
+          ":unique_token_id": { S: "" },
+        },
+        ReturnValues: "UPDATED_NEW",
+      };
+      await dynamoDBClient.send(new UpdateItemCommand(updateParams));
+    return res.status(200).json({message:"logout successful",statusCode:200,success:true})
+
+    }catch(er){
+      return res.status(500).json({message:er,statusCode:500,success:false})
+    }
+  }
   async UserAccountDeactivateOrActivate(req, res) {
     try {
       let { user_id, status } = req.body;
@@ -1355,7 +1493,8 @@ class UserServices {
 
   async addSubUser(req, res) {
     try {
-      let { email, phone, name, country, doc_id, permission, status } = req.body;
+      let { email, phone, name, country, doc_id, permission, account_status } =
+        req.body;
       const paramsOf = {
         RequestItems: {
           permission: {
@@ -1386,13 +1525,11 @@ class UserServices {
         }
       }
       if (invalid_permission_arr && invalid_permission_arr?.length > 0) {
-        return res
-          .status(400)
-          .json({
-            message: `This permission ${invalid_permission_arr} are not exist`,
-            statusCode: 400,
-            success: false,
-          });
+        return res.status(400).json({
+          message: `This permission ${invalid_permission_arr} are not exist`,
+          statusCode: 400,
+          success: false,
+        });
       }
       if (doc_id) {
         const findEmailExist = await dynamoDBClient.send(
@@ -1413,13 +1550,16 @@ class UserServices {
             success: false,
           });
         }
-        let profile_photo = req.files.profile_photo[0]?.filename || findEmailExist?.Items[0]?.profile_photo?.S || ""
+        let profile_photo =
+          req.files.profile_photo[0]?.filename ||
+          findEmailExist?.Items[0]?.profile_photo?.S ||
+          "";
         // console.log(findEmailExist ?.Items[0]?.,"aa")
         const params = {
           TableName: "users",
           Key: { id: { S: doc_id } },
           UpdateExpression:
-            "SET #name = :name, #phone = :phone, #permission =:permission, #country= :country , #updated_at=:updated_at, #profile_photo = :profile_photo, #status = :status ",
+            "SET #name = :name, #phone = :phone, #permission =:permission, #country= :country , #updated_at=:updated_at, #profile_photo = :profile_photo, #account_status = :account_status ",
           ExpressionAttributeNames: {
             "#name": "name",
             "#phone": "phone",
@@ -1427,7 +1567,7 @@ class UserServices {
             "#country": "country",
             "#updated_at": "updated_at",
             "#profile_photo": "profile_photo",
-            "#status": "status"
+            "#account_status": "account_status",
           },
           ExpressionAttributeValues: {
             ":name": { S: name || findEmailExist?.Items[0]?.name?.S },
@@ -1445,12 +1585,17 @@ class UserServices {
             },
             ":updated_at": { S: new Date().toISOString() },
             ":profile_photo": { S: profile_photo || "" },
-            ":status": { S: status || findEmailExist?.Items[0]?.status?.S || "active" }
+            ":account_status": {
+              S:
+                account_status ||
+                findEmailExist?.Items[0]?.account_status?.S ||
+                "active",
+            },
           },
         };
         // console.log(params, "apramnsnssnsm");
         await dynamoDBClient.send(new UpdateItemCommand(params));
-        let obj = { id: doc_id }
+        let obj = { id: doc_id };
         return res.status(200).json({
           message: "User's details update successfully",
           data: obj,
@@ -1521,7 +1666,11 @@ class UserServices {
           country: { S: country || "" },
           password: { S: hashPassword },
           created_by: { S: req.userData?.id },
-          profile_photo: { S: req.files?.profile_photo ? req.files?.profile_photo[0]?.filename : "" },
+          profile_photo: {
+            S: req.files?.profile_photo
+              ? req.files?.profile_photo[0]?.filename
+              : "",
+          },
           permission: {
             L:
               permission?.map((el) => ({
@@ -1532,7 +1681,7 @@ class UserServices {
           },
           created_at: { S: new Date().toISOString() },
           updated_at: { S: new Date().toISOString() },
-          status: { S: "active" }
+          account_status: { S: "activated" },
         },
       };
       // console.log("user_type", "docccleint", params);
@@ -1543,12 +1692,12 @@ class UserServices {
         name,
       };
       sendPasswordViaEmailOf(obj);
-      let obj2 = { id }
+      let obj2 = { id };
       res.status(201).json({
         message: "User added successfully",
         statusCode: 200,
         success: true,
-        data: obj2
+        data: obj2,
       });
     } catch (err) {
       console.error(err, "error ");
@@ -1637,7 +1786,7 @@ class UserServices {
         IndexName: "created_by-index",
         KeyConditionExpression: "created_by = :created_by",
         ExpressionAttributeValues: {
-          ":created_by": { S: req.userData?.id } // Assuming req.userData?.id is a string
+          ":created_by": { S: req.userData?.id }, // Assuming req.userData?.id is a string
         },
         // Limit: limit,
         ScanIndexForward: false,
@@ -1729,7 +1878,7 @@ class UserServices {
           success: false,
         });
       }
-      console.log(data?.Items[0], "@@@@@ @@@@ @@@ @@@@@ @@ @@")
+      // console.log(data?.Items[0], "@@@@@ @@@@ @@@ @@@@@ @@ @@");
       if (data?.Items[0]?.created_by?.S != req.userData?.id) {
         return res.status(400).json({
           message: "Not authorise to perform this action",
@@ -1760,7 +1909,7 @@ class UserServices {
 
   async change_status_user(req, res) {
     try {
-      let { id, status } = req.query;
+      let { id, account_status } = req.query;
       const data = await dynamoDBClient.send(
         new QueryCommand({
           TableName: "users",
@@ -1777,26 +1926,33 @@ class UserServices {
           success: false,
         });
       }
-      if (req.userData?.user_type != 'super_admin' && data?.Items[0]?.created_by?.S != req.userData?.id) {
+      if (
+        req.userData?.user_type != "super_admin" &&
+        data?.Items[0]?.created_by?.S != req.userData?.id
+      ) {
         return res.status(400).json({
           message: "Not authorise to perform this action",
           statusCode: 400,
           success: false,
-        })
+        });
       }
       const params = {
         TableName: "users",
         Key: { id: { S: id } },
-        UpdateExpression:
-          "SET #status = :status",
+        UpdateExpression: "SET #account_status = :account_status",
         ExpressionAttributeNames: {
-          "#status": "status"
+          "#account_status": "account_status",
         },
         ExpressionAttributeValues: {
-          ":status": { S: status || findEmailExist?.Items[0]?.status?.S || "active" }
+          ":account_status": {
+            S:
+              account_status ||
+              findEmailExist?.Items[0]?.account_status?.S ||
+              "activated",
+          },
         },
       };
-      await dynamoDBClient.send(new UpdateItemCommand(params))
+      await dynamoDBClient.send(new UpdateItemCommand(params));
       return res.status(200).json({
         message: "User status changed successfully",
         statusCode: 200,

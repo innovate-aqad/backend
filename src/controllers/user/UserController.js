@@ -639,7 +639,6 @@ class UserController {
           .status(400)
           .json({ message: error.details[0]?.message, success: false });
       }
-
       UserServicesObj.verify_otp_data(req, res);
     } catch (err) {
       // console.log(err, "Eeee reset password");
@@ -668,8 +667,6 @@ class UserController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
-
 
   async getAllUser(req, res) {
     try {
@@ -724,14 +721,15 @@ class UserController {
 
   async user_logout(req, res) {
     try {
-      return (
-        res
-          .clearCookie("_token")
-          // .clearCookie()
+      // return (
+      //   res
+      //     .clearCookie("_token")
+      //     // .clearCookie()
 
-          .status(200)
-          .json({ success: true, message: "Logout successful" })
-      );
+      //     .status(200)
+      //     .json({ success: true, message: "Logout successful" })
+      // );
+      UserServicesObj.user_logout_data(req,res)
     } catch (err) {
       return res
         .status(500)
