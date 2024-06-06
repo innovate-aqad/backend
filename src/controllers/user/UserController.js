@@ -721,14 +721,15 @@ class UserController {
 
   async user_logout(req, res) {
     try {
-      return (
-        res
-          .clearCookie("_token")
-          // .clearCookie()
+      // return (
+      //   res
+      //     .clearCookie("_token")
+      //     // .clearCookie()
 
-          .status(200)
-          .json({ success: true, message: "Logout successful" })
-      );
+      //     .status(200)
+      //     .json({ success: true, message: "Logout successful" })
+      // );
+      UserServicesObj.user_logout_data(req,res)
     } catch (err) {
       return res
         .status(500)

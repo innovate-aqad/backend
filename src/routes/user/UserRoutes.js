@@ -83,6 +83,12 @@ UserRoutes.put(
   UserControllerObj.status_sub_user
 );
 
+UserRoutes.get(
+  "/logout",
+  authorize,
+  UserControllerObj.user_logout
+);
+
 
 
 UserRoutes.put(
