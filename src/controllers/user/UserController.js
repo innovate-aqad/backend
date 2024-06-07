@@ -85,7 +85,6 @@ class UserController {
               success: false,
             });
           } else {
-            // uploadImageToS3(name, req.files?.vat_certificate[0]?.path);
           }
         } else {
           // console.log(req.body, "req.bodyyyyyyyyyyy", req.files, "asas req.files")
@@ -116,7 +115,6 @@ class UserController {
               success: false,
             });
           } else {
-            // uploadImageToS3(name, req.files?.trade_license[0]?.path);
           }
         } else {
           if (user_type == "logistic" && slide == 3 && !req.body.db_trade_license) {
@@ -146,7 +144,6 @@ class UserController {
               success: false,
             });
           } else {
-            // uploadImageToS3(name, req.files?.cheque_scan[0]?.path);
           }
         } else {
           // if (user_type == "logistic" && slide == 3) {
@@ -176,7 +173,6 @@ class UserController {
               success: false,
             });
           } else {
-            // uploadImageToS3(name, req.files?.emirate_id_pic[0]?.path);
           }
         }
       }
@@ -197,7 +193,6 @@ class UserController {
           });
         } else {
           // console.log("aaaaaaaaaaaaaaa   ",req.files?.profile_photo[0]?.path)
-          // uploadImageToS3(name, req.files?.profile_photo[0]?.path);
         }
       } else {
         if (user_type == "employee" && slide == 1) {
@@ -222,7 +217,6 @@ class UserController {
             success: false,
           });
         } else {
-          // uploadImageToS3(name, req.files?.residence_visa[0]?.path);
         }
       } else if (
         req.files &&
@@ -253,7 +247,6 @@ class UserController {
             success: false,
           });
         } else {
-          // uploadImageToS3(name, req.files?.passport[0]?.path);
         }
       } else if (
         req.files &&
@@ -288,7 +281,6 @@ class UserController {
               success: false,
             });
           } else {
-            // uploadImageToS3(el?.filename, el?.path);
           }
         }
       }
@@ -319,7 +311,6 @@ class UserController {
               success: false,
             });
           } else {
-            // uploadImageToS3(name, el?.path);
           }
         }
       } else if (!db_driver_details_array?.length &&
@@ -582,7 +573,6 @@ class UserController {
   async forgotPassword(req, res) {
     try {
       let { error } = forgotPasswordSchema.validate(req?.body, options);
-
       if (error) {
         return res
           .status(400)
@@ -658,7 +648,6 @@ class UserController {
           statusCode: 400,
         });
       }
-
       UserServicesObj.resetUserPassword(req, res);
     } catch (err) {
       // console.log(err, "Eeee reset password");
