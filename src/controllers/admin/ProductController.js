@@ -21,7 +21,7 @@ import UploadsDocumentModel from "../../models/UploadsDocumentModel.js";
 import docClient from "../../config/dbConfig.js";
 import vendorOnBoardModel from "../../models/VendorOnBoard.js";
 import { ImageFileCheck } from "../../helpers/validateImageFile.js";
-import { addProductVariantschema, addProductchema, deleteVariantImagechema, getProductByIdchema } from "../../helpers/validateProduct.js";
+import { addProductVariantschema, addProductchema, deleteVariantImagechema, getProductAndVariantByIdchema, getProductByIdchema } from "../../helpers/validateProduct.js";
 import ProductServicesServicesObj from "../../services/admin/ProductServices.js";
 import ProductServicesObj from "../../services/admin/ProductServices.js";
 // import axios from "axios";
@@ -147,6 +147,24 @@ class ProductController {
         });
       }
       await ProductServicesObj.get_data_by_id_(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  async get_variant_data_by_id(req, res) {
+    try {
+      let { error } = getProductAndVariantByIdchema.validate(req.query, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+      await ProductServicesObj.get_variant_data_by_id_(req, res);
     } catch (err) {
       return res
         .status(500)
