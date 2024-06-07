@@ -16,7 +16,7 @@ ProductRoutes.delete(
   "/delete_product",
   authorize,
   ProductControllerObj.delete_product
-);
+  );
 //VARIANT API'S
 ProductRoutes.post(
   "/add_product_variant",
@@ -30,6 +30,7 @@ ProductRoutes.post(
   ProductControllerObj.addProductVariants
 );
 
+ProductRoutes.get("/get_variant_by_id", authorize, ProductControllerObj.get_variant_data_by_id);
 
 ProductRoutes.delete(
   "/delete_product_variant",

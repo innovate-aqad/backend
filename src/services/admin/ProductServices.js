@@ -534,6 +534,43 @@ class ProductServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
+
+  async get_variant_data_by_id_(req, res) {
+    try {
+      const product_id = req.query?.product_id;
+      const variant_id = req.query?.variant_id;
+      let findProductData = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "products",
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: product_id },
+          },
+        })
+      );
+      // console.log(findProductData, "findproduct dataa");
+      let simplifiedData = findProductData.Items.map((el) =>
+        simplifyDynamoDBResponse(el)
+      );
+      let tempObj = { ...simplifiedData[0] }
+      delete tempObj?.variation_arr
+      let simplifiedData2 = simplifiedData[0]?.variation_arr?.find((el) => el?.id == variant_id)
+      // console.log(simplifiedData2, "simplifiedData2simplifiedData2@#@#", simplifiedData)
+      tempObj.variationObj = simplifiedData2
+      res.status(200).json({
+        message: "Fetch Data",
+        data: tempObj,
+        statusCode: 200,
+        success: true,
+      });
+      return;
+    } catch (err) {
+      console.error(err, "erroror");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
   //change status of main product
   async changeStatus(req, res) {
     try {
