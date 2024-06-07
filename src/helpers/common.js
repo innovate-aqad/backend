@@ -348,7 +348,7 @@ export async function forgotPasswordEmail(req, res, obj) {
     const mailOptions = {
       from: process.env.AUTH_EMAIL,
       to: obj.email,
-      subject: "Reset Your Password - vuezen",
+      subject: "Reset Your Password - ",
       html: `<!DOCTYPE html>
       <html lang="en">
       <head>

@@ -785,10 +785,10 @@ class UserServices {
               // console.log(ele, "eleleellel")
               try {
                 await deleteImageFromS3(ele?.filename, req.body.user_type);
-              } catch (err) {}
+              } catch (err) { }
               try {
                 await removefIle(ele?.filename, req.body.user_type);
-              } catch (error) {}
+              } catch (error) { }
             }
           }
         }
@@ -1202,13 +1202,13 @@ class UserServices {
               success: false,
             });
           } else
-           if (otpDb != otp) {
-            return res.status(400).json({
-              message: "In-valid otp",
-              statusCode: 400,
-              success: false,
-            });
-          }
+            if (otpDb != otp) {
+              return res.status(400).json({
+                message: "In-valid otp",
+                statusCode: 400,
+                success: false,
+              });
+            }
         } else {
           return res.status(400).json({
             message: "No data found",
@@ -1217,7 +1217,7 @@ class UserServices {
           });
         }
         let unique_token_id = uuidv4();
-        unique_token_id= unique_token_id?.replace(/-/g, "");
+        unique_token_id = unique_token_id?.replace(/-/g, "");
         let obj = {
           unique_token_id,
           name: findData?.Items[0]?.name?.S,
@@ -1320,7 +1320,7 @@ class UserServices {
         let expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 days
         // expiryDate.setTime(expiryDate.getTime() + (60 * 1000)); // Current time + 1 minute
-      
+
         const updateParams = {
           TableName: "users",
           Key: {
@@ -1360,14 +1360,6 @@ class UserServices {
           .status(400)
           .json({ message: "No data found", statusCode: 400, success: false });
       }
-      return;
-      if (emailExistCheck?.is_verified == 0) {
-        await UserModel.update(
-          { is_verified: true },
-          { where: { id: emailExistCheck?.id } }
-        );
-      }
-      return;
     } catch (err) {
       console.log(err, "Error in login api user");
       return res
@@ -1424,8 +1416,8 @@ class UserServices {
     }
   }
 
-  async user_logout_data(req,res){
-    try{
+  async user_logout_data(req, res) {
+    try {
       const updateParams = {
         TableName: "users",
         Key: {
@@ -1438,10 +1430,10 @@ class UserServices {
         ReturnValues: "UPDATED_NEW",
       };
       await dynamoDBClient.send(new UpdateItemCommand(updateParams));
-    return res.status(200).json({message:"logout successful",statusCode:200,success:true})
+      return res.status(200).json({ message: "logout successful", statusCode: 200, success: true })
 
-    }catch(er){
-      return res.status(500).json({message:er,statusCode:500,success:false})
+    } catch (er) {
+      return res.status(500).json({ message: er, statusCode: 500, success: false })
     }
   }
   async UserAccountDeactivateOrActivate(req, res) {
@@ -2095,41 +2087,105 @@ class UserServices {
   async sendForgotPasswordEmail(req, res) {
     try {
       let email = req.body.email?.trim();
-      let findEmailExist = await UserModel.findOne({
-        where: { email },
-        attributes: ["email", "id", "name"],
-      });
-
-      if (!findEmailExist) {
-        return res.status(404).json({
-          message: "Email not found",
+      const findEmailExist = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          IndexName: "email", // Replace with your GSI name for email
+          KeyConditionExpression: "email = :email",
+          ProjectionExpression: "email, phone, id, #nm",
+          ExpressionAttributeNames: {
+            "#nm": "name",
+          },
+          ExpressionAttributeValues: {
+            ":email": { S: email },
+          },
+        })
+      );
+      if (findEmailExist.Count == 0) {
+        return res.status(400).json({
           success: false,
+          message: "Email not found",
           statusCode: 400,
         });
-      } else {
-        let getRandomNumber = Math.round(Math.random() * 10000);
-        let obj = {
-          user_id: findEmailExist?.id,
-          otp_code: getRandomNumber,
-          email: findEmailExist?.email,
-          name: findEmailExist?.name,
-          creation_time: Date.now(),
-        };
-        // console.log(obj,"EEEEEEEEEEEEEEEEEEEEEEEEEEEE")
-        let getEmailCheck = await userOtpModel.findOne({
-          where: { user_id: findEmailExist?.id },
-          attributes: ["id"],
-        });
-        if (getEmailCheck && getEmailCheck?.id) {
-          await userOtpModel.update(
-            { otp_code: getRandomNumber, creation_time: Date.now() },
-            { where: { user_id: findEmailExist?.id } }
-          );
-        } else {
-          await userOtpModel.create(obj);
-        }
-        await forgotPasswordEmail(req, res, obj);
       }
+      let get = simplifyDynamoDBResponse(findEmailExist?.Items[0])
+      console.log(get, "Getgetget")
+      let otp = await generateOTP();
+      // console.log(otp, "otptptptp");
+      if (otp.length == 3) {
+        otp = otp + "0";
+      } else if (otp.length == 2) {
+        otp = otp + "00";
+      } else if (otp.length == 1) {
+        otp = otp + "000";
+      }
+      let currentTime = Date.now();
+      currentTime = currentTime?.toString();
+ 
+      let obj = {
+        user_id: get?.id,
+        otp_code: otp,
+        email: get?.email,
+        name: get?.name,
+        creationTime: currentTime
+      };
+
+      const find = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "userOtp",
+          IndexName: "email", // replace with your GSI name
+          KeyConditionExpression: "email = :email",
+          ExpressionAttributeValues: {
+            ":email": { S: email },
+          },
+        })
+      );
+      // console.log(find, "Asdad", find);
+      if (find && find?.Count > 0) {
+        const params = {
+          TableName: "userOtp",
+          Key: { id: { S: find?.Items[0]?.id?.S } },
+          UpdateExpression:
+            "SET #otp = :otp, #creationTime = :creationTime, #updatedAt =:updatedAt ",
+          ExpressionAttributeNames: {
+            "#otp": "otp",
+            "#creationTime": "creationTime",
+            "#updatedAt": "updatedAt",
+          },
+          ExpressionAttributeValues: {
+            ":otp": { S: otp },
+            ":creationTime": { S: currentTime },
+            ":updatedAt": { S: currentTime },
+          },
+        };
+        await dynamoDBClient.send(new UpdateItemCommand(params));
+      } else {
+        let id = uuidv4()?.replace(/-/g, "");
+        const params = {
+          TableName: "userOtp",
+          Item: {
+            email: { S: req.body.email },
+            otp: { S: otp },
+            creationTime: { N: currentTime },
+            createdAt: { N: currentTime },
+            updatedAt: { N: currentTime },
+            id: { S: id },
+          },
+        };
+        // console.log(params, "parasnsns");
+        let Data = await dynamoDBClient.send(new PutItemCommand(params));
+        // console.log(Data, "dayayayaya");
+      }
+      
+      res.status(200).json({
+        message: "Otp sent to registered email",
+        statusCode: 200,
+        success: true,
+      });
+      // console.log(obj,"EEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+      
+      await forgotPasswordEmail(req, res, obj);
+      return
     } catch (err) {
       // console.log(err);
       return res

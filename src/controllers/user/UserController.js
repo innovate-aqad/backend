@@ -582,7 +582,6 @@ class UserController {
   async forgotPassword(req, res) {
     try {
       let { error } = forgotPasswordSchema.validate(req?.body, options);
-
       if (error) {
         return res
           .status(400)
