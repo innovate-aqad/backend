@@ -76,21 +76,6 @@ UserRoutes.delete(
   authorize,
   UserControllerObj.delete_sub_user
 );
-
-UserRoutes.put(
-  "/status_sub_user",
-  authorize,
-  UserControllerObj.status_sub_user
-);
-
-UserRoutes.get(
-  "/logout",
-  authorize,
-  UserControllerObj.user_logout
-);
-
-
-
 UserRoutes.put(
   "/role_id_to_aqad_employee",
   authorize,
