@@ -348,7 +348,7 @@ export async function forgotPasswordEmail(req, res, obj) {
     const mailOptions = {
       from: process.env.AUTH_EMAIL,
       to: obj.email,
-      subject: "Reset Your Password - vuezen",
+      subject: "Reset Your Password - ",
       html: `<!DOCTYPE html>
       <html lang="en">
       <head>
@@ -406,7 +406,7 @@ export async function forgotPasswordEmail(req, res, obj) {
               <p>It seems that you've forgotten your password, but don't worry, we've got you covered!</p>
               <p>To reset your password, otp is ${obj?.otp_code}</p>
               <p>Please choose a strong and memorable password. That's it!</p>
-              <p>Thank you for choosing vuezen. We appreciate your trust in our platform and are here to ensure you have a seamless experience.</p>
+              <p>Thank you for choosing AQAD. We appreciate your trust in our platform and are here to ensure you have a seamless experience.</p>
               <p>Sincerely,</p>
               <p>Vuezen</p>
           </div>
@@ -414,11 +414,11 @@ export async function forgotPasswordEmail(req, res, obj) {
       </html>
       `,
     };
-    res.status(200).json({
-      success: true,
-      statusCode: 200,
-      message: "Otp sent to registered email",
-    });
+    // res.status(200).json({
+    //   success: true,
+    //   statusCode: 200,
+    //   message: "Otp sent to registered email",
+    // });
     try {
       await transporter2.sendMail(mailOptions);
     } catch (err) {

@@ -96,13 +96,13 @@ UserRoutes.put(
 //get all vendor or logistic or seller fetch with its sub_user
 // UserRoutes.get("/fetch_all_user",authorize,UserControllerObj)
 
-UserRoutes.put("/forgot_password", UserControllerObj.forgotPassword);
+UserRoutes.put("/forgot_password", UserControllerObj.forgotPassword); 
 UserRoutes.put("/verify_otp", UserControllerObj.verify_otp);
+UserRoutes.put("/reset_password", UserControllerObj.resetPassword);
 
 UserRoutes.get("/check_user_logged_in", UserControllerObj.check_user_logged_in);
 UserRoutes.get("/user_logout", UserControllerObj.user_logout);
 
-UserRoutes.put("/reset_password", UserControllerObj.resetPassword);
 // UserRoutes.get("/fetch_users", UserControllerObj.FetchUsers);
 UserRoutes.get("/get_allusers", authorize, UserControllerObj.getAllUser);
 

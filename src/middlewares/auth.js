@@ -76,19 +76,19 @@ export const authorize = async (req, res, next) => {
         .json({ message: "User not found", success: false, statusCode: 400 });
     }
     let rawData = simplifyDynamoDBResponse(findDataExist?.Items[0]);
-    // console.log(
-    //   findDataExist?.Items[0]?.permission?.L,
-    //   "findDataExistfindDataExist",
-    //   rawData
-    // );
+    console.log(
+      findDataExist?.Items[0]?.permission?.L,
+      "findDataExistfindDataExist",
+      rawData
+    );
     if(rawData&&rawData?.unique_token_id!=proof?.unique_token_id){
       return res.status(400).json({message:"Token expired",statusCode:400,success:false})
     }
     if (
-      rawData?.userData != "vendor" &&
-      rawData?.userData != "logistic" &&
-      rawData?.userData != "seller" &&
-      rawData?.userData != "super_admin"
+      rawData?.user_type != "vendor" &&
+      rawData?.user_type!= "logistic" &&
+      rawData?.user_type!= "seller" &&
+      rawData?.user_type!= "super_admin"
     ) {
       let checkAuthority = proof?.permission?.backend?.find(
         (el) => el?.title == req.originalUrl

@@ -113,6 +113,44 @@ export const sendPasswordViaEmailOf = async (obj) => {
     return false
   }
 };
+export const forgotPasswordSendOtp = async (obj) => {
+  try {
+
+    const params = {
+      Destination: {
+        ToAddresses: [obj?.email], // Replace with recipient email address/es
+      },
+      Message: {
+        Body: {
+          Text: {
+            Charset: "UTF-8",
+            Data: `Otp is ${obj?.otp}.`, // Replace with your message body
+          },
+        },
+        Subject: {
+          Charset: "UTF-8",
+          Data: "Forgot password Otp", // Replace with your email subject
+        },
+      },
+      Source: "aqadinnovate@gmail.com", // Replace with your sender email address
+    };
+    // Send email
+    // let get = await AWS_SES.sendEmail(params, (err, data) => {
+    //   if (data) {
+    //     console.log("success data", data)
+    //   } else {
+    //     console.log("error ", err)
+    //   }
+    // })
+    const command = new SendEmailCommand(params);
+    const data = await AWS_SES.send(command);
+// console.log(data,"dataa")
+    return true
+  } catch (error) {
+    console.log(error,"eorroor in forgot password otp send");
+    return false
+  }
+};
 
 export const sendOtpForLogin = async (email, otp) => {
   try {
