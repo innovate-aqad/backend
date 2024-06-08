@@ -1165,9 +1165,9 @@ class ProductServices {
       try {
         deleteImageFromS3(image, "product");
       } catch (er) { }
-      return res.status(400).json({
+      return res.status(200).json({
         message: "Image deleted successfully",
-        statusCode: 400,
+        statusCode: 200,
         success: false,
       });
     } catch (err) {
