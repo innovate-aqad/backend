@@ -14,6 +14,7 @@ import BrandRoutes from "./routes/admin/BrandRoutes.js";
 import SiUnitRoutes from "./routes/admin/SiUnitRoutesRoutes.js";
 import RoleRoutes from "./routes/admin/RoleRoutes.js";
 import OrderRoutes from "./routes/admin/OrderRoutes.js";
+import CartRoutes from "./routes/admin/CartRoutes.js";
 // require('dotenv').config();
 // import dotenv from 'dotenv';
 // dotenv.config();
@@ -92,6 +93,7 @@ app.use("/api/permission", PermissionRoutes);
 app.use("/api/brand", BrandRoutes);
 app.use("/api/si_unit", SiUnitRoutes);
 app.use("/api/order", OrderRoutes);
+app.use("/api/cart", CartRoutes);
 
 // Start the server
 const PORT = environmentVars.port;

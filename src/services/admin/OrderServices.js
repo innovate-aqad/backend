@@ -104,7 +104,7 @@ class orderServices {
             product_id_arr.push(el?.product_id);
           }
         }
-        console.log(product_id_arr, "product_id_arr")
+        console.log(product_id_arr, "product_id_arr");
         const paramsOf = {
           RequestItems: {
             users: {
@@ -114,17 +114,15 @@ class orderServices {
             },
           },
         };
-        const command = new BatchGetItemCommand(paramsOf); 
+        const command = new BatchGetItemCommand(paramsOf);
         const result = await dynamoDBClient.send(command);
         const items = result.Responses["users"];
         // console.log(items, "@@@@@@@@@@@@");
         for (let le of items) {
           if (le?.account_status?.S != "activated") {
-            return res
-              .status(400)
-              .json({
-                message: `This vendor account ${le?.name?.S} is not activate`,
-              });
+            return res.status(400).json({
+              message: `This vendor account ${le?.name?.S} is not activate`,
+            });
           }
         }
 
@@ -137,17 +135,16 @@ class orderServices {
             },
           },
         };
-        const commandProduct = new BatchGetItemCommand(paramsOfProduct); 
+        const commandProduct = new BatchGetItemCommand(paramsOfProduct);
         const resultProduct = await dynamoDBClient.send(commandProduct);
         const itemsProduct = resultProduct?.Responses["products"];
         // console.log(itemsProduct,"itemsproduct@!@@ $");
-        
-for(let el of itemsProduct){
-  for(let le of el?.variation_arr?.L){
-    console.log(le?.M?.warehouse_arr?.L,"lelelle");
-    
-  }
-}
+
+        for (let el of itemsProduct) {
+          for (let le of el?.variation_arr?.L) {
+            console.log(le?.M?.warehouse_arr?.L, "lelelle");
+          }
+        }
         return;
         if (findEmailExist.Count > 0) {
           return res.status(400).json({

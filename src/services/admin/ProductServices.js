@@ -13,7 +13,7 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import { v4 as uuidv4 } from "uuid";
-import AWS from "aws-sdk";
+// import AWS from "aws-sdk";
 import fs from "fs";
 import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
 import {
@@ -21,15 +21,15 @@ import {
   deleteImageFromS3,
   uploadImageToS3,
 } from "../../helpers/s3.js";
-AWS.config.update({
-  region: process.env.Aws_region,
-  credentials: {
-    accessKeyId: process.env.Aws_accessKeyId,
-    secretAccessKey: process.env.Aws_secretAccessKey,
-  },
-});
+// AWS.config.update({
+//   region: process.env.Aws_region,
+//   credentials: {
+//     accessKeyId: process.env.Aws_accessKeyId,
+//     secretAccessKey: process.env.Aws_secretAccessKey,
+//   },
+// });
 
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
+// const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
   credentials: {

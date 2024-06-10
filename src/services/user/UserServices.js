@@ -1496,42 +1496,45 @@ class UserServices {
     try {
       let { email, phone, name, country, doc_id, permission, account_status } =
         req.body;
-      const paramsOf = {
-        RequestItems: {
-          permission: {
-            Keys: permission.map((id) => ({
-              id: { S: id },
-            })),
-            ProjectionExpression: "title, id, backend_routes, frontend_routes",
+      if (req.userData?.user_type != "logistic") {
+        const paramsOf = {
+          RequestItems: {
+            permission: {
+              Keys: permission.map((id) => ({
+                id: { S: id },
+              })),
+              ProjectionExpression:
+                "title, id, backend_routes, frontend_routes",
+            },
           },
-        },
-      };
-      const commandOf = new BatchGetItemCommand(paramsOf);
-      const result = await dynamoDBClient.send(commandOf);
-      let dataOf = result?.Responses?.permission;
-      // console.log(dataOf, "dataofffffff");
-      if (dataOf?.length == 0) {
-        return res.status(400).json({
-          message: "In-valid permission",
-          status: 400,
-          success: false,
-        });
-      }
-      let invalid_permission_arr = [];
-      for (let le of permission) {
-        // console.log(le, "lelelelele");
-        let findPermissionObj = dataOf?.find((el) => el?.id?.S == le);
-        if (!findPermissionObj) {
-          invalid_permission_arr.push(le);
+        };
+        const commandOf = new BatchGetItemCommand(paramsOf);
+        const result = await dynamoDBClient.send(commandOf);
+        let dataOf = result?.Responses?.permission;
+        if (dataOf?.length == 0) {
+          return res.status(400).json({
+            message: "In-valid permission",
+            status: 400,
+            success: false,
+          });
+        }
+        let invalid_permission_arr = [];
+        for (let le of permission) {
+          // console.log(le, "lelelelele");
+          let findPermissionObj = dataOf?.find((el) => el?.id?.S == le);
+          if (!findPermissionObj) {
+            invalid_permission_arr.push(le);
+          }
+        }
+        if (invalid_permission_arr && invalid_permission_arr?.length > 0) {
+          return res.status(400).json({
+            message: `This permission ${invalid_permission_arr} are not exist`,
+            statusCode: 400,
+            success: false,
+          });
         }
       }
-      if (invalid_permission_arr && invalid_permission_arr?.length > 0) {
-        return res.status(400).json({
-          message: `This permission ${invalid_permission_arr} are not exist`,
-          statusCode: 400,
-          success: false,
-        });
-      }
+      // console.log(dataOf, "dataofffffff");
       if (doc_id) {
         const findEmailExist = await dynamoDBClient.send(
           new QueryCommand({
@@ -1555,7 +1558,7 @@ class UserServices {
           req.files.profile_photo[0]?.filename ||
           findEmailExist?.Items[0]?.profile_photo?.S ||
           "";
-        // console.log(findEmailExist ?.Items[0]?.,"aa")
+        // console.log(findEmailExist ?.Items[0]?.,"aa")   
         const params = {
           TableName: "users",
           Key: { id: { S: doc_id } },
@@ -2364,7 +2367,7 @@ class UserServices {
           password,
           findEmail?.Items[0]?.password?.S
         );
-        console.log(checkpassword,"qweqopwe");
+        console.log(checkpassword, "qweqopwe");
         if (checkpassword) {
           return res.status(400).json({
             message: "Password must be unique, previous password not allowed",
