@@ -92,8 +92,8 @@ app.use("/api/endpoint", ApiEndpointRoutes);
 app.use("/api/permission", PermissionRoutes);
 app.use("/api/brand", BrandRoutes);
 app.use("/api/si_unit", SiUnitRoutes);
-app.use("/api/order", OrderRoutes);
 app.use("/api/cart", CartRoutes);
+app.use("/api/order", OrderRoutes);
 
 // Start the server
 const PORT = environmentVars.port;
