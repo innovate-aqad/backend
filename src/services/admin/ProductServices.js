@@ -349,6 +349,57 @@ class ProductServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
+  //dub must br rvom
+  async get_dataOf(req, res) {
+    try {
+      const pageSize = parseInt(req.query?.pageSize) || 10;
+      const userType = req.userData.user_type;
+      const userId = req.userData.id;
+
+      const params = {
+        TableName: "products",
+        Limit: pageSize,
+      };
+      if (req.query.LastEvaluatedKey) {
+        params.ExclusiveStartKey = {
+          id: {
+            S: req.query.LastEvaluatedKey,
+          },
+        };
+      }
+      if (userType === "vendor") {
+        params.FilterExpression = "created_by = :userId";
+        params.ExpressionAttributeValues = {
+          ":userId": { S: userId },
+        };
+      }
+      console.log(params, "dynmosssssssssssssss");
+
+      const command = new ScanCommand(params);
+      const data = await dynamoDBClient.send(command);
+      const simplifiedData = data.Items.map((el) =>
+        simplifyDynamoDBResponse(el)
+      );
+      let LastEvaluatedKey;
+      if (data.LastEvaluatedKey) {
+        LastEvaluatedKey = data.LastEvaluatedKey?.id?.S;
+      }
+
+      res.status(200).json({
+        message: "Fetch Data",
+        data: simplifiedData,
+        LastEvaluatedKey,
+        statusCode: 200,
+        success: true,
+      });
+      return;
+    } catch (err) {
+      console.error(err, "erroror");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
 
   //product with pagination
   async get_dataOf_specifc(req, res) {
