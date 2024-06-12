@@ -263,6 +263,44 @@ class ApiEndpointServices {
     }
   }
 
+  async deleteEn(req, res) {//delete dubdub
+    try {
+      const { id } = req.query;
+
+      const data = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "api_endpoint",
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: id },
+          },
+        })
+      );
+      if (data?.Count == 0) {
+        return res.status(400).json({ message: "Data not found or deleted already", statusCode: 400, success: false })
+      }
+
+      // Delete the item
+      const deleteItemParams = {
+        TableName: 'api_endpoint',
+        Key: {
+          id: { S: id }
+        }
+      };
+      const deleteItemCommand = new DeleteItemCommand(deleteItemParams);
+      await dynamoDBClient.send(deleteItemCommand);
+      return res.status(200).json({
+        message: "Data delete successfully",
+        statusCode: 200,
+        success: true,
+      });
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
 }
 
 const ApiEndpointServicesObj = new ApiEndpointServices();

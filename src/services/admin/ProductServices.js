@@ -349,7 +349,7 @@ class ProductServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
-  //dub must br rvom
+  //dub must br rvom dubdub
   async get_dataOf(req, res) {
     try {
       const pageSize = parseInt(req.query?.pageSize) || 10;
