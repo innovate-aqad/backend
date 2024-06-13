@@ -288,7 +288,7 @@ class BrandServices {
     }
   }
 
-  async delete(req, res) {   // dubdubdub
+  async deletein(req, res) {   // dubdubdub
     try {
       let id = req.query.id
       const data = await dynamoDBClient.send(

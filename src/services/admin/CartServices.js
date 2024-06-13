@@ -390,6 +390,158 @@ class cartServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+
+  async editCa(req,res){
+    try {
+      let user_id = req.userData.id;
+      let findCartItem = await dynamoDBClient.send(
+        new ScanCommand({
+          TableName: "cart",
+          FilterExpression: "user_id = :user_id",
+          ExpressionAttributeValues: {
+            ":user_id": { S: user_id },
+          },
+        })
+      );
+      // console.log(findCartItem, "findCart)");
+      let mainCartArr = [];
+      if (findCartItem && findCartItem?.Items?.length > 0) {
+        let productArr = [];
+        findCartItem.Items.map((item) => productArr.push(item.product_id.S));
+        productArr = new Set(productArr);
+        productArr = [...productArr];
+        for (let el of findCartItem?.Items) {
+          mainCartArr.push(simplifyDynamoDBResponse(el));
+        }
+        // console.log(
+        //   "keys lete",
+        //   "keys -delete",
+        //   productArr,
+        //   "aaaaaaa",
+        //   mainCartArr
+        // );
+        // console.log(productArr, "products ");
+        const keys = productArr.map((productId) => ({
+          id: { S: productId }, // Assuming the primary key attribute name is 'id' and type is string
+        }));
+        const getProductDetails = await dynamoDBClient.send(
+          new BatchGetItemCommand({
+            RequestItems: {
+              products: {
+                Keys: keys,
+              },
+            },
+          })
+        );
+        let data = [];
+        const mainCat = [];
+        let subCat = [];
+        for (let el of getProductDetails?.Responses?.products) {
+          // console.log(el,"elelelel");
+          // mainCat.push({id:{S:el?.category_id?.S}});
+          // subCat.push({id:{S:el?.sub_category_id?.S}});
+          mainCat.push(el?.category_id?.S);
+          subCat.push(el?.sub_category_id?.S);
+          data.push(simplifyDynamoDBResponse(el));
+        }
+        console.log(mainCat, "m ttttttttt",keys,"asdf",subCat);
+        // return
+      //   let fetchMainCatData = await dynamoDBClient.send(
+      //     new BatchGetItemCommand({
+      //         RequestItems: {
+      //             category: {
+      //                 keys: mainCat, // Ensure mainCat contains valid key values
+      //             },
+      //             sub_category: {
+      //                 keys: subCat, // Ensure subCat contains valid key values
+      //             },
+      //         },
+      //     })
+      // );
+      
+        // let fetchMainCatData = await dynamoDBClient.send(
+        //   new BatchGetItemCommand({
+        //     RequestItems: {
+        //       category: {
+        //         keys: mainCat,
+        //       },
+        //     },
+        //   })
+        // );
+        // console.log(subCat, "!!!! ##### subCatsubCatsubCatsubCat");
+        let simpleMainCatData = [];
+        // if (fetchMainCatData && fetchMainCatData?.Responses?.category) {
+        //   for (let el of fetchMainCatData) {
+        //     simpleMainCatData.push(simpleMainCatData(el));
+        //   }
+        // }
+        // let fetchSubCatData = await dynamoDBClient.send(
+        //   new BatchGetItemCommand({
+        //     RequestItems: {
+        //       sub_category: {
+        //         keys: subCat,
+        //       },
+        //     },
+        //   })
+        // );
+        // let simpleSubCatData = [];
+        // if (fetchSubCatData && fetchSubCatData?.Responses?.sub_category) {
+        //   for (let el of fetchSubCatData) {
+        //     simpleSubCatData.push(simpleMainCatData(el));
+        //   }
+        // }
+        // console.log(mainCartArr, "maincart arrrrrrrr");
+        for (let el of mainCartArr) {
+          let findProductObj = data?.find((elem) => elem?.id == el?.product_id);
+          // console.log(findProductObj, "findproductobjjj");
+          let findVariationObj = {};
+          if (findProductObj) {
+            findVariationObj = findProductObj?.variation_arr?.find(
+              (elem) => elem?.id == el?.variant_id
+            );
+            //category data fetch and save
+            // let findCategoryData = simpleMainCatData?.find(
+            //   (a) => a?.id == findProductObj?.category_id
+            // );
+            // if (findCategoryData) {
+            //   el.categoryObj = findCategoryData;
+            // }
+            // //sub_category data fetch and save
+            // let findSubCategoryData = simpleSubCatData?.find(
+            //   (a) => a?.id == findProductObj?.sub_category_id
+            // );
+            // if (findSubCategoryData) {
+            //   el.subCategoryObj = findSubCategoryData;
+            // }
+          }
+          if (findProductObj) {
+            delete findProductObj?.variation_arr;
+            el.productObj = findProductObj;
+          }
+          if (findVariationObj) {
+            el.variantObj = findVariationObj;
+          }
+        }
+        return res.status(200).json({
+          message: "Fetch data",
+          statuscode: 200,
+          success: true,
+          data: mainCartArr,
+        });
+      } else {
+        return res.status(400).json({
+          message: "No items found in cart",
+          statusCode: 400,
+          success: false,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
 }
 
 const CartServicesObj = new cartServices();
