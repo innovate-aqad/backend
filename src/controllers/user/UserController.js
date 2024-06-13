@@ -406,6 +406,7 @@ class UserController {
   async add_sub_user(req, res) {
     try {
       if (!req.body.doc_id || req.body.doc_id == '') {
+        req.body.user_type=req.userData?.user_type
         let { error } = AddSubUserSchema.validate(req.body, options);
         if (error) {
           return res.status(400).json({

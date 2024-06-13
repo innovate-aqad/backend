@@ -157,12 +157,17 @@ export const AddSubUserSchema = Joi.object({
     .email({ tlds: { allow: false } })
     .label("Email"),
   name: Joi.string().trim().min(3).max(40).required().label("name"),
-  permission: Joi.array()
-    .items(Joi.string())
-    .min(1)
-    .max(100)
-    .required()
-    .label("permission"),
+  permission: Joi.when('user_type', {
+    is: 'logistic',
+    then: Joi.array().items(Joi.string()).max(100).label("Permission"),
+    otherwise: Joi.array().items(Joi.string()).min(1).max(100).required().label("Permission")
+  }),
+  // permission: Joi.array()
+  //   .items(Joi.string())
+  //   .min(1)
+  //   .max(100)
+  //   .required()
+  //   .label("permission"),
   phone: Joi.string()
     .trim()
     .required()

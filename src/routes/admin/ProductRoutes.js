@@ -43,6 +43,12 @@ ProductRoutes.delete(
   authorize,
   ProductControllerObj.delete_variant_image
 );
+
+ProductRoutes.delete(
+  "/delete_variant_images_tmp",
+  authorize,
+  ProductControllerObj.delete_variant_image
+);
 // ProductRoutes.delete("/delete", ProductControllerObj.deleteData);
 
 export default ProductRoutes;

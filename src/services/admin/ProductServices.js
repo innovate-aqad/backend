@@ -13,7 +13,7 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import { v4 as uuidv4 } from "uuid";
-import AWS from "aws-sdk";
+// import AWS from "aws-sdk";
 import fs from "fs";
 import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
 import {
@@ -21,15 +21,15 @@ import {
   deleteImageFromS3,
   uploadImageToS3,
 } from "../../helpers/s3.js";
-AWS.config.update({
-  region: process.env.Aws_region,
-  credentials: {
-    accessKeyId: process.env.Aws_accessKeyId,
-    secretAccessKey: process.env.Aws_secretAccessKey,
-  },
-});
+// AWS.config.update({
+//   region: process.env.Aws_region,
+//   credentials: {
+//     accessKeyId: process.env.Aws_accessKeyId,
+//     secretAccessKey: process.env.Aws_secretAccessKey,
+//   },
+// });
 
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
+// const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
   credentials: {
@@ -349,6 +349,7 @@ class ProductServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
+  
 
   //product with pagination
   async get_dataOf_specifc(req, res) {
@@ -1112,6 +1113,71 @@ class ProductServices {
   }
 
   async delete_variant_image_data(req, res) {
+    try {
+      let { product_id, variant_id, image } = req.query;
+      let findProductData = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "products",
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: product_id },
+          },
+        })
+      );
+      if (findProductData && findProductData?.Count == 0) {
+        return res.status(400).json({
+          message: "Product not found",
+          statusCode: 400,
+          success: false,
+        });
+      }
+      let checkProductImage = findProductData?.Items[0]?.variation_arr?.L;
+      let productImagesArray = checkProductImage.map((item) => item.M);
+      // console.log(productImagesArray[0]?.product_images_arr?.L,"productImagesArray productImagesArray ")
+      productImagesArray.forEach((variant) => {
+        if (variant?.id?.S === variant_id) {
+          variant.product_images_arr.L = variant.product_images_arr.L.filter(
+            (elem) => elem.M.image.S !== image
+          );
+        }
+      });
+      const updatedVariationArr = productImagesArray.map((item) => ({
+        M: item,
+      }));
+
+      console.log(productImagesArray, "oductayproductImagesArray");
+
+      const params = {
+        TableName: "products",
+        Key: {
+          id: { S: product_id },
+        },
+        UpdateExpression: "set variation_arr = :varArr",
+        ExpressionAttributeValues: {
+          ":varArr": { L: updatedVariationArr },
+        },
+      };
+      const updateCommand = new UpdateItemCommand(params);
+      await dynamoDBClient.send(updateCommand);
+      let filePath = `./uploads/vendor/product/${image}`;
+      try {
+        deleteImageFRomLocal(filePath);
+      } catch (er) { }
+      try {
+        deleteImageFromS3(image, "product");
+      } catch (er) { }
+      return res.status(200).json({
+        message: "Image deleted successfully",
+        statusCode: 200,
+        success: false,
+      });
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
+  async delete_variant_image_data_tmp(req, res) {
     try {
       let { product_id, variant_id, image } = req.query;
       let findProductData = await dynamoDBClient.send(

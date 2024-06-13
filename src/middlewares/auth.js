@@ -60,7 +60,7 @@ export const authorize = async (req, res, next) => {
     const proof = jwt.verify(_secrate, environmentVars.jwtSecret, {
       algorithm: "HS512",
     });
-    console.log("proof", "proof qwerty", proof);
+    // console.log("proof", "proof qwerty", proof);
     const findDataExist = await dynamoDBClient.send(
       new QueryCommand({
         TableName: "users",
@@ -76,11 +76,11 @@ export const authorize = async (req, res, next) => {
         .json({ message: "User not found", success: false, statusCode: 400 });
     }
     let rawData = simplifyDynamoDBResponse(findDataExist?.Items[0]);
-    console.log(
-      findDataExist?.Items[0]?.permission?.L,
-      "findDataExistfindDataExist",
-      rawData
-    );
+    // console.log(
+    //   findDataExist?.Items[0]?.permission?.L,
+    //   "findDataExistfindDataExist",
+    //   rawData
+    // );
     if(rawData&&rawData?.unique_token_id!=proof?.unique_token_id){
       return res.status(400).json({message:"Token expired",statusCode:400,success:false})
     }
