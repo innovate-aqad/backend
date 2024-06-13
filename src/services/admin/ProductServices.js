@@ -349,57 +349,7 @@ class ProductServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
-  //dub must br rvom dubdub
-  async get_dataOf(req, res) {
-    try {
-      const pageSize = parseInt(req.query?.pageSize) || 10;
-      const userType = req.userData.user_type;
-      const userId = req.userData.id;
-
-      const params = {
-        TableName: "products",
-        Limit: pageSize,
-      };
-      if (req.query.LastEvaluatedKey) {
-        params.ExclusiveStartKey = {
-          id: {
-            S: req.query.LastEvaluatedKey,
-          },
-        };
-      }
-      if (userType === "vendor") {
-        params.FilterExpression = "created_by = :userId";
-        params.ExpressionAttributeValues = {
-          ":userId": { S: userId },
-        };
-      }
-      console.log(params, "dynmosssssssssssssss");
-
-      const command = new ScanCommand(params);
-      const data = await dynamoDBClient.send(command);
-      const simplifiedData = data.Items.map((el) =>
-        simplifyDynamoDBResponse(el)
-      );
-      let LastEvaluatedKey;
-      if (data.LastEvaluatedKey) {
-        LastEvaluatedKey = data.LastEvaluatedKey?.id?.S;
-      }
-
-      res.status(200).json({
-        message: "Fetch Data",
-        data: simplifiedData,
-        LastEvaluatedKey,
-        statusCode: 200,
-        success: true,
-      });
-      return;
-    } catch (err) {
-      console.error(err, "erroror");
-      return res
-        .status(500)
-        .json({ message: err?.message, statusCode: 500, success: false });
-    }
-  }
+  
 
   //product with pagination
   async get_dataOf_specifc(req, res) {
@@ -1163,6 +1113,71 @@ class ProductServices {
   }
 
   async delete_variant_image_data(req, res) {
+    try {
+      let { product_id, variant_id, image } = req.query;
+      let findProductData = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "products",
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: product_id },
+          },
+        })
+      );
+      if (findProductData && findProductData?.Count == 0) {
+        return res.status(400).json({
+          message: "Product not found",
+          statusCode: 400,
+          success: false,
+        });
+      }
+      let checkProductImage = findProductData?.Items[0]?.variation_arr?.L;
+      let productImagesArray = checkProductImage.map((item) => item.M);
+      // console.log(productImagesArray[0]?.product_images_arr?.L,"productImagesArray productImagesArray ")
+      productImagesArray.forEach((variant) => {
+        if (variant?.id?.S === variant_id) {
+          variant.product_images_arr.L = variant.product_images_arr.L.filter(
+            (elem) => elem.M.image.S !== image
+          );
+        }
+      });
+      const updatedVariationArr = productImagesArray.map((item) => ({
+        M: item,
+      }));
+
+      console.log(productImagesArray, "oductayproductImagesArray");
+
+      const params = {
+        TableName: "products",
+        Key: {
+          id: { S: product_id },
+        },
+        UpdateExpression: "set variation_arr = :varArr",
+        ExpressionAttributeValues: {
+          ":varArr": { L: updatedVariationArr },
+        },
+      };
+      const updateCommand = new UpdateItemCommand(params);
+      await dynamoDBClient.send(updateCommand);
+      let filePath = `./uploads/vendor/product/${image}`;
+      try {
+        deleteImageFRomLocal(filePath);
+      } catch (er) { }
+      try {
+        deleteImageFromS3(image, "product");
+      } catch (er) { }
+      return res.status(200).json({
+        message: "Image deleted successfully",
+        statusCode: 200,
+        success: false,
+      });
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
+  async delete_variant_image_data_tmp(req, res) {
     try {
       let { product_id, variant_id, image } = req.query;
       let findProductData = await dynamoDBClient.send(

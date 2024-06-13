@@ -225,6 +225,23 @@ class ProductController {
         .json({ message: err?.message, status: false, statusCode: 500 });
     }
   }
+  async delete_variant_imagessTem(req, res) {
+    try {
+      let { error } = deleteVariantImagechema.validate(req.query, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+      await ProductServicesObj.delete_variant_image_data(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
+    }
+  }
 
 
 
@@ -483,6 +500,7 @@ class ProductController {
       });
     }
   }
+
 }
 
 const ProductControllerObj = new ProductController();
