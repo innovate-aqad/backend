@@ -262,8 +262,9 @@ class ApiEndpointServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
+  
 
-  async deleteEn(req, res) {//delete dubdub
+  async editstatus(req, res) {//editdata
     try {
       const { id } = req.query;
 
@@ -300,7 +301,7 @@ class ApiEndpointServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
+  
 }
 
 const ApiEndpointServicesObj = new ApiEndpointServices();
