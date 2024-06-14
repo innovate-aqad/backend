@@ -255,7 +255,7 @@ class cartServices {
       let mainCartArr = [];
       if (findCartItem && findCartItem?.Items?.length > 0) {
         let productArr = [];
-        findCartItem.Items.map((item) => productArr.push(item.product_id.S));
+        findCartItem.Items.forEach((item) => productArr.push(item.product_id.S));
         productArr = new Set(productArr);
         productArr = [...productArr];
         for (let el of findCartItem?.Items) {
@@ -282,92 +282,68 @@ class cartServices {
           })
         );
         let data = [];
-        const mainCat = [];
+        let mainCat = [];
         let subCat = [];
         for (let el of getProductDetails?.Responses?.products) {
-          // console.log(el,"elelelel");
-          // mainCat.push({id:{S:el?.category_id?.S}});
-          // subCat.push({id:{S:el?.sub_category_id?.S}});
-          mainCat.push(el?.category_id?.S);
-          subCat.push(el?.sub_category_id?.S);
+          mainCat.push({ id: { S: el?.category_id?.S } });
+          subCat.push({ id: { S: el?.sub_category_id?.S } });
           data.push(simplifyDynamoDBResponse(el));
         }
-        console.log(mainCat, "m ttttttttt",keys,"asdf",subCat);
-        // return
-      //   let fetchMainCatData = await dynamoDBClient.send(
-      //     new BatchGetItemCommand({
-      //         RequestItems: {
-      //             category: {
-      //                 keys: mainCat, // Ensure mainCat contains valid key values
-      //             },
-      //             sub_category: {
-      //                 keys: subCat, // Ensure subCat contains valid key values
-      //             },
-      //         },
-      //     })
-      // );
-      
-        // let fetchMainCatData = await dynamoDBClient.send(
-        //   new BatchGetItemCommand({
-        //     RequestItems: {
-        //       category: {
-        //         keys: mainCat,
-        //       },
-        //     },
-        //   })
-        // );
-        // console.log(subCat, "!!!! ##### subCatsubCatsubCatsubCat");
-        let simpleMainCatData = [];
-        // if (fetchMainCatData && fetchMainCatData?.Responses?.category) {
-        //   for (let el of fetchMainCatData) {
-        //     simpleMainCatData.push(simpleMainCatData(el));
-        //   }
-        // }
-        // let fetchSubCatData = await dynamoDBClient.send(
-        //   new BatchGetItemCommand({
-        //     RequestItems: {
-        //       sub_category: {
-        //         keys: subCat,
-        //       },
-        //     },
-        //   })
-        // );
-        // let simpleSubCatData = [];
-        // if (fetchSubCatData && fetchSubCatData?.Responses?.sub_category) {
-        //   for (let el of fetchSubCatData) {
-        //     simpleSubCatData.push(simpleMainCatData(el));
-        //   }
-        // }
-        // console.log(mainCartArr, "maincart arrrrrrrr");
+        // console.log(mainCat, "m ttttttttt", keys, "asdf", subCat);
+        const requestItems = {};
+        if (mainCat.length > 0) {
+          requestItems['category'] = {
+            Keys: mainCat,
+          };
+        }
+        if (subCat.length > 0) {
+          requestItems['sub_category'] = {
+            Keys: subCat,
+          };
+        }
+        const fetchMainCatData = await dynamoDBClient.send(
+          new BatchGetItemCommand({
+            RequestItems: requestItems,
+          })
+        );
+        // console.log(fetchMainCatData?.Responses?.sub_category, "fetchMainCatData", fetchMainCatData?.Responses?.category);
+        let mainCategoryArr = []
+        let subCategoryArr = []
+        for (let le of fetchMainCatData?.Responses?.sub_category) {
+          let get = simplifyDynamoDBResponse(le)
+          subCategoryArr.push(get)
+        }
+        for (let le of fetchMainCatData?.Responses?.category) {
+          let get = simplifyDynamoDBResponse(le)
+          mainCategoryArr.push(get)
+        }
+
         for (let el of mainCartArr) {
           let findProductObj = data?.find((elem) => elem?.id == el?.product_id);
-          // console.log(findProductObj, "findproductobjjj");
           let findVariationObj = {};
           if (findProductObj) {
             findVariationObj = findProductObj?.variation_arr?.find(
               (elem) => elem?.id == el?.variant_id
             );
-            //category data fetch and save
-            // let findCategoryData = simpleMainCatData?.find(
-            //   (a) => a?.id == findProductObj?.category_id
-            // );
-            // if (findCategoryData) {
-            //   el.categoryObj = findCategoryData;
-            // }
-            // //sub_category data fetch and save
-            // let findSubCategoryData = simpleSubCatData?.find(
-            //   (a) => a?.id == findProductObj?.sub_category_id
-            // );
-            // if (findSubCategoryData) {
-            //   el.subCategoryObj = findSubCategoryData;
-            // }
           }
           if (findProductObj) {
-            delete findProductObj?.variation_arr;
             el.productObj = findProductObj;
           }
           if (findVariationObj) {
             el.variantObj = findVariationObj;
+          }
+        }
+        for (let el of mainCartArr) {
+          let categoryObj = mainCategoryArr?.find((elem) => elem?.id == el?.productObj?.category_id)
+          if (categoryObj) {
+            el.productObj.categoryObj = categoryObj
+          }
+          let subCategoryObj = subCategoryArr?.find((elem) => elem?.id == el?.productObj?.sub_category_id)
+          if (subCategoryObj) {
+            el.productObj.subCategoryObj = subCategoryObj
+          }
+          if (el?.productObj?.variation_arr?.length) {
+            delete el.productObj.variation_arr
           }
         }
         return res.status(200).json({
@@ -391,7 +367,7 @@ class cartServices {
     }
   }
 
-  
+
 }
 
 const CartServicesObj = new cartServices();

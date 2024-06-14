@@ -8,6 +8,5 @@ CartRoutes.delete("/delete_from_cart", authorize, CartControllerObj.deleteProduc
 CartRoutes.delete("/empty_cart", authorize, CartControllerObj.emptyCart);
 CartRoutes.get("/fetch_data", authorize, CartControllerObj.fetch_data);
 
-CartRoutes.get("/fetch_data_tmp", authorize, CartControllerObj.fetch_data_tmp);
 
 export default CartRoutes;
