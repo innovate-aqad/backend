@@ -93,20 +93,7 @@ class CartController {
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
-  }
-
-
-  async fetch_data_tmp(req, res) {
-    try {
-      await CartServicesObj.editCa(req, res);
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: err?.message, success: false, statusCode: 500 });
-    }
-  }
-
-  
+  }  
 }
 const CartControllerObj = new CartController();
 export default CartControllerObj;
