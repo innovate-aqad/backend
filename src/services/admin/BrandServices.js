@@ -286,7 +286,34 @@ class BrandServices {
       return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
     }
   }
-
+async del_tp(req,res){
+  try {
+    let id = req.query.id
+    const data = await dynamoDBClient.send(
+      new QueryCommand({
+        TableName: "brand",
+        KeyConditionExpression: "id = :id",
+        ExpressionAttributeValues: {
+          ":id": { S: id },
+        },
+      })
+    );
+    if (data?.Count == 0) {
+      return res.status(400).json({ message: "Data not found or deleted already", statusCode: 400, success: false })
+    }
+    const params = {
+      TableName: 'brand',
+      Key: {
+        'id': { S: id } 
+      }
+    };
+    let result = await dynamoDBClient.send(new DeleteItemCommand(params));
+    return res.status(200).json({ message: "Delete successfully", statusCode: 200, success: true })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+  } 
+}
 }
 
 const BrandServicesObj = new BrandServices();
