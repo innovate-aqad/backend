@@ -1,26 +1,25 @@
 import Joi from "joi";
 
 export const OrderSchema = Joi.object({
+  address: Joi.number().positive(90).label("address"),
+  po_box: Joi.number().positive(90).required().label("po_box"),
   order_detail: Joi.array()
     .min(1)
     .items(
       Joi.object({
-        vendor_id: Joi.string().trim().required(),
-        detail: Joi.array()
-          .min(1)
-          .items(
-            Joi.object({
-              variant_id: Joi.string().max(70).label("variant_id"),
-              product_id: Joi.string().max(70).label("product_id"),
-              quantity: Joi.number().positive().label("quantity"),//product title , price ,image
-            })
-          )
-          .required(),
+        variant_id: Joi.string().max(70).label("variant_id"),
+        product_id: Joi.string().max(70).label("product_id"),
+        quantity: Joi.number().positive().label("quantity"), //product title , price ,image
       })
     )
     .required()
     .label("order_detail"),
+    sub_total: Joi.number().positive(90).required().label("sub_total"),
+  delivery_charges: Joi.number().max(90).label("delivery_charges"),
+  payment_method: Joi.string().max(90).required().label("payment_method"),
+  country_code: Joi.number().positive(50).required().label("country_code"),
 });
+
 
 export const UpdateOrderSchema = Joi.object({
   order_id: Joi.string()

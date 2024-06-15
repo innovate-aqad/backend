@@ -27,7 +27,6 @@ class OrderController {
           statusCode: 400,
         });
       }
-      
       await OrderServicesObj.add(req, res);
     } catch (err) {
       return res
