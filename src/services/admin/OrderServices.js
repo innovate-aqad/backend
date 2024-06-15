@@ -24,31 +24,22 @@ const dynamoDBClient = new DynamoDBClient({
 class orderServices {
   async add(req, res) {
     try {
-      let findCartItem = await dynamoDBClient.send(
-        new ScanCommand({
-          TableName: "cart",
-          FilterExpression: "user_id = :user_id",
-          ExpressionAttributeValues: {
-            ":user_id": { S: req.userData.id },
-          },
-        })
-      );
-      let fetchProductIdArr = [];
-      console.log(findCartItem?.Items, " @@@ @@ Item ?. Items@#! ");
-      if (findCartItem?.Items == 0) {
-        return res
-          .status(400)
-          .json({
-            message: "No product found",
-            statusCode: 400,
-            success: false,
-          });
+      let {
+        address,
+        po_box,
+        order_detail,
+        sub_total,
+        delivery_charges,
+        payment_method,
+        country_code,
+      } = req.body;
+      let tempProductId = [];
+
+      for (let le of order_detail) {
+        tempProductId.push(le?.product_id);
       }
-      for (let le of findCartItem?.Items) {
-        fetchProductIdArr.push(le?.product_id?.S);
-      }
-      const keys = fetchProductIdArr.map((productId) => ({
-        id: { S: productId }, // Assuming the primary key attribute name is 'id' and type is string
+      const keys = tempProductId.map((product_id) => ({
+        id: { S: product_id }, // Assuming the primary key attribute name is 'id' and type is string
       }));
       const getProductDetails = await dynamoDBClient.send(
         new BatchGetItemCommand({
@@ -56,32 +47,59 @@ class orderServices {
             products: {
               Keys: keys,
               ProjectionExpression:
-                "variation_arr,id ,category_id,sub_category_id",
+                "variation_arr,id ,category_id,sub_category_id,title,created_by",
             },
           },
         })
       );
-
       // console.log(getProductDetails?.Responses?.products, "!!@@  ffffffffffff");
       //validation of product's quantity
-      let simplrProductArr=[]
+      let simplrProductArr = [];
       for (let el of getProductDetails?.Responses?.products) {
         let getSimpleData = simplifyDynamoDBResponse(el);
-        simplrProductArr.push(getSimpleData)
+        simplrProductArr.push(getSimpleData);
         // console.log(getSimpleData, "elll qwerty", "!!@@ ## variation_arr?.L");
       }
-      console.log(simplrProductArr,"simplrrrrrrrr");
-      for(let el of findCartItem?.Items){
-        let findProductOBj=simplrProductArr?.find((elem)=>elem?.id==el?.product_id?.S)
+      console.log(simplrProductArr, "simplrrrrrrrr");
+      let vendorArr = [];
+      for (let el of order_detail) {
+        const timestamp = new Date().toISOString(); // Format timestamp as ISO string
+        let findProductOBj = simplrProductArr?.find(
+          (elem) => elem?.id == el?.product_id
+        );
         // console.log(findProductOBj,"find product objbjb");
-        if(findProductOBj){
-          let findVariationObj=findProductOBj?.variation_arr?.find((e)=>e?.id==el?.variant_id?.S)
-          console.log(findVariationObj,"find Variant t t t ");
+        if (findProductOBj) {
+          let findVariationObj = findProductOBj?.variation_arr?.find(
+            (e) => e?.id == el?.variant_id
+          );
+          console.log(findVariationObj, "find Variant t !!@#$%^&**()}{() ");
+          // let DbQuantity=findVariationObj?.reduce((axx,acc)=>axx)
+        } else {
+          return res
+            .status(400)
+            .json({
+              message: `This product ${el?.product_id} is not found`,
+              statusCode: 400,
+              success: false,
+            });
+        }
+        let findVendorObj = vendorArr?.find(
+          (s) => s?.vendor_id == findProductOBj?.created_by
+        );
+        if (!findVendorObj) {
+          vendorArr.push({
+            vendor_id: findProductOBj?.created_by,
+            product_arr: [{ product_id: findProductOBj?.id }],
+          });
+        } else {
+          let findProductExist = findVendorObj?.product_arr?.find(
+            (z) => z?.product_id == el?.product_id
+          );
+          if (!findProductExist) {
+            findVendorObj.product_arr.push({ product_id: findProductOBj?.id });
+          }
         }
       }
-    return;
-      const timestamp = new Date().toISOString(); // Format timestamp as ISO string
-
       // if (id) {
       let findData = await dynamoDBClient.send(
         new QueryCommand({
@@ -375,6 +393,45 @@ class orderServices {
   }
 
   async delete(req, res) {
+    try {
+      let id = req.query.id;
+      const data = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "brand",
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: id },
+          },
+        })
+      );
+      if (data?.Count == 0) {
+        return res.status(400).json({
+          message: "Data not found or deleted already",
+          statusCode: 400,
+          success: false,
+        });
+      }
+      const params = {
+        TableName: "brand",
+        Key: {
+          id: { S: id },
+        },
+      };
+      let result = await dynamoDBClient.send(new DeleteItemCommand(params));
+      return res.status(200).json({
+        message: "Delete successfully",
+        statusCode: 200,
+        success: true,
+      });
+    } catch (err) {
+      console.error(err);
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
+
+  async delete_ept(req, res) {
     try {
       let id = req.query.id;
       const data = await dynamoDBClient.send(

@@ -93,7 +93,7 @@ class CartController {
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
-  }
+  }  
 }
 const CartControllerObj = new CartController();
 export default CartControllerObj;

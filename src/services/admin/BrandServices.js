@@ -225,7 +225,6 @@ class BrandServices {
     }
   }
 
-
   async get_Brand_by_main_cat_id(req, res) {
     try {
       const params = {
