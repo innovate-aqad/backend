@@ -93,6 +93,11 @@ export const deleteVariantImagechema = Joi.object({
 export const getProductByIdchema = Joi.object({
   product_id: Joi.string().max(90).required().label("Product id"),
 });
+
+export const getProducttByCategoryIdchema = Joi.object({
+  category_id: Joi.string().max(90).required().label("Category id"),
+});
+
 export const getProductAndVariantByIdchema = Joi.object({
   product_id: Joi.string().max(90).required().label("Product id"),
   variant_id: Joi.string().max(90).required().label("variant id"),

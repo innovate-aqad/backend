@@ -580,6 +580,62 @@ class ProductServices {
     }
   }
 
+  async get_product_by_category_id(req, res) {
+    try {
+      let category_id = req.query?.category_id;
+      let limit = parseInt(req.query?.limit, 10) || 10;  // Number of items per page
+      let lastEvaluatedKey = req.query?.lastEvaluatedKey ? { id: { S: req.query.lastEvaluatedKey }, category_id: { S: category_id } } : null;
+      let products = [];
+      let totalItemsFetched = 0;
+      while (totalItemsFetched < limit) {
+        let params = {
+          TableName: "products",
+          IndexName: "category_id",  // Make sure you have a GSI on category_id
+          KeyConditionExpression: "category_id = :category_id",
+          ExpressionAttributeValues: {
+            ":category_id": { S: category_id },
+          },
+          FilterExpression: "attribute_exists(variation_arr) AND size(variation_arr) > :zero",
+          ExpressionAttributeValues: {
+            ":category_id": { S: category_id },
+            ":zero": { N: "0" }
+          },
+          Limit: limit,
+          ExclusiveStartKey: lastEvaluatedKey
+        };
+        // Stop fetching if no more items or reached the limit
+        // console.log(params, 'praramns')
+        let findProductData2 = await dynamoDBClient.send(new QueryCommand(params));
+        //  console.log(findProductData2,"findProductData2findProductData2")
+        let simplifiedData2 = findProductData2.Items.map((el) => simplifyDynamoDBResponse(el));
+        // console.log(simplifiedData2, "simplifiedData2", limit, "limitit", totalItemsFetched)
+        products.push(...simplifiedData2);
+        totalItemsFetched += simplifiedData2.length;
+        lastEvaluatedKey = findProductData2.LastEvaluatedKey;
+
+        if (!lastEvaluatedKey || totalItemsFetched >= limit) {
+          break;
+        }
+      }
+      // Simplify the product data response
+      let response = {
+        items: products,
+        lastEvaluatedKey: lastEvaluatedKey ? lastEvaluatedKey?.id?.S : null,
+        statusCode: 200,
+        success: true,
+      };
+
+      // Send the response
+      res.status(200).json({message:"Fetchd data",statusCode:400,success:true,data:response});
+      return
+    } catch (err) {
+      console.error(err, "erroror");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
+
   async get_variant_data_by_id_(req, res) {
     try {
       const product_id = req.query?.product_id;
