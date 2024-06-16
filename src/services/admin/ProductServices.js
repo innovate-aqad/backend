@@ -334,7 +334,13 @@ class ProductServices {
         LastEvaluatedKey = data.LastEvaluatedKey?.id?.S;
       }
       // simplifiedData =simplifiedData?.map((e)=>el?.variation_arr)
-      simplifiedData = simplifiedData?.filter(e => e?.variation_arr && e.variation_arr.length > 0);
+      // simplifiedData = simplifiedData?.filter(e => e?.variation_arr && e.variation_arr.length > 0);
+      simplifiedData = simplifiedData?.filter(e => e?.variation_arr && e.variation_arr.length > 0)
+                                .map(e => {
+                                    // Sort the variation_arr by price in ascending order
+                                    e.variation_arr.sort((a, b) => a?.price - b?.price);
+                                    return e;
+                                });
       res.status(200).json({
         message: "Fetch Data",
         data: simplifiedData,
