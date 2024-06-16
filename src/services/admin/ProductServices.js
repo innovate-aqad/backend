@@ -336,11 +336,11 @@ class ProductServices {
       // simplifiedData =simplifiedData?.map((e)=>el?.variation_arr)
       // simplifiedData = simplifiedData?.filter(e => e?.variation_arr && e.variation_arr.length > 0);
       simplifiedData = simplifiedData?.filter(e => e?.variation_arr && e.variation_arr.length > 0)
-                                .map(e => {
-                                    // Sort the variation_arr by price in ascending order
-                                    e.variation_arr.sort((a, b) => a?.price - b?.price);
-                                    return e;
-                                });
+        .map(e => {
+          // Sort the variation_arr by price in ascending order
+          e.variation_arr.sort((a, b) => a?.price - b?.price);
+          return e;
+        });
       res.status(200).json({
         message: "Fetch Data",
         data: simplifiedData,
@@ -356,7 +356,7 @@ class ProductServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
-  
+
 
   //product with pagination
   async get_dataOf_specifc(req, res) {
@@ -523,14 +523,51 @@ class ProductServices {
           },
         })
       );
-      console.log(findProductData, "findproduct dataa");
-      const simplifiedData = findProductData.Items.map((el) =>
+      // console.log(findProductData, "findproduct dataa");
+      let simplifiedData = findProductData.Items.map((el) =>
         simplifyDynamoDBResponse(el)
       );
 
+      let firstProduct = simplifiedData[0];
+      let category = firstProduct?.category_id;
+      let sub_category = firstProduct?.sub_category_id;
+      let fetchVariationArr = firstProduct?.variation_arr?.map((e) => e?.variation) || [];
+      fetchVariationArr = new Set(fetchVariationArr)
+      fetchVariationArr = [...fetchVariationArr]
+      // Prepare keys for batch get item
+      let keys = {
+        category: {
+          Keys: [{ id: { S: category } }]
+        },
+        sub_category: {
+          Keys: [{ id: { S: sub_category } }]
+        },
+        si_unit: {
+          Keys: fetchVariationArr.map(variation => ({ id: { S: variation } }))
+        }
+      };
+      // console.log(keys, "ekekekekek")
+      let { Responses } = await dynamoDBClient.send(
+        new BatchGetItemCommand({
+          RequestItems: keys
+        })
+      );
+      let categoryData = Responses?.category ? simplifyDynamoDBResponse(Responses.category[0]) : {};
+      let subCategoryData = Responses?.sub_category ? simplifyDynamoDBResponse(Responses.sub_category[0]) : {};
+      let siUnitData = Responses?.si_unit?.map((el) => simplifyDynamoDBResponse(el)) || [];
+      // console.log(siUnitData, "siissii")
+      firstProduct.variation_arr = firstProduct.variation_arr.map((lem) => {
+        let findVariation = siUnitData.find((unit) => unit.id === lem.variation);
+        if (findVariation) {
+          lem.variationObj = findVariation;
+        }
+        return lem;
+      });
+
+      let productObj = { ...firstProduct, categoryObj: categoryData, subCategoryObj: subCategoryData }
       res.status(200).json({
         message: "Fetch Data",
-        data: simplifiedData[0],
+        data: { productObj },
         statusCode: 200,
         success: true,
       });
