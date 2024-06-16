@@ -301,7 +301,7 @@ class ProductServices {
 
   async get_dataOf(req, res) {
     try {
-      const pageSize = parseInt(req.query?.pageSize) || 10;
+      const pageSize = parseInt(req.query?.pageSize) || 100;
       const userType = req.userData.user_type;
       const userId = req.userData.id;
 
@@ -326,14 +326,15 @@ class ProductServices {
 
       const command = new ScanCommand(params);
       const data = await dynamoDBClient.send(command);
-      const simplifiedData = data.Items.map((el) =>
+      let simplifiedData = data.Items.map((el) =>
         simplifyDynamoDBResponse(el)
       );
       let LastEvaluatedKey;
       if (data.LastEvaluatedKey) {
         LastEvaluatedKey = data.LastEvaluatedKey?.id?.S;
       }
-
+      // simplifiedData =simplifiedData?.map((e)=>el?.variation_arr)
+      simplifiedData = simplifiedData?.filter(e => e?.variation_arr && e.variation_arr.length > 0);
       res.status(200).json({
         message: "Fetch Data",
         data: simplifiedData,
