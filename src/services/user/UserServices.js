@@ -2404,22 +2404,7 @@ class UserServices {
     }
   }
 
-  async getAllUSerData(req, res) {
-    try {
-      let fetchArray = await UserModel.findAll();
-      res.status(200).json({
-        message: "fetch user data",
-        data: fetchArray,
-        success: true,
-        statusCode: 200,
-      });
-      return;
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: err?.message, success: false, statusCode: 500 });
-    }
-  }
+ 
 
   async updateUserDetails(id, data, res) {
     try {

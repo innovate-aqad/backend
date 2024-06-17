@@ -90,7 +90,6 @@ UserRoutes.get(
 );
 
 
-
 UserRoutes.put(
   "/role_id_to_aqad_employee",
   authorize,
@@ -119,7 +118,6 @@ UserRoutes.get("/check_user_logged_in", UserControllerObj.check_user_logged_in);
 UserRoutes.get("/user_logout", UserControllerObj.user_logout);
 
 // UserRoutes.get("/fetch_users", UserControllerObj.FetchUsers);
-UserRoutes.get("/get_allusers", authorize, UserControllerObj.getAllUser);
 
 UserRoutes.post(
   "/update_user_details",

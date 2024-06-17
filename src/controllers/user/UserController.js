@@ -658,15 +658,7 @@ class UserController {
     }
   }
 
-  async getAllUser(req, res) {
-    try {
-      UserServicesObj.getAllUSerData(req, res);
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: err?.message, success: false, statusCode: 500 });
-    }
-  }
+
 
   async check_user_logged_in(req, res) {
     try {
