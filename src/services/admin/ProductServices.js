@@ -161,57 +161,26 @@ class ProductServices {
         //     }
         //   })) : findProductData.Items[0].warehouse_arr.L
         // },
+        
         const params = {
           TableName: "products",
           Key: { id: { S: id } },
-          UpdateExpression: `
-          SET #title = :title,
-              #category_id = :category_id,
-              #sub_category_id = :sub_category_id,
-              #description = :description,
-              #brand_id = :brand_id,
-              #status = :status,
-              #summary =  :summary,
-              #condition = :condition
-        `,
+          UpdateExpression: "SET #condition = :condition, #summary = :summary , #description = :description",
+        // UpdateExpression:
+        // "SET #title = :title, #status = :status, #permission =:permission, #updated_at= :updated_at",
+    
           ExpressionAttributeNames: {
-            "#title": "title",
-            "#category_id": "category_id",
-            "#sub_category_id": "sub_category_id",
-            "#description": "description",
-            "#brand_id": "brand_id",
-            "#status": "status",
-            "#summary": "summary",
-            "#condition":"condition"
+            "#condition": "condition",
+            "#summary" :"summary",
+            "#description":"description",
           },
           ExpressionAttributeValues: {
-            ":title": { S: title || findProductData.Items[0].title.S },
-            ":category_id": {
-              S: category_id || findProductData.Items[0].category_id.S || "",
-            },
-            ":sub_category_id": {
-              S:
-                sub_category_id ||
-                findProductData.Items[0].sub_category_id.S ||
-                "",
-            },
-            ":description": {
-              S: description || findProductData.Items[0].description.S,
-            },
-            ":brand_id": {
-              S: brand_id || findProductData.Items[0].brand_id?.S || "",
-            },
-            ":status": {
-              S: status || findProductData.Items[0].status?.S || "active",
-            },
-            ":summary": {
-              S: summary || findProductData.Items[0].summary?.S || "",
-            },
-            ":condition": {
-              S: condition || findProductData.Items[0].condition?.S || "",
-            },
+            ":condition": { S: condition|| findProductData.Items[0].condition.S||"" },
+            ":summary": { S: summary|| findProductData.Items[0].summary?.S||"" },
+            ":description": { S: description|| findProductData.Items[0].description?.S||"" },
           },
         };
+        console.log(params,"paramnsnsnsn")
         await dynamoDBClient.send(new UpdateItemCommand(params));
         return res.status(200).json({
           message: "Product details update successfully",
@@ -442,14 +411,15 @@ class ProductServices {
   async get_dataOf(req, res) {
     try {
       const pageSize = parseInt(req.query?.pageSize) || 1;
-      const userType = req.userData.user_type;
+      const userType= req.userData.user_type;
       const userId = req.userData.id;
       const searchString = req.query.search;
+      const filterCondition=req.query.filter;
       const params = {
         TableName: "products",
         // Limit: pageSize,
       };
-      console.log(userType, 'ttttttttttttttt')
+      // console.log(userType, 'ttttttttttttttt')
       if (req.query.LastEvaluatedKey) {
         params.ExclusiveStartKey = {
           id: {
@@ -458,34 +428,53 @@ class ProductServices {
         };
       }
       let filterExpressions = [];
-      params.ExpressionAttributeValues = {};
+      let expressionAttributeValues = {};
+      let expressionAttributeNames = {};
+      // params.ExpressionAttributeNames = {}; // Initialize ExpressionAttributeNames
+
       if (userType === "vendor") {
-        params.FilterExpression = "created_by = :userId";
-        params.ExpressionAttributeValues = {
-          ":userId": { S: userId },
-        };
-        // params.ExpressionAttributeValues[":userId"] = { S: userId };
+        filterExpressions.push("#created_by = :userId");
+        expressionAttributeNames["#created_by"] = "created_by";
+        expressionAttributeValues[":userId"] = { S: userId };
       }
 
       if (searchString) {
-        const words = searchString.split(' '); // Split search string into words
+        const words = searchString.split(' ');
         const containsConditions = words.map((word, index) => `contains(title, :word${index})`);
         const searchFilterExpression = containsConditions.join(' AND ');
 
         filterExpressions.push(searchFilterExpression);
-
+        // params.ExpressionAttributeNames["#title"] = "title"; //
         words.forEach((word, index) => {
-          params.ExpressionAttributeValues[`:word${index}`] = { S: word };
+          expressionAttributeValues[`:word${index}`] = { S: word };
         });
       }
+   
+      if (filterCondition) {
+        filterExpressions.push("#condition = :filterCondition");
+        expressionAttributeNames["#condition"] = "condition";
+        expressionAttributeValues[":filterCondition"] = { S: filterCondition };
+      }
+      //  if (filterExpressions.length > 0) {
+      //   params.FilterExpression = filterExpressions.join(' AND ');
+      //   if (Object.keys(expressionAttributeNames).length > 0) {
+      //     params.ExpressionAttributeNames = expressionAttributeNames;
+      //   }
+      // } else {
+       
+      // }
       if (filterExpressions.length > 0) {
         params.FilterExpression = filterExpressions.join(' AND ');
+        params.ExpressionAttributeValues = expressionAttributeValues;
+        if (Object.keys(expressionAttributeNames).length > 0) {
+          params.ExpressionAttributeNames = expressionAttributeNames;
+        }
       } else {
-        params.limit = pageSize
+        delete params.ExpressionAttributeValues;
+        delete params.ExpressionAttributeNames;
       }
-
-      console.log(params, "dynmosssssssssssssss");
-
+  
+      // console.log(params, "dynmossssss");
       const command = new ScanCommand(params);
       const data = await dynamoDBClient.send(command);
       let simplifiedData = data.Items.map((el) =>
@@ -495,12 +484,13 @@ class ProductServices {
       if (data.LastEvaluatedKey) {
         LastEvaluatedKey = data.LastEvaluatedKey?.id?.S;
       }
-      simplifiedData = simplifiedData?.filter(e => e?.variation_arr && e.variation_arr.length > 0)
+      if(userType!='vendor'){
+        simplifiedData = simplifiedData?.filter(e => e?.variation_arr && e.variation_arr.length > 0)
         .map(e => {
-          // Sort the variation_arr by price in ascending order
           e.variation_arr.sort((a, b) => a?.price - b?.price);
           return e;
         });
+      }
       res.status(200).json({
         message: "Fetch Data",
         data: simplifiedData,
@@ -692,8 +682,11 @@ class ProductServices {
       let firstProduct = simplifiedData[0];
       let category = firstProduct?.category_id;
       let sub_category = firstProduct?.sub_category_id;
-      let fetchVariationArr = firstProduct?.variation_arr?.map((e) => e?.variation) || [];
-      fetchVariationArr = new Set(fetchVariationArr)
+      let categoryData;
+      let subCategoryData;
+      if(firstProduct?.variation_arr){
+        let fetchVariationArr = firstProduct?.variation_arr?.map((e) => e?.variation) || [];
+        fetchVariationArr = new Set(fetchVariationArr)
       fetchVariationArr = [...fetchVariationArr]
       // Prepare keys for batch get item
       let keys = {
@@ -713,8 +706,8 @@ class ProductServices {
           RequestItems: keys
         })
       );
-      let categoryData = Responses?.category ? simplifyDynamoDBResponse(Responses.category[0]) : {};
-      let subCategoryData = Responses?.sub_category ? simplifyDynamoDBResponse(Responses.sub_category[0]) : {};
+       categoryData = Responses?.category ? simplifyDynamoDBResponse(Responses.category[0]) : {};
+      subCategoryData = Responses?.sub_category ? simplifyDynamoDBResponse(Responses.sub_category[0]) : {};
       let siUnitData = Responses?.si_unit?.map((el) => simplifyDynamoDBResponse(el)) || [];
       // console.log(siUnitData, "siissii")
       firstProduct.variation_arr = firstProduct.variation_arr.map((lem) => {
@@ -724,8 +717,26 @@ class ProductServices {
         }
         return lem;
       });
-
-      let productObj = { ...firstProduct, categoryObj: categoryData, subCategoryObj: subCategoryData }
+    }else{
+    // Prepare keys for batch get item
+    let keys = {
+      category: {
+        Keys: [{ id: { S: category } }]
+      },
+      sub_category: {
+        Keys: [{ id: { S: sub_category } }]
+      },
+    };
+    // console.log(keys, "ekekekekek")
+    let { Responses } = await dynamoDBClient.send(
+      new BatchGetItemCommand({
+        RequestItems: keys
+      })
+    );
+     categoryData = Responses?.category ? simplifyDynamoDBResponse(Responses.category[0]) : {};
+    subCategoryData = Responses?.sub_category ? simplifyDynamoDBResponse(Responses.sub_category[0]) : {};
+    }
+   let productObj = { ...firstProduct, categoryObj: categoryData, subCategoryObj: subCategoryData }
       res.status(200).json({
         message: "Fetch Data",
         data: { productObj },

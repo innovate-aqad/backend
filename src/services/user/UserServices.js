@@ -1323,8 +1323,8 @@ class UserServices {
           }
         }
         let token = generateAccessToken(obj);
-        let expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 days
+        // let expiryDate = new Date();
+        // expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 days
         // expiryDate.setTime(expiryDate.getTime() + (60 * 1000)); // Current time + 1 minute
 
         const updateParams = {
@@ -1344,7 +1344,7 @@ class UserServices {
             httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
             secure: true, // Requires HTTPS connection
             sameSite: "strict", // Restricts the cookie to be sent only in same-site requests
-            expires: expiryDate, // Set the expiry date
+            // expires: expiryDate, // Set the expiry date
           })
           .status(200)
           .json({
