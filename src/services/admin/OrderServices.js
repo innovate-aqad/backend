@@ -72,6 +72,9 @@ class orderServices {
           let findVariationObj = findProductOBj?.variation_arr?.find(
             (e) => e?.id == el?.variant_id
           );
+          if(!findVariationObj){
+            return res.status(400).json({message:`This variation ${el?.variant_id} is not found`,statusCode:400,success:false})
+          }
           console.log(findVariationObj, "find Variant t !!@#$%^&**()}{() ");
           // let DbQuantity=findVariationObj?.reduce((axx,acc)=>axx)
         } else {
@@ -89,164 +92,28 @@ class orderServices {
         if (!findVendorObj) {
           vendorArr.push({
             vendor_id: findProductOBj?.created_by,
-            product_arr: [{ product_id: findProductOBj?.id }],
+            product_arr: [{ product_id: findProductOBj?.id }],quantity:el?.quantity,name:el?.variant_name
           });
         } else {
           let findProductExist = findVendorObj?.product_arr?.find(
             (z) => z?.product_id == el?.product_id
           );
           if (!findProductExist) {
-            findVendorObj.product_arr.push({ product_id: findProductOBj?.id });
+            findVendorObj.product_arr.push({ product_id: findProductOBj?.id ,quantity:el?.quantity});
+          }else {
+            findProductExist.quantity=findProductExist.quantity+el?.quantity
           }
         }
       }
-      // if (id) {
-      let findData = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "brand",
-          KeyConditionExpression: "id = :id",
-          ExpressionAttributeValues: {
-            ":id": { S: id },
-          },
-        })
-      );
-      if (findData && findData?.Count == 0) {
-        return res.status(400).json({
-          message: "Document not found",
-          statusCode: 400,
-          success: false,
-        });
-      }
-      const params = {
-        TableName: "brand",
-        Key: { id: { S: id } },
-        UpdateExpression:
-          "SET #title = :title, #status = :status, #category_id =:category_id, #updated_at= :updated_at ",
-        ExpressionAttributeNames: {
-          "#title": "title",
-          "#status": "status",
-          "#category_id": "category_id",
-          "#updated_at": "updated_at",
-        },
-        ExpressionAttributeValues: {
-          ":title": { S: title || findData?.Items[0]?.title?.S || "" },
-          ":status": {
-            S: status || findData?.Items[0]?.status?.S || "active",
-          },
-          ":category_id": {
-            S: category_id || findData?.Items[0]?.category_id?.S || "",
-          },
-          ":updated_at": { S: timestamp },
-        },
-      };
-      const findExist = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "brand",
-          IndexName: "title", // Use the correct GSI name
-          KeyConditionExpression: "title = :title",
-          FilterExpression: "id <> :id",
-          ExpressionAttributeValues: {
-            ":title": { S: title },
-            ":id": { S: id },
-          },
-        })
-      );
-      if (findExist?.Count > 0) {
-        return res.status(400).json({
-          message: "Title already exist",
-          statusCode: 400,
-          success: false,
-        });
-      } else {
-        await dynamoDBClient.send(new UpdateItemCommand(params));
-        return res.status(200).json({
-          message: "Data updated successfully",
-          statusCode: 200,
+
+        return res.status(201).json({
+          message: "Order generated successfully",
+          vendorArr,
+          order_detail,
+          statusCode: 201,
           success: true,
         });
-      }
-      // } else {
-      //   let randomNumber = Date.now() + Math.round(Math.random() * 1000000000);
-      //   let vendor_id_arr = [];
-      //   let product_id_arr = [];
-      //   for (let le of order_detail) {
-      //     vendor_id_arr.push(le?.vendor_id);
-      //     for (let el of le?.detail) {
-      //       product_id_arr.push(el?.product_id);
-      //     }
-      //   }
-      //   console.log(product_id_arr, "product_id_arr");
-      //   const paramsOf = {
-      //     RequestItems: {
-      //       users: {
-      //         Keys: vendor_id_arr.map((vendor_id) => ({
-      //           id: { S: vendor_id },
-      //         })),
-      //       },
-      //     },
-      //   };
-      //   const command = new BatchGetItemCommand(paramsOf);
-      //   const result = await dynamoDBClient.send(command);
-      //   const items = result.Responses["users"];
-      //   // console.log(items, "@@@@@@@@@@@@");
-      //   for (let le of items) {
-      //     if (le?.account_status?.S != "activated") {
-      //       return res.status(400).json({
-      //         message: `This vendor account ${le?.name?.S} is not activate`,
-      //       });
-      //     }
-      //   }
-
-      //   const paramsOfProduct = {
-      //     RequestItems: {
-      //       products: {
-      //         Keys: product_id_arr.map((id) => ({
-      //           id: { S: id },
-      //         })),
-      //       },
-      //     },
-      //   };
-      //   const commandProduct = new BatchGetItemCommand(paramsOfProduct);
-      //   const resultProduct = await dynamoDBClient.send(commandProduct);
-      //   const itemsProduct = resultProduct?.Responses["products"];
-      //   // console.log(itemsProduct,"itemsproduct@!@@ $");
-
-      //   for (let el of itemsProduct) {
-      //     for (let le of el?.variation_arr?.L) {
-      //       console.log(le?.M?.warehouse_arr?.L, "lelelle");
-      //     }
-      //   }
-      //   return;
-      //   if (findEmailExist.Count > 0) {
-      //     return res.status(400).json({
-      //       success: false,
-      //       message: "Brand name already exist!",
-      //       statusCode: 400,
-      //     });
-      //   }
-
-      //   let id = uuidv4();
-      //   id = id?.replace(/-/g, "");
-      //   const params = {
-      //     TableName: "brand",
-      //     Item: {
-      //       id: { S: id },
-      //       title: { S: title },
-      //       status: { S: status ? "active" : "inactive" },
-      //       category_id: { S: category_id },
-      //       created_by: { S: req.userData.id },
-      //       created_at: { S: timestamp },
-      //       updated_at: { S: timestamp },
-      //     },
-      //   };
-      //   // console.log("docClient", "docccleint", params);
-      //   let Data = await dynamoDBClient.send(new PutItemCommand(params));
-      //   return res.status(201).json({
-      //     message: "Brand add successfully",
-      //     statusCode: 201,
-      //     success: true,
-      //   });
-      // }
+      
     } catch (err) {
       console.log(err, "errorororro");
       return res

@@ -15,9 +15,9 @@ export const OrderSchema = Joi.object({
     .required()
     .label("order_detail"),
     sub_total: Joi.number().positive(90).required().label("sub_total"),
-  delivery_charges: Joi.number().max(90).label("delivery_charges"),
+  // delivery_charges: Joi.number().max(90).label("delivery_charges"),
   payment_method: Joi.string().max(90).required().label("payment_method"),
-  country_code: Joi.number().positive(50).required().label("country_code"),
+  // country_code: Joi.number().positive(50).required().label("country_code"),
 });
 
 

@@ -81,7 +81,7 @@ export const authorize = async (req, res, next) => {
     //   "findDataExistfindDataExist",
     //   rawData
     // );
-    if(rawData&&rawData?.unique_token_id!=proof?.unique_token_id){
+      if(rawData&&rawData?.unique_token_id!=proof?.unique_token_id){
       return res.status(400).json({message:"Token expired",statusCode:400,success:false})
     }
     if (
