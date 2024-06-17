@@ -682,8 +682,11 @@ class ProductServices {
       let firstProduct = simplifiedData[0];
       let category = firstProduct?.category_id;
       let sub_category = firstProduct?.sub_category_id;
+      let brand=firstProduct?.brand_id;
       let categoryData;
       let subCategoryData;
+      let brandObj;
+      // console.log(firstProduct,"firstProductfirstProduct")
       if(firstProduct?.variation_arr){
         let fetchVariationArr = firstProduct?.variation_arr?.map((e) => e?.variation) || [];
         fetchVariationArr = new Set(fetchVariationArr)
@@ -696,20 +699,25 @@ class ProductServices {
         sub_category: {
           Keys: [{ id: { S: sub_category } }]
         },
+        brand: {
+          Keys: [{ id: { S: brand } }]
+        },
         si_unit: {
           Keys: fetchVariationArr.map(variation => ({ id: { S: variation } }))
         }
       };
-      // console.log(keys, "ekekekekek")
+      console.log(keys, "ekekekekek")
       let { Responses } = await dynamoDBClient.send(
         new BatchGetItemCommand({
           RequestItems: keys
         })
       );
+      // console.log(Responses,"resssspspseoeo", "siissii")
        categoryData = Responses?.category ? simplifyDynamoDBResponse(Responses.category[0]) : {};
       subCategoryData = Responses?.sub_category ? simplifyDynamoDBResponse(Responses.sub_category[0]) : {};
       let siUnitData = Responses?.si_unit?.map((el) => simplifyDynamoDBResponse(el)) || [];
-      // console.log(siUnitData, "siissii")
+       brandObj= Responses?.brand ? simplifyDynamoDBResponse(Responses.brand[0]) : {};
+      // console.log(brandObj, "siissii")
       firstProduct.variation_arr = firstProduct.variation_arr.map((lem) => {
         let findVariation = siUnitData.find((unit) => unit.id === lem.variation);
         if (findVariation) {
@@ -726,6 +734,9 @@ class ProductServices {
       sub_category: {
         Keys: [{ id: { S: sub_category } }]
       },
+      brand: {
+        Keys: [{ id: { S: brand } }]
+      },
     };
     // console.log(keys, "ekekekekek")
     let { Responses } = await dynamoDBClient.send(
@@ -733,10 +744,13 @@ class ProductServices {
         RequestItems: keys
       })
     );
+  // console.log(Responses,"esepespspsep")
      categoryData = Responses?.category ? simplifyDynamoDBResponse(Responses.category[0]) : {};
     subCategoryData = Responses?.sub_category ? simplifyDynamoDBResponse(Responses.sub_category[0]) : {};
+    subCategoryData = Responses?.sub_category ? simplifyDynamoDBResponse(Responses.sub_category[0]) : {};
+    brandObj= Responses?.brand ? simplifyDynamoDBResponse(Responses.brand[0]) : {};
     }
-   let productObj = { ...firstProduct, categoryObj: categoryData, subCategoryObj: subCategoryData }
+   let productObj = { ...firstProduct, categoryObj: categoryData, subCategoryObj: subCategoryData,brandObj }
       res.status(200).json({
         message: "Fetch Data",
         data: { productObj },

@@ -94,23 +94,6 @@ class ApiEndpointController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-  async editstatus_tmp(req, res) {
-    try {
-      let { error } = deleteSubCategorySchema.validate(req.query, options);
-      if (error) {
-        return res.status(400).json({
-          message: error.details[0]?.message,
-          success: false,
-          statusCode: 400,
-        });
-      }
-      await ApiEndpointServicesObj.editstatus(req, res);
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: err?.message, success: false, statusCode: 500 });
-    }
-  }
 
 }
 
