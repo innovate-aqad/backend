@@ -83,6 +83,7 @@ app.get("/", async (req, res) => {
   return res.status(200).send("Hello World ! aqad" + Date.now());
 });
 
+
 app.use("/api/user", UserRoutes);
 app.use("/api/product", ProductRoutes);
 app.use("/api/category", CategoryRoutes);

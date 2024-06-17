@@ -367,7 +367,6 @@ class cartServices {
     }
   }
 
-
 }
 
 const CartServicesObj = new cartServices();

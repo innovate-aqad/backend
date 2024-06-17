@@ -297,7 +297,6 @@ class orderServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
-
   async delete_ept(req, res) {
     try {
       let id = req.query.id;
