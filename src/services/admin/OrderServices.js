@@ -86,13 +86,14 @@ class orderServices {
               success: false,
             });
         }
+        //storing the product in array
         let findVendorObj = vendorArr?.find(
           (s) => s?.vendor_id == findProductOBj?.created_by
         );
         if (!findVendorObj) {
           vendorArr.push({
             vendor_id: findProductOBj?.created_by,
-            product_arr: [{ product_id: findProductOBj?.id }],quantity:el?.quantity,name:el?.variant_name
+            product_arr: [{ product_id: findProductOBj?.id ,quantity:el?.quantity,name:el?.variant_name}],
           });
         } else {
           let findProductExist = findVendorObj?.product_arr?.find(
@@ -104,8 +105,7 @@ class orderServices {
             findProductExist.quantity=findProductExist.quantity+el?.quantity
           }
         }
-      }
-
+      } 
         return res.status(201).json({
           message: "Order generated successfully",
           vendorArr,
