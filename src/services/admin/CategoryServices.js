@@ -96,13 +96,7 @@ class CategoryServices {
             ":updated_at": { S: new Date().toISOString() },
           },
         };
-      //   {
-      //     "title":"Baby Productss",
-      //     // "title":"Household Good",
-      // "status":"active"
       
-      // // ,"id":"cbc232588c50403985d69239c4b9657a"
-      // }
         const findExist = await dynamoDBClient.send(
           new QueryCommand({
             TableName: "category",
@@ -329,7 +323,6 @@ class CategoryServices {
 
         await dynamoDBClient.send(new BatchWriteItemCommand(batchDeleteParams));
       }
-      // category_id-index
       return res.status(200).json({
         message: "Category deleted successfully",
         statusCode: 200,
@@ -367,12 +360,11 @@ class CategoryServices {
       const params = {
         TableName: "category",
         Key: {
-          id: { S: id }, // Replace with your primary key attributes
+          id: { S: id }, 
         },
       };
       const command = new DeleteItemCommand(params);
       await dynamoDBClient.send(command);
-      // Query all subcategories with the same category_id
       const subCategoriesData = await dynamoDBClient.send(
         new QueryCommand({
           TableName: "sub_category",
@@ -406,7 +398,6 @@ class CategoryServices {
 
         await dynamoDBClient.send(new BatchWriteItemCommand(batchDeleteParams));
       }
-      // category_id-index
       return res.status(200).json({
         message: "Category deleted successfully",
         statusCode: 200,
@@ -419,7 +410,6 @@ class CategoryServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
-
 
 }
 
