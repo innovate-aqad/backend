@@ -450,7 +450,9 @@ class ProductServices {
         });
       }
    
-      if (filterCondition) {
+      console.log(filterCondition,"filter conditin@@@@@@@@@@@@@@@@2")
+      if (filterCondition&&filterCondition!=='') {
+        console.log(filterCondition,"filter conditin")
         filterExpressions.push("#condition = :filterCondition");
         expressionAttributeNames["#condition"] = "condition";
         expressionAttributeValues[":filterCondition"] = { S: filterCondition };
