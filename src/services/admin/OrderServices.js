@@ -10,6 +10,7 @@ import {
   GetItemCommand,
   DeleteItemCommand,
   BatchGetItemCommand,
+  BatchWriteItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
 
@@ -34,7 +35,7 @@ class orderServices {
         country_code,
       } = req.body;
       let tempProductId = new Set();
-      
+
       for (let le of order_detail) {
         tempProductId.add(le?.product_id);
       }
@@ -60,12 +61,11 @@ class orderServices {
       for (let el of getProductDetails?.Responses?.products) {
         let getSimpleData = simplifyDynamoDBResponse(el);
         simplrProductArr.push(getSimpleData);
-        // console.log(getSimpleData, "elll qwerty", "!!@ ariation_arr?.L");
       }
       // console.log(simplrProductArr, "simpl    rrrrrrrr");
       let vendorArr = [];
       for (let el of order_detail) {
-        const timestamp = new Date().toISOString(); // Format timestamp as ISO string
+        const timestamp = new Date().toISOString();
         let findProductOBj = simplrProductArr?.find(
           (elem) => elem?.id == el?.product_id
         );
@@ -115,10 +115,73 @@ class orderServices {
           }
         }
       }
+      let id = uuidv4();
+      id = id?.replace(/-/g, "");
+      const params = {
+        TableName: "order",
+        Item: {
+          id: { S: id },
+          address: { S: address || "" },
+          po_box: { S: po_box || "" },
+          sub_total: { N: sub_total || "" },
+          delivery_charges: { N: delivery_charges },
+          payment_method: { S: payment_method || "" },
+          country_code: { S: country_code ||""},
+          created_by: { S: req.userData?.id||"" },
+          email: { S: req.userData?.email||"" },
+          order_detail: {
+            L:
+              order_detail?.map((el) => ({
+                M: {
+                  variant_id: { S: el?.variant_id||"" },
+                  quantity: { S: el.quantity?.toString()||"" },
+                  variant_name: { S: el.variant_name||"" },
+                  thumbnail_url: { S: el.thumbnail_url||"" },
+                  product_id: { S: el.product_id ||""},
+                  product_price: { S: el.product_price?.toString() ||"" },
+                },
+              }))
+          },
+          created_at: { S: new Date().toISOString() },
+          updated_at: { S: new Date().toISOString() },
+        },
+      };
+      console.log(params,"apapapamfr")
+      await dynamoDBClient.send(new PutItemCommand(params));
+      try {
+        let user_id = req.userData.id;
+        let findCartItem = await dynamoDBClient.send(
+          new ScanCommand({
+            TableName: "cart",
+            FilterExpression: "user_id = :user_id",
+            ExpressionAttributeValues: {
+              ":user_id": { S: user_id },
+            },
+          })
+        );
+        // console.log(findCartItem, "findCa rtI temf indCart Item `_+ ++_)");
+        if (findCartItem && findCartItem?.Items?.length > 0) {
+          const keysToDelete = findCartItem.Items.map((item) => ({
+            id: { S: item.id.S },
+          }));
+          // console.log(keysToDelete, "keys -to----delete");
+          await dynamoDBClient.send(
+            new BatchWriteItemCommand({
+              RequestItems: {
+                cart: keysToDelete.map((key) => ({
+                  DeleteRequest: { Key: key },
+                })),
+              },
+            })
+          );
+        }
+      } catch (err) {
+        console.log(err)
+      }
       return res.status(201).json({
         message: "Order generated successfully",
-        vendorArr,
-        order_detail,
+        // vendorArr,
+        // order_detail,
         statusCode: 201,
         success: true,
       });
@@ -184,42 +247,22 @@ class orderServices {
 
   async get_data(req, res) {
     try {
-      const categoryParams = {
-        TableName: "category",
-      };
-      const commandCat = new ScanCommand(categoryParams);
-      const categoryData = await dynamoDBClient.send(commandCat);
-
-      const brandParams = {
-        TableName: "brand",
-      };
-      const commandBrand = new ScanCommand(brandParams);
-      const brandData = await dynamoDBClient.send(commandBrand);
-
-      const simplifiedCategoryData = categoryData?.Items?.map((el) =>
+      let createdBy=req.userData.id
+      const params = {
+        TableName: "order",
+        IndexName: "created_by", // Ensure this index exists if created_by is a secondary index
+        KeyConditionExpression: "created_by = :createdBy",
+        ExpressionAttributeValues: {
+            ":createdBy": { S: createdBy },
+        },
+    };
+    const data = await dynamoDBClient.send(new QueryCommand(params));
+      const simplifiedData = data?.Items?.map((el) =>
         simplifyDynamoDBResponse(el)
       );
-      const simplifiedBrandData = brandData?.Items?.map((el) =>
-        simplifyDynamoDBResponse(el)
-      );
-
-      const subBrandByCategoryId = {};
-      simplifiedBrandData.forEach((el) => {
-        const categoryId = el?.category_id;
-        if (!subBrandByCategoryId[categoryId]) {
-          subBrandByCategoryId[categoryId] = [];
-        }
-        subBrandByCategoryId[categoryId].push(el);
-      });
-
-      const combinedData = simplifiedCategoryData.map((category) => ({
-        ...category,
-        BrandArr: subBrandByCategoryId[category.id] || [],
-      }));
-
       res.status(200).json({
         message: "Fetch Data",
-        data: combinedData,
+        data: simplifiedData,
         statusCode: 200,
         success: true,
       });

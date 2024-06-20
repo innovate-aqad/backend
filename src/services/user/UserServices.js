@@ -363,7 +363,7 @@ class UserServices {
           : findData?.Items[0]?.trade_license?.S || "";
         if (req.files && req.files?.trade_license?.length) {
           let filePath = `./uploads/${user_type}/${findData?.Items[0]?.trade_license?.S}`;
-          console.log(filePath, "filepathhhhhhh");
+          // console.log(filePath, "filepathhhhhhh");
           try {
             deleteImageFRomLocal(filePath);
           } catch (err) {

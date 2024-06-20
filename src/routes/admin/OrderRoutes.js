@@ -9,7 +9,7 @@ const OrderRoutes = express.Router();
 OrderRoutes.post("/add", authorize, OrderControllerObj.create_order);
 OrderRoutes.put("/edit_status", authorize, OrderControllerObj.edit_status_);
 
-OrderRoutes.get("/get", OrderControllerObj.get_);
+OrderRoutes.get("/get",authorize, OrderControllerObj.get_);
 OrderRoutes.get("/get_by_main_cat_id", OrderControllerObj.get_by_main_cat_id);
 
 OrderRoutes.delete("/delete", authorize, OrderControllerObj.deleteData);

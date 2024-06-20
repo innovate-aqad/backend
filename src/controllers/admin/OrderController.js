@@ -55,7 +55,7 @@ class OrderController {
   
   async get_(req, res) {
     try {
-      await BrandServicesObj.get_data(req, res);
+      await OrderServicesObj.get_data(req, res);
     } catch (err) {
       return res
         .status(500)
