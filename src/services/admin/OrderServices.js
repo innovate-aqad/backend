@@ -33,14 +33,16 @@ class orderServices {
         payment_method,
         country_code,
       } = req.body;
-      let tempProductId = [];
-
+      let tempProductId = new Set();
+      
       for (let le of order_detail) {
-        tempProductId.push(le?.product_id);
+        tempProductId.add(le?.product_id);
       }
-      const keys = tempProductId.map((product_id) => ({
+      const keys = Array.from(tempProductId).map((product_id) => ({
         id: { S: product_id }, // Assuming the primary key attribute name is 'id' and type is string
       }));
+
+      // console.log(keys,"keysysy")
       const getProductDetails = await dynamoDBClient.send(
         new BatchGetItemCommand({
           RequestItems: {
@@ -58,9 +60,9 @@ class orderServices {
       for (let el of getProductDetails?.Responses?.products) {
         let getSimpleData = simplifyDynamoDBResponse(el);
         simplrProductArr.push(getSimpleData);
-        // console.log(getSimpleData, "elll qwerty", "!!@@ ## variation_arr?.L");
+        // console.log(getSimpleData, "elll qwerty", "!!@ ariation_arr?.L");
       }
-      console.log(simplrProductArr, "simplrrrrrrrr");
+      // console.log(simplrProductArr, "simpl    rrrrrrrr");
       let vendorArr = [];
       for (let el of order_detail) {
         const timestamp = new Date().toISOString(); // Format timestamp as ISO string
@@ -72,11 +74,10 @@ class orderServices {
           let findVariationObj = findProductOBj?.variation_arr?.find(
             (e) => e?.id == el?.variant_id
           );
-          if(!findVariationObj){
-            return res.status(400).json({message:`This variation ${el?.variant_id} is not found`,statusCode:400,success:false})
+          if (!findVariationObj) {
+            return res.status(400).json({ message: `This variation ${el?.variant_id} is not found`, statusCode: 400, success: false })
           }
-          console.log(findVariationObj, "find Variant t !!@#$%^&**()}{() ");
-          // let DbQuantity=findVariationObj?.reduce((axx,acc)=>axx)
+          // console.log(findVariationObj, "find Variant t !!@#$%^&**()}{() ");
         } else {
           return res
             .status(400)
@@ -93,27 +94,35 @@ class orderServices {
         if (!findVendorObj) {
           vendorArr.push({
             vendor_id: findProductOBj?.created_by,
-            product_arr: [{ product_id: findProductOBj?.id ,quantity:el?.quantity,name:el?.variant_name}],
+            product_arr: [{
+              product_id: findProductOBj?.id,
+              variant_id: el?.variant_id,
+              quantity: el?.quantity
+            }]
           });
         } else {
           let findProductExist = findVendorObj?.product_arr?.find(
-            (z) => z?.product_id == el?.product_id
+            (z) => z?.product_id == el?.product_id && z?.variant_id == el?.variant_id
           );
           if (!findProductExist) {
-            findVendorObj.product_arr.push({ product_id: findProductOBj?.id ,quantity:el?.quantity});
-          }else {
-            findProductExist.quantity=findProductExist.quantity+el?.quantity
+            findVendorObj.product_arr.push({
+              product_id: findProductOBj?.id,
+              variant_id: el?.variant_id,
+              quantity: el?.quantity
+            });
+          } else {
+            findProductExist.quantity += el?.quantity;
           }
         }
-      } 
-        return res.status(201).json({
-          message: "Order generated successfully",
-          vendorArr,
-          order_detail,
-          statusCode: 201,
-          success: true,
-        });
-      
+      }
+      return res.status(201).json({
+        message: "Order generated successfully",
+        vendorArr,
+        order_detail,
+        statusCode: 201,
+        success: true,
+      });
+
     } catch (err) {
       console.log(err, "errorororro");
       return res
