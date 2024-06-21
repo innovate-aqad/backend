@@ -15,7 +15,18 @@ import {
   verifyAccountSchema,
   AccountDeactivateOrActiveSchema,
 } from "../../helpers/validateUser.js";
+import { getUser } from "../../services/user/cognito.js";
+
+import {
+  CognitoIdentityProviderClient,
+  ConfirmSignUpCommand,
+} from "@aws-sdk/client-cognito-identity-provider";
+const cognitoClient = new CognitoIdentityProviderClient({
+  region: "me-central-1",
+});
+
 import bcrypt from "bcrypt";
+
 import UserServicesObj from "../../services/user/UserServices.js";
 import jwt from "jsonwebtoken";
 import { environmentVars } from "../../config/environmentVar.js";
@@ -29,6 +40,8 @@ import UploadsDocumentModel from "../../models/UploadsDocumentModel.js";
 import docClient from "../../config/dbConfig.js";
 import vendorOnBoardModel from "../../models/VendorOnBoard.js";
 import { ImageFileCheck } from "../../helpers/validateImageFile.js";
+import AWS from "aws-sdk";
+const cognito = new AWS.CognitoIdentityServiceProvider();
 // import axios from "axios";
 
 const options = {
@@ -1021,6 +1034,32 @@ class UserController {
         message: "Error Vendor On Board",
         error: err.message,
         status: 404,
+      });
+    }
+  }
+  // sign-up confirm cognito
+
+  async confirmSignupController(req, res) {
+    const { username, code } = req.body;
+
+    const params = {
+      ClientId: "1ptb64mei0bfpvhdcfe8vndrlf", // Your Cognito App Client ID
+      Username: username,
+      ConfirmationCode: code,
+    };
+
+    try {
+      await cognito.confirmSignUp(params).promise();
+
+      res.status(200).send({
+        success: true,
+        message: "User confirmed successfully",
+      });
+    } catch (error) {
+      res.status(400).send({
+        success: false,
+        message: error.message,
+        error,
       });
     }
   }

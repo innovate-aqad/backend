@@ -4,6 +4,8 @@ import { authorize } from "../../middlewares/auth.js";
 import { educationImage, userImage } from "../../helpers/multer.js";
 import { upload, upload_for_sub_user } from "../../helpers/s3.js";
 
+// import { confirmSignupController } from '../../controllers/user/UserController.js';
+
 const UserRoutes = express.Router();
 
 UserRoutes.post(
@@ -51,6 +53,7 @@ UserRoutes.post(
 
 //create
 UserRoutes.post("/super_admn", UserControllerObj.super_admin);
+UserRoutes.post("/confirm-signup", UserControllerObj.confirmSignupController);
 
 UserRoutes.get("/get_by_email", UserControllerObj.getByEmail);
 UserRoutes.get("/send_otp_to_email", UserControllerObj.sendOtpOnEmailData);
@@ -96,7 +99,7 @@ UserRoutes.put(
 //get all vendor or logistic or seller fetch with its sub_user
 // UserRoutes.get("/fetch_all_user",authorize,UserControllerObj)
 
-UserRoutes.put("/forgot_password", UserControllerObj.forgotPassword); 
+UserRoutes.put("/forgot_password", UserControllerObj.forgotPassword);
 UserRoutes.put("/verify_otp", UserControllerObj.verify_otp);
 UserRoutes.put("/reset_password", UserControllerObj.resetPassword);
 

@@ -13,7 +13,7 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import { v4 as uuidv4 } from "uuid";
-import AWS from "aws-sdk";
+// import AWS from "aws-sdk";
 import fs from "fs";
 import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
 import {
@@ -21,15 +21,15 @@ import {
   deleteImageFromS3,
   uploadImageToS3,
 } from "../../helpers/s3.js";
-AWS.config.update({
-  region: process.env.Aws_region,
-  credentials: {
-    accessKeyId: process.env.Aws_accessKeyId,
-    secretAccessKey: process.env.Aws_secretAccessKey,
-  },
-});
+// AWS.config.update({
+//   region: process.env.Aws_region,
+//   credentials: {
+//     accessKeyId: process.env.Aws_accessKeyId,
+//     secretAccessKey: process.env.Aws_secretAccessKey,
+//   },
+// });
 
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
+// const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
   credentials: {
@@ -356,7 +356,7 @@ class ProductServices {
       // const pageSize = parseInt(req.query?.pageSize) || 10;
       const userType = req.userData.user_type;
       const userId = req.userData.id;
-      console.log(userType, "userTypeeeeeee", userId, "a@@@@@@")
+      console.log(userType, "userTypeeeeeee", userId, "a@@@@@@");
       const params = {
         TableName: "products",
         // Limit: pageSize,
@@ -383,15 +383,12 @@ class ProductServices {
       const data = await dynamoDBClient.send(command);
 
       let uniqueCategories = [];
-      let simplifiedData = data.Items.map((el) => simplifyDynamoDBResponse(el)
-
-      );
+      let simplifiedData = data.Items.map((el) => simplifyDynamoDBResponse(el));
       data.Items.map((el) => {
         if (!uniqueCategories?.includes(el?.category_id?.S)) {
-          uniqueCategories.push(el?.category_id?.S)
+          uniqueCategories.push(el?.category_id?.S);
         }
-      }
-      );
+      });
       const paramsOf = {
         RequestItems: {
           category: {
@@ -407,9 +404,9 @@ class ProductServices {
       let dataOf = result?.Responses?.category;
       // console.log(simplifiedData, "simplifiedDatasimplifiedDatasimplifiedData", uniqueCategories,"dataOfdataOf",dataOf)
       for (let le of simplifiedData) {
-        let findCategory = dataOf?.find((ele) => ele?.id?.S == le?.category_id)
+        let findCategory = dataOf?.find((ele) => ele?.id?.S == le?.category_id);
         if (findCategory) {
-          le.categoryName = findCategory?.title?.S
+          le.categoryName = findCategory?.title?.S;
         }
       }
       // let LastEvaluatedKey;
@@ -449,7 +446,13 @@ class ProductServices {
       const data = await dynamoDBClient.send(command);
       // console.log(data, "Dataaaaaaaaaaa")
       if (data && data?.Count == 0) {
-        return res.status(400).json({ message: "Product not found", statusCode: 400, success: false })
+        return res
+          .status(400)
+          .json({
+            message: "Product not found",
+            statusCode: 400,
+            success: false,
+          });
       }
       let obj = {};
       let uniqueCategories = [];
@@ -552,11 +555,13 @@ class ProductServices {
       let simplifiedData = findProductData.Items.map((el) =>
         simplifyDynamoDBResponse(el)
       );
-      let tempObj = { ...simplifiedData[0] }
-      delete tempObj?.variation_arr
-      let simplifiedData2 = simplifiedData[0]?.variation_arr?.find((el) => el?.id == variant_id)
+      let tempObj = { ...simplifiedData[0] };
+      delete tempObj?.variation_arr;
+      let simplifiedData2 = simplifiedData[0]?.variation_arr?.find(
+        (el) => el?.id == variant_id
+      );
       // console.log(simplifiedData2, "simplifiedData2simplifiedData2@#@#", simplifiedData)
-      tempObj.variationObj = simplifiedData2
+      tempObj.variationObj = simplifiedData2;
       res.status(200).json({
         message: "Fetch Data",
         data: tempObj,
@@ -676,10 +681,10 @@ class ProductServices {
         let filePath = `./uploads/vendor/product/${el?.M?.image?.S}`;
         try {
           deleteImageFRomLocal(filePath);
-        } catch (err) { }
+        } catch (err) {}
         try {
           deleteImageFromS3(el?.M?.image?.S, "product");
-        } catch (err) { }
+        } catch (err) {}
       }
       await dynamoDBClient.send(new DeleteItemCommand(params));
       return res.status(200).json({
@@ -1044,10 +1049,10 @@ class ProductServices {
           console.log(el?.M?.image?.S, "el?.M?.image");
           try {
             deleteImageFRomLocal(el?.M?.image?.S, "product");
-          } catch (er) { }
+          } catch (er) {}
           try {
             // deleteImageFromS3(el?.M?.image?.S, "product");
-          } catch (Er) { }
+          } catch (Er) {}
         }
       }
       const updatedDbVariant = updatedVariants?.map((variant) => ({
@@ -1161,10 +1166,10 @@ class ProductServices {
       let filePath = `./uploads/vendor/product/${image}`;
       try {
         deleteImageFRomLocal(filePath);
-      } catch (er) { }
+      } catch (er) {}
       try {
         deleteImageFromS3(image, "product");
-      } catch (er) { }
+      } catch (er) {}
       return res.status(400).json({
         message: "Image deleted successfully",
         statusCode: 400,

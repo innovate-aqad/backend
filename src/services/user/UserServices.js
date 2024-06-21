@@ -1,4 +1,5 @@
 import UserModel from "../../models/UserModel.js";
+
 import bcrypt from "bcrypt";
 import {
   sendPasswordViaEmail,
@@ -36,11 +37,13 @@ import {
   uploadImageToS3,
 } from "../../helpers/s3.js";
 import { removefIle } from "../../helpers/validateImageFile.js";
+import AWS from "aws-sdk";
+const cognito = new AWS.CognitoIdentityServiceProvider();
 import {
   del_image_local_and_s3_and_upload_image,
   simplifyDynamoDBResponse,
 } from "../../helpers/datafetch.js";
-
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -49,6 +52,16 @@ const dynamoDBClient = new DynamoDBClient({
     secretAccessKey: process.env.Aws_secretAccessKey,
   },
 });
+import {
+  CognitoIdentityProviderClient,
+  ConfirmSignUpCommand,
+} from "@aws-sdk/client-cognito-identity-provider";
+import { signup, signin } from "./cognito.js";
+const cognitoClient = new CognitoIdentityProviderClient({
+  region: "me-central-1",
+});
+
+console.log(dynamoDBClient, "dydb", process.env.Aws_region);
 
 // AWS.config.update({
 //   region: "us-east-1", //process.env.Aws_region //'us-east-1'  // Change to your region
@@ -82,6 +95,7 @@ class UserServices {
         country,
         user_type,
         slide,
+        password,
         role,
         dob,
         company_name,
@@ -104,6 +118,8 @@ class UserServices {
       console.log(req.body, " @@@  a  aaaaaa!@#!@#aa req.body");
       console.log(req.files, "req.filesssss");
       email = email?.trim();
+      console.log(req.files, "req.fil");
+
       let findData;
       if ((slide == 2 || slide == 3 || slide == 4) && doc_id == "") {
         return res.status(400).json({
@@ -113,6 +129,8 @@ class UserServices {
         });
       }
       if (slide == 2 || slide == 3 || doc_id) {
+        console.log(req.files, "req.files is here", process.env.Aws_region);
+
         findData = await dynamoDBClient.send(
           new QueryCommand({
             TableName: "users",
@@ -124,7 +142,9 @@ class UserServices {
         );
         // console.log(findData, "findataaaaaaaa222222111");
       }
-      console.log(findData?.Items[0], "findDatafindData22", "findData");
+
+      // cog
+      console.log(findData, "findDatafindData22", "findData");
       // return
       if (findData?.Count > 0 && slide == 1) {
         let profile_photo = findData?.Items[0]?.profile_photo?.S;
@@ -723,11 +743,105 @@ class UserServices {
         }
       }
       let salt = environmentVars.salt;
-      let randomPassword = encryptStringWithKey(
-        req.body.email.toLowerCase()?.slice(0, 6)
-      );
-      // console.log(randomPassword, "randomPasswordrandomPassword");
-      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+
+      // const phoneNumber = parsePhoneNumberFromString(phone, "IN"); // 'IN' for India, adjust as needed
+
+      // if (!phoneNumber || !phoneNumber.isValid()) {
+      //   return res.status(400).send({
+      //     success: false,
+      //     message: "Invalid phone number format.",
+      //     error: {
+      //       name: "InvalidParameterException",
+      //       code: "InvalidParameterException",
+      //     },
+      //   });
+      // }
+
+      // const formattedPhoneNumber = phoneNumber.number; // Get the E.164 formatted phone number
+
+      // // Hash the password
+      // // const saltRounds = 10;
+      // // const hashPassword = await bcrypt.hash(password, saltRounds);
+
+      // // Generate a unique username
+      // const username = uuidv4();
+
+      // const cognitoParams = {
+      //   username,
+      //   password: "Fathima@123",
+      //   email,
+      //   name,
+      //   dob,
+      //   phone: formattedPhoneNumber,
+      // };
+
+      // const cognitoUser = await new Promise((resolve, reject) => {
+      //   signup(cognitoParams, (err, user) => {
+      //     if (err) {
+      //       reject(err);
+      //     } else {
+      //       resolve(user);
+      //     }
+      //   });
+      // });
+
+      // res.status(200).send({
+      //   success: true,
+      //   message: "User registered successfully and notification sent to group",
+      //   user: cognitoUser.user.getUsername(),
+      // });
+
+      //
+      try {
+        const phoneNumber = parsePhoneNumberFromString(phone, "IN"); // 'IN' for India, adjust as needed
+
+        if (!phoneNumber || !phoneNumber.isValid()) {
+          return res.status(400).send({
+            success: false,
+            message: "Invalid phone number format.",
+            error: {
+              name: "InvalidParameterException",
+              code: "InvalidParameterException",
+            },
+          });
+        }
+
+        const formattedPhoneNumber = phoneNumber.number; // Get the E.164 formatted phone number
+
+        const cognitoParams = {
+          email,
+          name,
+          dob,
+          phone: formattedPhoneNumber,
+          password: "Fathima@123", // Ensure the password is passed
+        };
+
+        const cognitoUser = await new Promise((resolve, reject) => {
+          signup(cognitoParams, (err, user) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(user);
+            }
+          });
+        });
+
+        res.status(200).send({
+          success: true,
+          message:
+            "User registered successfully. Please check your email for verification code.",
+          user: cognitoUser.UserSub, // Ensure you use the correct property
+        });
+      } catch (error) {
+        console.error("Error during registration:", error);
+        res.status(500).send({
+          success: false,
+          message: error.message,
+          error,
+        });
+      }
+
+      // console.log(cognitoUser, "cognitoUsercognitoUsercognitoUsercognitoUser");
 
       let id = uuidv4();
       id = id?.replace(/-/g, "");
@@ -755,6 +869,10 @@ class UserServices {
           is_verified: { BOOL: false },
         },
       };
+      // let salt = environmentVars.salt;
+
+      // console.log(randomPassword, "randomPasswordrandomPassword");
+
       console.log("docClient", "docccleint", params);
       await dynamoDBClient.send(new PutItemCommand(params));
       let obj = {
@@ -959,90 +1077,122 @@ class UserServices {
   async verifyEmailWithOtpCheck(req, res) {
     try {
       let { otp, email } = req.query;
-      const find = await dynamoDBClient.send(
-        new ScanCommand({
-          TableName: "userOtp",
-          FilterExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-        })
-      );
-      // console.log(find, "Asdad", find?.Items[0]);
-      if (find && find?.Count > 0) {
-        let otpDb = find?.Items[0]?.otp?.S;
-        let creationTime = parseInt(find?.Items[0]?.creationTime?.S, 10);
+
+      // Step 1: Verify OTP from DynamoDB
+      const findParams = {
+        TableName: "userOtp",
+        FilterExpression: "email = :email",
+        ExpressionAttributeValues: {
+          ":email": { S: email },
+        },
+      };
+
+      const find = await dynamoDBClient.send(new ScanCommand(findParams));
+
+      if (find && find.Count > 0) {
+        let otpDb = find.Items[0].otp.S;
+        let creationTime = parseInt(find.Items[0].creationTime.S, 10);
         let nowTime = Date.now();
         const timeDifference = nowTime - creationTime; // Difference in milliseconds
-        const tenMinutes = 600000; //10 minutes in milliseconds
+        const tenMinutes = 600000; // 10 minutes in milliseconds
+
         if (timeDifference > tenMinutes) {
           return res.status(400).json({
             message: "Otp is expired",
             statusCode: 400,
             success: false,
           });
-        } else if (otpDb != otp) {
-          return res
-            .status(400)
-            .json({ message: "In-valid otp", statusCode: 400, success: false });
-        } else {
-          return res.status(200).json({
-            message: "Email verified successfully",
-            statusCode: 200,
-            success: true,
+        } else if (otpDb !== otp) {
+          return res.status(400).json({
+            message: "Invalid otp",
+            statusCode: 400,
+            success: false,
           });
-        }
-        // console.log("otpDb", "as",
-        //   creationTime,
-        //   nowTime, "timeDifferencetimeDifference", timeDifference)
-        // const findData = await dynamoDBClient.send(new QueryCommand({
-        //   TableName: "users",
-        //   IndexName: "email", // replace with your GSI name
-        //   KeyConditionExpression: "email = :email",
-        //   ExpressionAttributeValues: {
-        //     ":email": { S: email },
-        //   },
-        // }));
-        // console.log(findData, "findDatafindData")
+        } else {
+          // Step 2: Confirm Signup in Cognito
+          const params = {
+            ClientId: "1hvv0kepvqqapp62ac06t46ffu", // Your Cognito App Client ID
+            Username: email,
+            ConfirmationCode: otp,
+          };
 
-        // if (findData && findData?.Count == 0) {
-        //   return res.status(400).json({ message: "No data found", statusCode: 400, success: false })
-        // // } else if (findData&&findData?.Items[0]?.is_email_verified?.) {
-        // } else  {
-        //   const params = {
-        //     TableName: "users",
-        //     Key: { id: { S: findData?.Items[0]?.id?.S } },
-        //     UpdateExpression:
-        //       "SET #is_email_verified = :is_email_verified",
-        //     ExpressionAttributeNames: {
-        //       "#is_email_verified": "is_email_verified",
-        //       "#is_email_verified": "is_email_verified",
-        //     },
-        //     ExpressionAttributeValues: {
-        //       ":is_email_verified": {
-        //         Bool: true
-        //       },
-        //     },
-        //   };
-        //   await dynamoDBClient.send(new UpdateItemCommand(params));
-        // }
+          try {
+            await cognitoClient.send(new ConfirmSignUpCommand(params));
+
+            // Step 3: Update DynamoDB to mark email as verified
+            const updateParams = {
+              TableName: "users",
+              Key: { email: { S: email } },
+              UpdateExpression: "SET is_email_verified = :is_email_verified",
+              ExpressionAttributeValues: {
+                ":is_email_verified": { BOOL: true },
+              },
+            };
+            await dynamoDBClient.send(new UpdateItemCommand(updateParams));
+
+            return res.status(200).json({
+              message: "Email verified successfully",
+              statusCode: 200,
+              success: true,
+            });
+          } catch (error) {
+            return res.status(400).json({
+              message: error.message,
+              statusCode: 400,
+              success: false,
+            });
+          }
+        }
       } else {
-        return res
-          .status(400)
-          .json({ message: "No data found", statusCode: 400, success: false });
+        return res.status(400).json({
+          message: "No data found",
+          statusCode: 400,
+          success: false,
+        });
       }
     } catch (err) {
-      console.error(err, "Eeee");
+      console.error(err, "Error");
 
-      return res
-        .status(500)
-        .json({ message: err?.message, statusCode: 500, success: false });
+      return res.status(500).json({
+        message: err?.message,
+        statusCode: 500,
+        success: false,
+      });
     }
   }
 
   async loginUser(req, res) {
     try {
       let { email, password } = req.body;
+      const cognitoParams = {
+        username: email,
+        password,
+      };
+
+      try {
+        const cognitoUser = await new Promise((resolve, reject) => {
+          signin(cognitoParams, (err, user) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(user);
+            }
+          });
+        });
+
+        // DB logic here
+        // ...
+
+        res.status(200).send({
+          success: true,
+          message: "User logged in successfully",
+          user: cognitoUser,
+        });
+      } catch (error) {
+        res.status(400).send({ success: false, message: error.message, error });
+      }
+
+      //
       const findData = await dynamoDBClient.send(
         new QueryCommand({
           TableName: "users",
@@ -1496,42 +1646,45 @@ class UserServices {
     try {
       let { email, phone, name, country, doc_id, permission, account_status } =
         req.body;
-      const paramsOf = {
-        RequestItems: {
-          permission: {
-            Keys: permission.map((id) => ({
-              id: { S: id },
-            })),
-            ProjectionExpression: "title, id, backend_routes, frontend_routes",
+      if (req.userData?.user_type != "logistic") {
+        const paramsOf = {
+          RequestItems: {
+            permission: {
+              Keys: permission.map((id) => ({
+                id: { S: id },
+              })),
+              ProjectionExpression:
+                "title, id, backend_routes, frontend_routes",
+            },
           },
-        },
-      };
-      const commandOf = new BatchGetItemCommand(paramsOf);
-      const result = await dynamoDBClient.send(commandOf);
-      let dataOf = result?.Responses?.permission;
-      // console.log(dataOf, "dataofffffff");
-      if (dataOf?.length == 0) {
-        return res.status(400).json({
-          message: "In-valid permission",
-          status: 400,
-          success: false,
-        });
-      }
-      let invalid_permission_arr = [];
-      for (let le of permission) {
-        // console.log(le, "lelelelele");
-        let findPermissionObj = dataOf?.find((el) => el?.id?.S == le);
-        if (!findPermissionObj) {
-          invalid_permission_arr.push(le);
+        };
+        const commandOf = new BatchGetItemCommand(paramsOf);
+        const result = await dynamoDBClient.send(commandOf);
+        let dataOf = result?.Responses?.permission;
+        if (dataOf?.length == 0) {
+          return res.status(400).json({
+            message: "In-valid permission",
+            status: 400,
+            success: false,
+          });
+        }
+        let invalid_permission_arr = [];
+        for (let le of permission) {
+          // console.log(le, "lelelelele");
+          let findPermissionObj = dataOf?.find((el) => el?.id?.S == le);
+          if (!findPermissionObj) {
+            invalid_permission_arr.push(le);
+          }
+        }
+        if (invalid_permission_arr && invalid_permission_arr?.length > 0) {
+          return res.status(400).json({
+            message: `This permission ${invalid_permission_arr} are not exist`,
+            statusCode: 400,
+            success: false,
+          });
         }
       }
-      if (invalid_permission_arr && invalid_permission_arr?.length > 0) {
-        return res.status(400).json({
-          message: `This permission ${invalid_permission_arr} are not exist`,
-          statusCode: 400,
-          success: false,
-        });
-      }
+      // console.log(dataOf, "dataofffffff");
       if (doc_id) {
         const findEmailExist = await dynamoDBClient.send(
           new QueryCommand({
@@ -2364,7 +2517,7 @@ class UserServices {
           password,
           findEmail?.Items[0]?.password?.S
         );
-        console.log(checkpassword,"qweqopwe");
+        console.log(checkpassword, "qweqopwe");
         if (checkpassword) {
           return res.status(400).json({
             message: "Password must be unique, previous password not allowed",
