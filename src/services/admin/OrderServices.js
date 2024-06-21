@@ -32,7 +32,7 @@ class orderServices {
         sub_total,
         delivery_charges,
         payment_method,
-        country_code,
+        country_code,payment_status,
       } = req.body;
       let tempProductId = new Set();
 
@@ -129,6 +129,8 @@ class orderServices {
           country_code: { S: country_code ||""},
           created_by: { S: req.userData?.id||"" },
           email: { S: req.userData?.email||"" },
+          order_status:{S:"new"},
+          payment_status:{S:payment_status||"pending"},
           order_detail: {
             L:
               order_detail?.map((el) => ({
@@ -201,7 +203,7 @@ class orderServices {
 
       let findData = await dynamoDBClient.send(
         new QueryCommand({
-          TableName: "brand",
+          TableName: "order",
           KeyConditionExpression: "id = :id",
           ExpressionAttributeValues: {
             ":id": { S: id },
@@ -210,13 +212,15 @@ class orderServices {
       );
       if (findData && findData?.Count == 0) {
         return res.status(400).json({
-          message: "Brand document not found",
+          message: "Order not found",
           statusCode: 400,
           success: false,
         });
+      }if(findData&&findData?.Items[0]?.order_status?.S!='new'){
+        return res.status(400).json({message:"Order status cannot be changed",statusCode:400,success:false})
       }
       const params = {
-        TableName: "brand",
+        TableName: "order",
         Key: { id: { S: id } },
         UpdateExpression: "SET  #status = :status,  #updated_at= :updated_at ",
         ExpressionAttributeNames: {
@@ -224,7 +228,7 @@ class orderServices {
           "#updated_at": "updated_at",
         },
         ExpressionAttributeValues: {
-          ":status": { S: status || findData?.Items[0]?.status?.S || "active" },
+          ":status": { S: status || findData?.Items[0]?.status?.S || "" },
           ":updated_at": {
             S: timestamp || findData?.Items[0]?.updated_at?.S || "",
           },
@@ -233,7 +237,7 @@ class orderServices {
 
       await dynamoDBClient.send(new UpdateItemCommand(params));
       return res.status(200).json({
-        message: "Brand status updated successfully",
+        message: "Order status updated successfully",
         statusCode: 200,
         success: true,
       });
@@ -257,9 +261,10 @@ class orderServices {
         },
     };
     const data = await dynamoDBClient.send(new QueryCommand(params));
-      const simplifiedData = data?.Items?.map((el) =>
+    const simplifiedData = data?.Items?.map((el) =>
         simplifyDynamoDBResponse(el)
       );
+
       res.status(200).json({
         message: "Fetch Data",
         data: simplifiedData,
@@ -276,40 +281,40 @@ class orderServices {
     }
   }
 
-  async get_Brand_by_main_cat_id(req, res) {
-    try {
-      const params = {
-        TableName: "brand",
-        FilterExpression: "#category_id = :category_id",
-        ExpressionAttributeNames: {
-          "#category_id": "category_id",
-        },
-        ExpressionAttributeValues: {
-          ":category_id": { S: req.query.category_id },
-        },
-      };
+  // async get_Brand_by_main_cat_id(req, res) {
+  //   try {
+  //     const params = {
+  //       TableName: "brand",
+  //       FilterExpression: "#category_id = :category_id",
+  //       ExpressionAttributeNames: {
+  //         "#category_id": "category_id",
+  //       },
+  //       ExpressionAttributeValues: {
+  //         ":category_id": { S: req.query.category_id },
+  //       },
+  //     };
 
-      const command = new ScanCommand(params);
-      const data = await dynamoDBClient.send(command);
-      const simplifiedData = data.Items.map((el) =>
-        simplifyDynamoDBResponse(el)
-      );
-      res.status(200).json({
-        message: "Fetch Data",
-        data: simplifiedData,
-        statusCode: 200,
-        success: true,
-      });
-      return;
-    } catch (err) {
-      console.error(err, "error");
-      return res.status(500).json({
-        message: err?.message,
-        statusCode: 500,
-        success: false,
-      });
-    }
-  }
+  //     const command = new ScanCommand(params);
+  //     const data = await dynamoDBClient.send(command);
+  //     const simplifiedData = data.Items.map((el) =>
+  //       simplifyDynamoDBResponse(el)
+  //     );
+  //     res.status(200).json({
+  //       message: "Fetch Data",
+  //       data: simplifiedData,
+  //       statusCode: 200,
+  //       success: true,
+  //     });
+  //     return;
+  //   } catch (err) {
+  //     console.error(err, "error");
+  //     return res.status(500).json({
+  //       message: err?.message,
+  //       statusCode: 500,
+  //       success: false,
+  //     });
+  //   }
+  // }
 
   async delete(req, res) {
     try {

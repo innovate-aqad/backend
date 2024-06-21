@@ -63,23 +63,23 @@ class OrderController {
     }
   }
   
-  async get_by_main_cat_id(req, res) {
-    try {
-      let { error } = SubBrandFetchByMainCategoryIdSchema .validate(req.query, options);
-      if (error) {
-        return res.status(400).json({
-          message: error.details[0]?.message,
-          success: false,
-          statusCode: 400,
-        });
-      }
-      await BrandServicesObj.get_Brand_by_main_cat_id(req, res);
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: err?.message, success: false, statusCode: 500 });
-    }
-  }
+  // async get_by_main_cat_id(req, res) {
+  //   try {
+  //     let { error } = SubBrandFetchByMainCategoryIdSchema .validate(req.query, options);
+  //     if (error) {
+  //       return res.status(400).json({
+  //         message: error.details[0]?.message,
+  //         success: false,
+  //         statusCode: 400,
+  //       });
+  //     }
+  //     await BrandServicesObj.get_Brand_by_main_cat_id(req, res);
+  //   } catch (err) {
+  //     return res
+  //       .status(500)
+  //       .json({ message: err?.message, success: false, statusCode: 500 });
+  //   }
+  // }
 
   async deleteData(req, res) {
     try {
