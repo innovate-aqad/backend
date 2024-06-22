@@ -117,6 +117,31 @@ UserRoutes.put("/reset_password", UserControllerObj.resetPassword);
 UserRoutes.get("/check_user_logged_in", UserControllerObj.check_user_logged_in);
 UserRoutes.get("/user_logout", UserControllerObj.user_logout);
 
+UserRoutes.get("/get_warehouse_or_retailer_address", authorize, UserControllerObj.get_warehouse_or_retailer_address); //fetch data of warehouse or retailer
+UserRoutes.post("/add_edit_warehouse_or_retailer_address_data", authorize, UserControllerObj.add_edit_warehouse_or_retailer_address_data); 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // UserRoutes.get("/fetch_users", UserControllerObj.FetchUsers);
 
 UserRoutes.post(
