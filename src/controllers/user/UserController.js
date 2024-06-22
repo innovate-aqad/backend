@@ -16,6 +16,7 @@ import {
   AccountDeactivateOrActiveSchema,
   delete_sub_user_schema,
   statusChangeSchema,
+  AddWarehouseSchema,
 } from "../../helpers/validateUser.js";
 import bcrypt from "bcrypt";
 import UserServicesObj from "../../services/user/UserServices.js";
@@ -406,7 +407,7 @@ class UserController {
   async add_sub_user(req, res) {
     try {
       if (!req.body.doc_id || req.body.doc_id == '') {
-        req.body.user_type=req.userData?.user_type
+        req.body.user_type = req.userData?.user_type
         let { error } = AddSubUserSchema.validate(req.body, options);
         if (error) {
           return res.status(400).json({
@@ -416,23 +417,24 @@ class UserController {
           });
         }
       }
-      if(req.files.profile_photo){
+      if (req.files.profile_photo) {
         for (let el of req.files.profile_photo) {
           let get = await ImageFileCheck(el?.filename, 'vendor_user', el?.size);
           if (get == "invalid file") {
-          return res.status(400).json({
-            message:
-              "Image must be png or jpeg or webp file and size must be less than 500 kb",
-            statusCode: 400,
-            success: false,
-          });
-        } else {
-         let filePath = `./uploads/${req.body.user_type}/sub_user/${el?.filename}`;
-          try{deleteImageFRomLocal(filePath)
-          }catch(er){console.log(er)}
-          // uploadImageToS3(el?.filename, el?.path);
+            return res.status(400).json({
+              message:
+                "Image must be png or jpeg or webp file and size must be less than 500 kb",
+              statusCode: 400,
+              success: false,
+            });
+          } else {
+            let filePath = `./uploads/${req.body.user_type}/sub_user/${el?.filename}`;
+            try {
+              deleteImageFRomLocal(filePath)
+            } catch (er) { console.log(er) }
+            // uploadImageToS3(el?.filename, el?.path);
+          }
         }
-      }
       }
       await UserServicesObj.addSubUser(req, res);
     } catch (err) {
@@ -442,8 +444,8 @@ class UserController {
 
   async role_id_to_aqad_employee(req, res) {
     try {
-      if(req.userData?.user_type!='super_admin'){
-        return res.status(400).json({message:"Not authorise",statusCode:400,success:false})
+      if (req.userData?.user_type != 'super_admin') {
+        return res.status(400).json({ message: "Not authorise", statusCode: 400, success: false })
       }
       if (!req.body.doc_id || req.body.doc_id == '') {
         let { error } = assignRoleToSubUserSchema.validate(req.body, options);
@@ -477,6 +479,7 @@ class UserController {
       return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
     }
   }
+
 
   async delete_sub_user(req, res) {
     try {
@@ -711,13 +714,57 @@ class UserController {
       //     .status(200)
       //     .json({ success: true, message: "Logout successful" })
       // );
-      UserServicesObj.user_logout_data(req,res)
+      UserServicesObj.user_logout_data(req, res)
     } catch (err) {
       return res
         .status(500)
         .json({ mesaage: err?.message, success: false, statusCode: 500 });
     }
   }
+
+  async get_warehouse_or_retailer_address(req, res) {
+    try {
+
+      await UserServicesObj.get_warehouse_or_retailer_address_arr(req, res);
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
+    }
+  }
+  async add_edit_warehouse_or_retailer_address_data(req, res) {
+    try {
+      let { error } = AddWarehouseSchema.validate(req.body, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+      await UserServicesObj.add_edit_warehouse_or_retailer_address(req, res);
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   async updateUserInfo(req, res) {

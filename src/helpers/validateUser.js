@@ -207,6 +207,12 @@ export const GetSubUserSchema = Joi.object({
   limit: Joi.number().positive().label("limit"),
 });
 
+export const AddWarehouseSchema = Joi.object({
+  address: Joi.string().required().max(200).label("address"),
+  po_box: Joi.string().required().max(20).label("po_box"),
+  is_default: Joi.boolean().label("status"),
+});
+
 export const registerAdminSchema = Joi.object({
   name: Joi.string().min(3).max(25).trim().required().label("Full Name"),
   email: Joi.string()

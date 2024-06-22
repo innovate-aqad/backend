@@ -209,7 +209,7 @@ class cartServices {
         const keysToDelete = findCartItem.Items.map((item) => ({
           id: { S: item.id.S },
         }));
-        console.log(keysToDelete, "keys -to----delete");
+        // console.log(keysToDelete, "keys -to----delete");
         await dynamoDBClient.send(
           new BatchWriteItemCommand({
             RequestItems: {
