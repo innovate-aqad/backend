@@ -213,6 +213,10 @@ export const AddWarehouseSchema = Joi.object({
   is_default: Joi.boolean().label("status"),
 });
 
+export const DeleteWarehouseSchema = Joi.object({
+  po_box: Joi.string().required().max(20).label("po_box"),
+});
+
 export const registerAdminSchema = Joi.object({
   name: Joi.string().min(3).max(25).trim().required().label("Full Name"),
   email: Joi.string()
