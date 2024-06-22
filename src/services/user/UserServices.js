@@ -263,6 +263,7 @@ class UserServices {
                     M: {
                       address: { S: address.address },
                       po_box: { S: address.po_box },
+                      is_default:{BOOL:address?.is_default||false}
                     },
                   })) ||
                   findData?.Items[0]?.outlet_addresses?.L ||
@@ -271,7 +272,7 @@ class UserServices {
               ":updated_at": { S: new Date().toISOString() },
             },
           };
-          // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_addresses",outlet_addresses)
+          // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_adresses",outlet_addreses)
           await dynamoDBClient.send(new UpdateItemCommand(params));
           return res.status(200).json({
             message: "User data updated successfully",
