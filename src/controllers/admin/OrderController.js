@@ -16,7 +16,7 @@ class OrderController {
     try {
       // console.log(req.body, "req.bod!@#!@#",req.userData,"er00")
       if(req.userData?.user_type!='seller'){
-        return res.status(400).json({message:"Only Seller make order",statusCode:400,success:false})
+        return res.status(400).json({message:"Only Seller can place order",statusCode:400,success:false})
       }
       // return 
       let { error } = OrderSchema.validate(req.body, options);

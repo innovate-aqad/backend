@@ -32,13 +32,14 @@ class orderServices {
         sub_total,
         delivery_charges,
         payment_method,
-        country_code,payment_status,
+        country_code, payment_status,
       } = req.body;
       let tempProductId = new Set();
 
       for (let le of order_detail) {
         tempProductId.add(le?.product_id);
       }
+      ///////////
       const keys = Array.from(tempProductId).map((product_id) => ({
         id: { S: product_id }, // Assuming the primary key attribute name is 'id' and type is string
       }));
@@ -56,7 +57,6 @@ class orderServices {
         })
       );
       // console.log(getProductDetails?.Responses?.products, "!!@@  ffffffffffff");
-      //validation of product's quantity
       let simplrProductArr = [];
       for (let el of getProductDetails?.Responses?.products) {
         let getSimpleData = simplifyDynamoDBResponse(el);
@@ -66,10 +66,12 @@ class orderServices {
       let vendorArr = [];
       for (let el of order_detail) {
         const timestamp = new Date().toISOString();
+        let id = uuidv4()?.replace(/-/g, "")?.slice(0, 19)?.toString() + timestamp
         let findProductOBj = simplrProductArr?.find(
           (elem) => elem?.id == el?.product_id
         );
-        // console.log(findProductOBj,"find product objbjb");
+        console.log(findProductOBj,"find product objbjb");
+        return
         if (findProductOBj) {
           let findVariationObj = findProductOBj?.variation_arr?.find(
             (e) => e?.id == el?.variant_id
@@ -98,6 +100,7 @@ class orderServices {
               product_id: findProductOBj?.id,
               variant_id: el?.variant_id,
               quantity: el?.quantity
+
             }]
           });
         } else {
@@ -126,21 +129,21 @@ class orderServices {
           sub_total: { N: sub_total || "" },
           delivery_charges: { N: delivery_charges },
           payment_method: { S: payment_method || "" },
-          country_code: { S: country_code ||""},
-          created_by: { S: req.userData?.id||"" },
-          email: { S: req.userData?.email||"" },
-          order_status:{S:"new"},
-          payment_status:{S:payment_status||"pending"},
+          country_code: { S: country_code || "" },
+          created_by: { S: req.userData?.id || "" },
+          email: { S: req.userData?.email || "" },
+          order_status: { S: "new" },
+          payment_status: { S: payment_status || "pending" },
           order_detail: {
             L:
               order_detail?.map((el) => ({
                 M: {
-                  variant_id: { S: el?.variant_id||"" },
-                  quantity: { S: el.quantity?.toString()||"" },
-                  variant_name: { S: el.variant_name||"" },
-                  thumbnail_url: { S: el.thumbnail_url||"" },
-                  product_id: { S: el.product_id ||""},
-                  product_price: { S: el.product_price?.toString() ||"" },
+                  variant_id: { S: el?.variant_id || "" },
+                  quantity: { S: el.quantity?.toString() || "" },
+                  variant_name: { S: el.variant_name || "" },
+                  thumbnail_url: { S: el.thumbnail_url || "" },
+                  product_id: { S: el.product_id || "" },
+                  product_price: { S: el.product_price?.toString() || "" },
                 },
               }))
           },
@@ -148,8 +151,8 @@ class orderServices {
           updated_at: { S: new Date().toISOString() },
         },
       };
-      console.log(params,"apapapamfr")
-      await dynamoDBClient.send(new PutItemCommand(params));
+      console.log(params, "apapapamfr")
+      // await dynamoDBClient.send(new PutItemCommand(params));
       try {
         let user_id = req.userData.id;
         let findCartItem = await dynamoDBClient.send(
@@ -182,8 +185,8 @@ class orderServices {
       }
       return res.status(201).json({
         message: "Order generated successfully",
-        // vendorArr,
-        // order_detail,
+        vendorArr,
+        order_detail,
         statusCode: 201,
         success: true,
       });
@@ -216,8 +219,8 @@ class orderServices {
           statusCode: 400,
           success: false,
         });
-      }if(findData&&findData?.Items[0]?.order_status?.S!='new'){
-        return res.status(400).json({message:"Order status cannot be changed",statusCode:400,success:false})
+      } if (findData && findData?.Items[0]?.order_status?.S != 'new') {
+        return res.status(400).json({ message: "Order status cannot be changed", statusCode: 400, success: false })
       }
       const params = {
         TableName: "order",
@@ -251,17 +254,17 @@ class orderServices {
 
   async get_data(req, res) {
     try {
-      let createdBy=req.userData.id
+      let createdBy = req.userData.id
       const params = {
         TableName: "order",
         IndexName: "created_by", // Ensure this index exists if created_by is a secondary index
         KeyConditionExpression: "created_by = :createdBy",
         ExpressionAttributeValues: {
-            ":createdBy": { S: createdBy },
+          ":createdBy": { S: createdBy },
         },
-    };
-    const data = await dynamoDBClient.send(new QueryCommand(params));
-    const simplifiedData = data?.Items?.map((el) =>
+      };
+      const data = await dynamoDBClient.send(new QueryCommand(params));
+      const simplifiedData = data?.Items?.map((el) =>
         simplifyDynamoDBResponse(el)
       );
 
