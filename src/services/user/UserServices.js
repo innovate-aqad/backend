@@ -1084,7 +1084,7 @@ class UserServices {
         } else {
           // Step 2: Confirm Signup in Cognito
           const params = {
-            ClientId: "1hvv0kepvqqapp62ac06t46ffu", // Your Cognito App Client ID
+            ClientId: process.env.Client_Id, // Your Cognito App Client ID
             Username: email,
             ConfirmationCode: otp,
           };
