@@ -762,25 +762,26 @@ class UserServices {
           });
         });
 
-        res.status(200).send({
-          success: true,
-          message:
-            "User registered successfully. Please check your email for verification code.",
-          user: cognitoUser.UserSub, // Ensure you use the correct property
-        });
+        // res.status(200).send({
+        //   success: true,
+        //   message:
+        //     "User registered successfully. Please check your email for verification code.",
+        //   user: cognitoUser.UserSub, // Ensure you use the correct property
+        // });
       } catch (error) {
         console.error("Error during registration:", error);
-        res.status(500).send({
-          success: false,
-          message: error.message,
-          error,
-        });
+        // res.status(500).send({
+        //   success: false,
+        //   message: error.message,
+        //   error,
+        // });
       }
 
       // console.log(cognitoUser, "cognitoUsercognitoUsercognitoUsercognitoUser");
 
       let id = uuidv4();
       id = id?.replace(/-/g, "");
+      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
 
       let profile_photo;
       if (req.files && req.files?.profile_photo?.length) {
