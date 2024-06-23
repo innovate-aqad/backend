@@ -56,7 +56,7 @@ import {
   CognitoIdentityProviderClient,
   ConfirmSignUpCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
-import { signup, signin } from "./cognito.js";
+// import { signup, signin } from "./cognito.js";
 const cognitoClient = new CognitoIdentityProviderClient({
   region: process.env.Aws_region,
 });
@@ -743,75 +743,75 @@ class UserServices {
       }
       let salt = environmentVars.salt;
 
-      try {
-        const cognitoParams = {
-          email,
-          name,
-          dob,
-          phone,
-          password: "Fathima@123", // Ensure the password is passed
-        };
+      // try {
+      //   const cognitoParams = {
+      //     email,
+      //     name,
+      //     dob,
+      //     phone,
+      //     password: "Fathima@123", // Ensure the password is passed
+      //   };
 
-        const cognitoUser = await new Promise((resolve, reject) => {
-          signup(cognitoParams, (err, user) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(user);
-            }
-          });
-        });
-        const id = uuidv4();
+      //   const cognitoUser = await new Promise((resolve, reject) => {
+      //     signup(cognitoParams, (err, user) => {
+      //       if (err) {
+      //         reject(err);
+      //       } else {
+      //         resolve(user);
+      //       }
+      //     });
+      //   });
+      //   const id = uuidv4();
 
-        // Hash the password
-        const salt = await bcrypt.genSalt(10);
-        const hashPassword = await bcrypt.hash(cognitoParams.password, salt);
+      //   // Hash the password
+      //   const salt = await bcrypt.genSalt(10);
+      //   const hashPassword = await bcrypt.hash(cognitoParams.password, salt);
 
-        const params = {
-          TableName: "users",
-          Item: {
-            // profile_photo: { S: profile_photo || "" },
-            id: { S: id },
-            name: { S: name },
-            email: { S: email },
-            phone: { S: phone || "" },
-            dob: { S: dob || "" },
-            // user_type: { S: user_type },
-            // role: { S: role || "" },
-            // country: { S: country || "" },
-            // password: { S: hashPassword },
-            // created_at: { S: new Date().toISOString() },
-            // updated_at: { S: new Date().toISOString() },
-            // account_status: { S: "activated" },
-            // is_verified: { BOOL: false },
-          },
-        };
+      //   const params = {
+      //     TableName: "users",
+      //     Item: {
+      //       // profile_photo: { S: profile_photo || "" },
+      //       id: { S: id },
+      //       name: { S: name },
+      //       email: { S: email },
+      //       phone: { S: phone || "" },
+      //       dob: { S: dob || "" },
+      //       // user_type: { S: user_type },
+      //       // role: { S: role || "" },
+      //       // country: { S: country || "" },
+      //       // password: { S: hashPassword },
+      //       // created_at: { S: new Date().toISOString() },
+      //       // updated_at: { S: new Date().toISOString() },
+      //       // account_status: { S: "activated" },
+      //       // is_verified: { BOOL: false },
+      //     },
+      //   };
 
-        console.log("DynamoDB Params:", JSON.stringify(params, null, 2));
-        await dynamoDBClient.send(new PutItemCommand(params));
-        console.log("Data sent to DynamoDB successfully====>");
+      //   console.log("DynamoDB Params:", JSON.stringify(params, null, 2));
+      //   await dynamoDBClient.send(new PutItemCommand(params));
+      //   console.log("Data sent to DynamoDB successfully====>");
 
-        res.status(200).send({
-          success: true,
-          message:
-            "User registered successfully. Please check your email for verification code.",
-          user: cognitoUser.user_id, // Ensure you use the correct property
-        });
+      //   res.status(200).send({
+      //     success: true,
+      //     message:
+      //       "User registered successfully. Please check your email for verification code.",
+      //     user: cognitoUser.user_id, // Ensure you use the correct property
+      //   });
 
-        // res.status(200).send({
-        //   success: true,
-        //   message:
-        //     "User registered successfully. Please check your email for verification code.",
-        //   user: cognitoUser.UserSub, // Ensure you use the correct property
-        // });
-      } catch (error) {
-        console.error("Error during registration:", error);
-        res.status(500).send({
-          success: false,
-          message: error.message,
-          error,
-        });
-      }
+      //   // res.status(200).send({
+      //   //   success: true,
+      //   //   message:
+      //   //     "User registered successfully. Please check your email for verification code.",
+      //   //   user: cognitoUser.UserSub, // Ensure you use the correct property
+      //   // });
+      // } catch (error) {
+      //   console.error("Error during registration:", error);
+      //   res.status(500).send({
+      //     success: false,
+      //     message: error.message,
+      //     error,
+      //   });
+      // }
 
       // console.log(cognitoUser, "cognitoUsercognitoUsercognitoUsercognitoUser");
 
@@ -1083,11 +1083,6 @@ class UserServices {
           });
         } else {
           // Step 2: Confirm Signup in Cognito
-          const params = {
-            ClientId: "1hvv0kepvqqapp62ac06t46ffu", // Your Cognito App Client ID
-            Username: email,
-            ConfirmationCode: otp,
-          };
 
           try {
             await cognitoClient.send(new ConfirmSignUpCommand(params));
@@ -1134,164 +1129,164 @@ class UserServices {
     }
   }
 
-  async loginUser(req, res) {
-    try {
-      let { email, password } = req.body;
-      const cognitoParams = {
-        username: email,
-        password,
-      };
+  // async loginUser(req, res) {
+  //   try {
+  //     let { email, password } = req.body;
+  //     const cognitoParams = {
+  //       username: email,
+  //       password,
+  //     };
 
-      try {
-        const cognitoUser = await new Promise((resolve, reject) => {
-          signin(cognitoParams, (err, user) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(user);
-            }
-          });
-        });
+  //     try {
+  //       const cognitoUser = await new Promise((resolve, reject) => {
+  //         signin(cognitoParams, (err, user) => {
+  //           if (err) {
+  //             reject(err);
+  //           } else {
+  //             resolve(user);
+  //           }
+  //         });
+  //       });
 
-        // DB logic here
-        // ...
+  //       // DB logic here
+  //       // ...
 
-        res.status(200).send({
-          success: true,
-          message: "User logged in successfully",
-          user: cognitoUser,
-        });
-      } catch (error) {
-        res.status(400).send({ success: false, message: error.message, error });
-      }
+  //       res.status(200).send({
+  //         success: true,
+  //         message: "User logged in successfully",
+  //         user: cognitoUser,
+  //       });
+  //     } catch (error) {
+  //       res.status(400).send({ success: false, message: error.message, error });
+  //     }
 
-      //
-      const findData = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "users",
-          IndexName: "email", // replace with your GSI name
-          KeyConditionExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-        })
-      );
-      // console.log(findData?.Items[0], "dinffdddaa", "findData");
-      if (
-        findData?.Items[0]?.user_type?.S != "super_admin" &&
-        findData?.Items[0]?.account_status?.S != "activated"
-      ) {
-        return res.status(400).json({
-          message: "This account de-activated",
-          statusCode: 400,
-          success: false,
-        });
-      }
-      if (findData?.Count > 0 && findData?.Items?.length) {
-        let checkpassword = await bcrypt.compare(
-          password,
-          findData?.Items[0]?.password?.S
-        );
+  //     //
+  //     const findData = await dynamoDBClient.send(
+  //       new QueryCommand({
+  //         TableName: "users",
+  //         IndexName: "email", // replace with your GSI name
+  //         KeyConditionExpression: "email = :email",
+  //         ExpressionAttributeValues: {
+  //           ":email": { S: email },
+  //         },
+  //       })
+  //     );
+  //     // console.log(findData?.Items[0], "dinffdddaa", "findData");
+  //     if (
+  //       findData?.Items[0]?.user_type?.S != "super_admin" &&
+  //       findData?.Items[0]?.account_status?.S != "activated"
+  //     ) {
+  //       return res.status(400).json({
+  //         message: "This account de-activated",
+  //         statusCode: 400,
+  //         success: false,
+  //       });
+  //     }
+  //     if (findData?.Count > 0 && findData?.Items?.length) {
+  //       let checkpassword = await bcrypt.compare(
+  //         password,
+  //         findData?.Items[0]?.password?.S
+  //       );
 
-        if (!checkpassword) {
-          return res.status(400).json({
-            message: "Password invalid",
-            success: false,
-            statusCode: 400,
-          });
-        }
-        let otp = await generateOTP();
-        // console.log(otp, "otptptptp");
-        if (otp.length == 3) {
-          otp = otp + "0";
-        } else if (otp.length == 2) {
-          otp = otp + "00";
-        } else if (otp.length == 1) {
-          otp = otp + "000";
-        }
-        let currentTime = Date.now();
-        currentTime = currentTime?.toString();
-        let get = await sendOtpForLogin(email, otp);
-        if (get == false) {
-          return res.status(400).json({
-            message: "internal server error",
-            statusCode: 400,
-            success: false,
-          });
-        }
-        // const find = await dynamoDBClient.send(
-        //   new ScanCommand({
-        //     TableName: "userOtp",
-        //     FilterExpression: "email = :email",
-        //     ExpressionAttributeValues: {
-        //       ":email": { S: email },
-        //     },
-        //   })
-        // );
-        const find = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "userOtp",
-            IndexName: "email", // replace with your GSI name
-            KeyConditionExpression: "email = :email",
-            ExpressionAttributeValues: {
-              ":email": { S: email },
-            },
-          })
-        );
-        // console.log(find, "Asdad", find);
-        if (find && find?.Count > 0) {
-          const params = {
-            TableName: "userOtp",
-            Key: { id: { S: find?.Items[0]?.id?.S } },
-            UpdateExpression:
-              "SET #otp = :otp, #creationTime = :creationTime, #updatedAt =:updatedAt ",
-            ExpressionAttributeNames: {
-              "#otp": "otp",
-              "#creationTime": "creationTime",
-              "#updatedAt": "updatedAt",
-            },
-            ExpressionAttributeValues: {
-              ":otp": { S: otp },
-              ":creationTime": { S: currentTime },
-              ":updatedAt": { S: currentTime },
-            },
-          };
-          await dynamoDBClient.send(new UpdateItemCommand(params));
-        } else {
-          let id = uuidv4()?.replace(/-/g, "");
-          const params = {
-            TableName: "userOtp",
-            Item: {
-              email: { S: req.body.email },
-              otp: { S: otp },
-              creationTime: { N: currentTime },
-              createdAt: { N: currentTime },
-              updatedAt: { N: currentTime },
-              id: { S: id },
-            },
-          };
-          // console.log(params, "parasnsns");
-          let Data = await dynamoDBClient.send(new PutItemCommand(params));
-          // console.log(Data, "dayayayaya");
-        }
-        return res.status(200).json({
-          message: "Otp sent to registered email",
-          statusCode: 200,
-          success: true,
-        });
-      } else {
-        // console.log("enddddd");
-        return res
-          .status(400)
-          .json({ message: "No data found", statusCode: 400, success: false });
-      }
-    } catch (err) {
-      console.log(err, "Error in login api user");
-      return res
-        .status(500)
-        .json({ message: err?.message, success: false, statusCode: 500 });
-    }
-  }
+  //       if (!checkpassword) {
+  //         return res.status(400).json({
+  //           message: "Password invalid",
+  //           success: false,
+  //           statusCode: 400,
+  //         });
+  //       }
+  //       let otp = await generateOTP();
+  //       // console.log(otp, "otptptptp");
+  //       if (otp.length == 3) {
+  //         otp = otp + "0";
+  //       } else if (otp.length == 2) {
+  //         otp = otp + "00";
+  //       } else if (otp.length == 1) {
+  //         otp = otp + "000";
+  //       }
+  //       let currentTime = Date.now();
+  //       currentTime = currentTime?.toString();
+  //       let get = await sendOtpForLogin(email, otp);
+  //       if (get == false) {
+  //         return res.status(400).json({
+  //           message: "internal server error",
+  //           statusCode: 400,
+  //           success: false,
+  //         });
+  //       }
+  //       // const find = await dynamoDBClient.send(
+  //       //   new ScanCommand({
+  //       //     TableName: "userOtp",
+  //       //     FilterExpression: "email = :email",
+  //       //     ExpressionAttributeValues: {
+  //       //       ":email": { S: email },
+  //       //     },
+  //       //   })
+  //       // );
+  //       const find = await dynamoDBClient.send(
+  //         new QueryCommand({
+  //           TableName: "userOtp",
+  //           IndexName: "email", // replace with your GSI name
+  //           KeyConditionExpression: "email = :email",
+  //           ExpressionAttributeValues: {
+  //             ":email": { S: email },
+  //           },
+  //         })
+  //       );
+  //       // console.log(find, "Asdad", find);
+  //       if (find && find?.Count > 0) {
+  //         const params = {
+  //           TableName: "userOtp",
+  //           Key: { id: { S: find?.Items[0]?.id?.S } },
+  //           UpdateExpression:
+  //             "SET #otp = :otp, #creationTime = :creationTime, #updatedAt =:updatedAt ",
+  //           ExpressionAttributeNames: {
+  //             "#otp": "otp",
+  //             "#creationTime": "creationTime",
+  //             "#updatedAt": "updatedAt",
+  //           },
+  //           ExpressionAttributeValues: {
+  //             ":otp": { S: otp },
+  //             ":creationTime": { S: currentTime },
+  //             ":updatedAt": { S: currentTime },
+  //           },
+  //         };
+  //         await dynamoDBClient.send(new UpdateItemCommand(params));
+  //       } else {
+  //         let id = uuidv4()?.replace(/-/g, "");
+  //         const params = {
+  //           TableName: "userOtp",
+  //           Item: {
+  //             email: { S: req.body.email },
+  //             otp: { S: otp },
+  //             creationTime: { N: currentTime },
+  //             createdAt: { N: currentTime },
+  //             updatedAt: { N: currentTime },
+  //             id: { S: id },
+  //           },
+  //         };
+  //         // console.log(params, "parasnsns");
+  //         let Data = await dynamoDBClient.send(new PutItemCommand(params));
+  //         // console.log(Data, "dayayayaya");
+  //       }
+  //       return res.status(200).json({
+  //         message: "Otp sent to registered email",
+  //         statusCode: 200,
+  //         success: true,
+  //       });
+  //     } else {
+  //       // console.log("enddddd");
+  //       return res
+  //         .status(400)
+  //         .json({ message: "No data found", statusCode: 400, success: false });
+  //     }
+  //   } catch (err) {
+  //     console.log(err, "Error in login api user");
+  //     return res
+  //       .status(500)
+  //       .json({ message: err?.message, success: false, statusCode: 500 });
+  //   }
+  // }
 
   async loginWithOtp(req, res) {
     try {
