@@ -58,7 +58,7 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import { signup, signin } from "./cognito.js";
 const cognitoClient = new CognitoIdentityProviderClient({
-  region: process.env.Aws_region,,
+  region: process.env.Aws_region,
 });
 
 console.log(dynamoDBClient, "dydb", process.env.Aws_region);
@@ -282,6 +282,7 @@ class UserServices {
                     M: {
                       address: { S: address.address },
                       po_box: { S: address.po_box },
+                      is_default: { BOOL: address?.is_default || false },
                     },
                   })) ||
                   findData?.Items[0]?.outlet_addresses?.L ||
@@ -290,7 +291,7 @@ class UserServices {
               ":updated_at": { S: new Date().toISOString() },
             },
           };
-          // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_addresses",outlet_addresses)
+          // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_adresses",outlet_addreses)
           await dynamoDBClient.send(new UpdateItemCommand(params));
           return res.status(200).json({
             message: "User data updated successfully",
@@ -382,7 +383,7 @@ class UserServices {
           : findData?.Items[0]?.trade_license?.S || "";
         if (req.files && req.files?.trade_license?.length) {
           let filePath = `./uploads/${user_type}/${findData?.Items[0]?.trade_license?.S}`;
-          console.log(filePath, "filepathhhhhhh");
+          // console.log(filePath, "filepathhhhhhh");
           try {
             deleteImageFRomLocal(filePath);
           } catch (err) {
@@ -931,6 +932,252 @@ class UserServices {
     }
   }
 
+  async get_warehouse_or_retailer_address_arr(req, res) {
+    try {
+      let email = req.userData?.email;
+      const find = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          IndexName: "email", // replace with your GSI name
+          KeyConditionExpression: "email = :email",
+          ExpressionAttributeValues: {
+            ":email": { S: email },
+          },
+        })
+      );
+
+      let arr = [];
+
+      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
+      if (rawData && rawData?.user_type == "seller") {
+        arr = rawData?.outlet_addresses || [];
+      } else if (rawData && rawData?.user_type == "vendor") {
+        arr = rawData?.warehouse_addresses || [];
+      }
+      // console.log(rawData, "rawDataaaaaaaaaaaaa")
+      return res.status(200).json({
+        message: "Get data",
+        data: arr,
+        statusCode: 200,
+        success: true,
+      });
+    } catch (err) {
+      console.error(err, "erroror");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
+
+  async add_edit_warehouse_or_retailer_address(req, res) {
+    try {
+      let email = req.userData?.email;
+      let doc_id = req.userData.id;
+      let { id, address, po_box, is_default, is_edit } = req.body;
+
+      const find = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          IndexName: "email", // replace with your GSI name
+          KeyConditionExpression: "email = :email",
+          ExpressionAttributeValues: {
+            ":email": { S: email },
+          },
+        })
+      );
+      let arr = [];
+      let address_arr;
+      if (find?.Count == 0) {
+        return res
+          .status(400)
+          .json({ message: "User not found", statusCode: 400, success: false });
+      }
+      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
+      address_arr = rawData?.outlet_addresses || [];
+      let msg = "Warehouse address updated successfully";
+      if (is_edit) {
+        let find_po_box = address_arr?.find((e) => e?.po_box == po_box);
+        if (!find_po_box) {
+          return res.status(400).json({
+            message: "Address not found",
+            statusCode: 400,
+            success: false,
+          });
+        }
+        if (is_default) {
+          address_arr = address_arr.map((e) => {
+            if (e.po_box == po_box) {
+              e.address = address;
+              e.is_default = is_default;
+            } else {
+              e.is_default = false;
+            }
+            return e;
+          });
+        } else {
+          address_arr = address_arr.map((e) => {
+            if (e.po_box == po_box) {
+              e.is_default = is_default;
+              e.address = address;
+            }
+            return e;
+          });
+        }
+      } else {
+        if (rawData && rawData?.user_type == "seller") {
+          if (address_arr && address_arr?.length) {
+            if (is_default) {
+              address_arr?.map((el) => (el.is_default = false));
+            }
+            address_arr.push({ address, po_box, is_default });
+          } else {
+            address_arr = [{ address, po_box, is_default }];
+          }
+        } else if (rawData && rawData?.user_type == "vendor") {
+          address_arr = rawData?.warehouse_addresses || [];
+          if (address_arr && address_arr.length) {
+            if (is_default) {
+              address_arr?.map((el) => (el.is_default = false));
+            }
+            address_arr.push({ address, po_box, is_default });
+          } else {
+            address_arr = [{ address, po_box, is_default }];
+          }
+        }
+        msg = "Warehouse added successfully";
+      }
+      if (rawData && rawData?.user_type == "seller") {
+        const params = {
+          TableName: "users",
+          Key: { id: { S: doc_id } },
+          UpdateExpression:
+            "SET  #outlet_addresses = :outlet_addresses, #updated_at = :updated_at ",
+          ExpressionAttributeNames: {
+            "#outlet_addresses": "outlet_addresses",
+            "#updated_at": "updated_at",
+          },
+          ExpressionAttributeValues: {
+            ":outlet_addresses": {
+              L:
+                address_arr?.map((address) => ({
+                  M: {
+                    address: { S: address.address },
+                    po_box: { S: address.po_box },
+                    is_default: { BOOL: address?.is_default || false },
+                  },
+                })) || [],
+            },
+            ":updated_at": { S: new Date().toISOString() },
+          },
+        };
+        // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_adresses",outlet_addreses)
+        await dynamoDBClient.send(new UpdateItemCommand(params));
+      } else if (rawData && rawData?.user_type == "vendor") {
+        const params = {
+          TableName: "users",
+          Key: { id: { S: doc_id } },
+          UpdateExpression:
+            "SET  #warehouse_addresses = :warehouse_addresses,  #updated_at = :updated_at ",
+          ExpressionAttributeNames: {
+            "#warehouse_addresses": "warehouse_addresses",
+            "#updated_at": "updated_at",
+          },
+          ExpressionAttributeValues: {
+            ":warehouse_addresses": {
+              L:
+                address_arr?.map((address) => ({
+                  M: {
+                    address: { S: address.address },
+                    po_box: { S: address.po_box },
+                  },
+                })) || [],
+            },
+            ":updated_at": { S: new Date().toISOString() },
+          },
+        };
+        console.log(params, "paramsmsmsmsssmm");
+        await dynamoDBClient.send(new UpdateItemCommand(params));
+      }
+      // console.log(rawData, "rawDataaaaaaaaaaaaa")
+      return res.status(200).json({
+        message: msg,
+        // data: address_arr,
+        statusCode: 200,
+        success: true,
+      });
+    } catch (err) {
+      console.error(err, "erroror");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
+
+  async delete_warehouse_or_retailer_adres(req, res) {
+    try {
+      let email = req.userData?.email;
+      let doc_id = req.userData.id;
+      let { po_box } = req.body;
+
+      const find = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          IndexName: "email", // replace with your GSI name
+          KeyConditionExpression: "email = :email",
+          ExpressionAttributeValues: {
+            ":email": { S: email },
+          },
+        })
+      );
+      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
+      let address_arr = rawData?.outlet_addresses;
+      let findout_address = address_arr?.find((e) => e?.po_box == po_box);
+      if (!findout_address) {
+        return res.status(400).json({
+          message: "Warehouse deleted already ",
+          statusCode: 400,
+          success: false,
+        });
+      }
+      address_arr = address_arr?.filter((e) => e.po_box != po_box);
+      const params = {
+        TableName: "users",
+        Key: { id: { S: doc_id } },
+        UpdateExpression:
+          "SET  #outlet_addresses = :outlet_addresses, #updated_at = :updated_at ",
+        ExpressionAttributeNames: {
+          "#outlet_addresses": "outlet_addresses",
+          "#updated_at": "updated_at",
+        },
+        ExpressionAttributeValues: {
+          ":outlet_addresses": {
+            L:
+              address_arr?.map((address) => ({
+                M: {
+                  address: { S: address.address },
+                  po_box: { S: address.po_box },
+                  is_default: { BOOL: address?.is_default || false },
+                },
+              })) || [],
+          },
+          ":updated_at": { S: new Date().toISOString() },
+        },
+      };
+      await dynamoDBClient.send(new UpdateItemCommand(params));
+      return res.status(200).json({
+        message: "Warehouse address deleted successfully",
+        // data: address_arr,
+        statusCode: 200,
+        success: true,
+      });
+    } catch (err) {
+      console.error(err, "erroror");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
+    }
+  }
+
   async sendOtpEmail(req, res) {
     try {
       let otp = await generateOTP();
@@ -1410,8 +1657,8 @@ class UserServices {
           }
         }
         let token = generateAccessToken(obj);
-        let expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 days
+        // let expiryDate = new Date();
+        // expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 days
         // expiryDate.setTime(expiryDate.getTime() + (60 * 1000)); // Current time + 1 minute
 
         const updateParams = {
@@ -1431,7 +1678,7 @@ class UserServices {
             httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
             secure: true, // Requires HTTPS connection
             sameSite: "strict", // Restricts the cookie to be sent only in same-site requests
-            expires: expiryDate, // Set the expiry date
+            // expires: expiryDate, // Set the expiry date
           })
           .status(200)
           .json({
@@ -2485,23 +2732,6 @@ class UserServices {
       });
     } catch (err) {
       console.error(err);
-      return res
-        .status(500)
-        .json({ message: err?.message, success: false, statusCode: 500 });
-    }
-  }
-
-  async getAllUSerData(req, res) {
-    try {
-      let fetchArray = await UserModel.findAll();
-      res.status(200).json({
-        message: "fetch user data",
-        data: fetchArray,
-        success: true,
-        statusCode: 200,
-      });
-      return;
-    } catch (err) {
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });

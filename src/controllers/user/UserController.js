@@ -14,6 +14,10 @@ import {
   assignRoleToSubUserSchema,
   verifyAccountSchema,
   AccountDeactivateOrActiveSchema,
+  delete_sub_user_schema,
+  statusChangeSchema,
+  AddWarehouseSchema,
+  DeleteWarehouseSchema,
 } from "../../helpers/validateUser.js";
 import { getUser } from "../../services/user/cognito.js";
 
@@ -434,6 +438,7 @@ class UserController {
   async add_sub_user(req, res) {
     try {
       if (!req.body.doc_id || req.body.doc_id == "") {
+        req.body.user_type = req.userData?.user_type;
         let { error } = AddSubUserSchema.validate(req.body, options);
         if (error) {
           return res.status(400).json({
@@ -683,16 +688,6 @@ class UserController {
     }
   }
 
-  async getAllUser(req, res) {
-    try {
-      UserServicesObj.getAllUSerData(req, res);
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: err?.message, success: false, statusCode: 500 });
-    }
-  }
-
   async check_user_logged_in(req, res) {
     try {
       let _secrate = req?.cookies?._token;
@@ -744,10 +739,58 @@ class UserController {
           .status(200)
           .json({ success: true, message: "Logout successful" })
       );
+      //     .status(200)
+      //     .json({ success: true, message: "Logout successful" })
+      // );
+      UserServicesObj.user_logout_data(req, res);
     } catch (err) {
       return res
         .status(500)
         .json({ mesaage: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  async get_warehouse_or_retailer_address(req, res) {
+    try {
+      await UserServicesObj.get_warehouse_or_retailer_address_arr(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
+    }
+  }
+  async add_edit_warehouse_or_retailer_address_data(req, res) {
+    try {
+      let { error } = AddWarehouseSchema.validate(req.body, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+      await UserServicesObj.add_edit_warehouse_or_retailer_address(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
+    }
+  }
+  async delete_warehouse_or_retailer_address(req, res) {
+    try {
+      let { error } = DeleteWarehouseSchema.validate(req.body, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+      await UserServicesObj.delete_warehouse_or_retailer_adres(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
     }
   }
 

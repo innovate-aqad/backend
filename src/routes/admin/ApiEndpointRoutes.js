@@ -13,8 +13,6 @@ ApiEndpointRoutes.put("/status_edit",authorize, ApiEndpointControllerObj.edit_st
 ApiEndpointRoutes .delete("/delete",authorize, ApiEndpointControllerObj.deleteData);
 
 
-
-
 // ApiEndpointRoutes.get("/get_active",authorize, ApiEndpointControllerObj.get_active);
 
 export default ApiEndpointRoutes;

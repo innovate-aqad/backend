@@ -10,6 +10,7 @@ const ProductRoutes = express.Router();
 ProductRoutes.post("/add", authorize, ProductControllerObj.addProduct);//main product
 ProductRoutes.get("/get", authorize, ProductControllerObj.get_data);
 ProductRoutes.get("/get_by_id", authorize, ProductControllerObj.get_data_by_id);
+ProductRoutes.get("/get_product_by_cat_id", authorize, ProductControllerObj.get_product_by_cat_id);
 ProductRoutes.get("/get_specific_data", authorize, ProductControllerObj.get_data_specific_only);
 ProductRoutes.get("/get_cateory_product_count", authorize, ProductControllerObj.get_cateory_product_count);
 ProductRoutes.delete(
@@ -43,6 +44,8 @@ ProductRoutes.delete(
   authorize,
   ProductControllerObj.delete_variant_image
 );
+
+
 // ProductRoutes.delete("/delete", ProductControllerObj.deleteData);
 
 export default ProductRoutes;
