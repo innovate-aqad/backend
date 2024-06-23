@@ -58,7 +58,7 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import { signup, signin } from "./cognito.js";
 const cognitoClient = new CognitoIdentityProviderClient({
-  region: process.env.Aws_region,,
+  region: process.env.Aws_region,
 });
 
 console.log(dynamoDBClient, "dydb", process.env.Aws_region);
@@ -761,6 +761,42 @@ class UserServices {
             }
           });
         });
+        const id = uuidv4();
+
+        // Hash the password
+        const salt = await bcrypt.genSalt(10);
+        const hashPassword = await bcrypt.hash(cognitoParams.password, salt);
+
+        const params = {
+          TableName: "users",
+          Item: {
+            // profile_photo: { S: profile_photo || "" },
+            id: { S: id },
+            name: { S: name },
+            email: { S: email },
+            phone: { S: phone || "" },
+            dob: { S: dob || "" },
+            // user_type: { S: user_type },
+            // role: { S: role || "" },
+            // country: { S: country || "" },
+            // password: { S: hashPassword },
+            // created_at: { S: new Date().toISOString() },
+            // updated_at: { S: new Date().toISOString() },
+            // account_status: { S: "activated" },
+            // is_verified: { BOOL: false },
+          },
+        };
+
+        console.log("DynamoDB Params:", JSON.stringify(params, null, 2));
+        await dynamoDBClient.send(new PutItemCommand(params));
+        console.log("Data sent to DynamoDB successfully====>");
+
+        res.status(200).send({
+          success: true,
+          message:
+            "User registered successfully. Please check your email for verification code.",
+          user: cognitoUser.user_id, // Ensure you use the correct property
+        });
 
         // res.status(200).send({
         //   success: true,
@@ -770,18 +806,18 @@ class UserServices {
         // });
       } catch (error) {
         console.error("Error during registration:", error);
-        // res.status(500).send({
-        //   success: false,
-        //   message: error.message,
-        //   error,
-        // });
+        res.status(500).send({
+          success: false,
+          message: error.message,
+          error,
+        });
       }
 
       // console.log(cognitoUser, "cognitoUsercognitoUsercognitoUsercognitoUser");
 
       let id = uuidv4();
       id = id?.replace(/-/g, "");
-      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+      // let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
 
       let profile_photo;
       if (req.files && req.files?.profile_photo?.length) {
