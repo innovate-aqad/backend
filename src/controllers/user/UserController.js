@@ -21,9 +21,6 @@ import {
   CognitoIdentityProviderClient,
   ConfirmSignUpCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
-const cognitoClient = new CognitoIdentityProviderClient({
-  region: "me-central-1",
-});
 
 import bcrypt from "bcrypt";
 

@@ -58,7 +58,7 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import { signup, signin } from "./cognito.js";
 const cognitoClient = new CognitoIdentityProviderClient({
-  region: "me-central-1",
+  region: process.env.Aws_region,,
 });
 
 console.log(dynamoDBClient, "dydb", process.env.Aws_region);
