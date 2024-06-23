@@ -118,7 +118,6 @@ class UserServices {
       console.log(req.body, " @@@  a  aaaaaa!@#!@#aa req.body");
       console.log(req.files, "req.filesssss");
       email = email?.trim();
-      console.log(req.files, "req.fil");
 
       let findData;
       if ((slide == 2 || slide == 3 || slide == 4) && doc_id == "") {
@@ -144,7 +143,7 @@ class UserServices {
       }
 
       // cog
-      console.log(findData, "findDatafindData22", "findData");
+      // console.log(findData, "findDatafindData22", "findData");
       // return
       if (findData?.Count > 0 && slide == 1) {
         let profile_photo = findData?.Items[0]?.profile_photo?.S;
@@ -744,75 +743,12 @@ class UserServices {
       }
       let salt = environmentVars.salt;
 
-      // const phoneNumber = parsePhoneNumberFromString(phone, "IN"); // 'IN' for India, adjust as needed
-
-      // if (!phoneNumber || !phoneNumber.isValid()) {
-      //   return res.status(400).send({
-      //     success: false,
-      //     message: "Invalid phone number format.",
-      //     error: {
-      //       name: "InvalidParameterException",
-      //       code: "InvalidParameterException",
-      //     },
-      //   });
-      // }
-
-      // const formattedPhoneNumber = phoneNumber.number; // Get the E.164 formatted phone number
-
-      // // Hash the password
-      // // const saltRounds = 10;
-      // // const hashPassword = await bcrypt.hash(password, saltRounds);
-
-      // // Generate a unique username
-      // const username = uuidv4();
-
-      // const cognitoParams = {
-      //   username,
-      //   password: "Fathima@123",
-      //   email,
-      //   name,
-      //   dob,
-      //   phone: formattedPhoneNumber,
-      // };
-
-      // const cognitoUser = await new Promise((resolve, reject) => {
-      //   signup(cognitoParams, (err, user) => {
-      //     if (err) {
-      //       reject(err);
-      //     } else {
-      //       resolve(user);
-      //     }
-      //   });
-      // });
-
-      // res.status(200).send({
-      //   success: true,
-      //   message: "User registered successfully and notification sent to group",
-      //   user: cognitoUser.user.getUsername(),
-      // });
-
-      //
       try {
-        const phoneNumber = parsePhoneNumberFromString(phone, "IN"); // 'IN' for India, adjust as needed
-
-        if (!phoneNumber || !phoneNumber.isValid()) {
-          return res.status(400).send({
-            success: false,
-            message: "Invalid phone number format.",
-            error: {
-              name: "InvalidParameterException",
-              code: "InvalidParameterException",
-            },
-          });
-        }
-
-        const formattedPhoneNumber = phoneNumber.number; // Get the E.164 formatted phone number
-
         const cognitoParams = {
           email,
           name,
           dob,
-          phone: formattedPhoneNumber,
+          phone,
           password: "Fathima@123", // Ensure the password is passed
         };
 

@@ -1043,7 +1043,7 @@ class UserController {
     const { username, code } = req.body;
 
     const params = {
-      ClientId: "1ptb64mei0bfpvhdcfe8vndrlf", // Your Cognito App Client ID
+      ClientId: process.env.Client_Id, // Your Cognito App Client ID
       Username: username,
       ConfirmationCode: code,
     };
