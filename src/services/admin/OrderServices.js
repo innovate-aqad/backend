@@ -32,19 +32,16 @@ class orderServices {
         sub_total,
         delivery_charges,
         payment_method,
-        country_code, payment_status,
+        country_code,
+        payment_status,
       } = req.body;
       let tempProductId = new Set();
-
       for (let le of order_detail) {
         tempProductId.add(le?.product_id);
       }
-      ///////////
       const keys = Array.from(tempProductId).map((product_id) => ({
-        id: { S: product_id }, // Assuming the primary key attribute name is 'id' and type is string
+        id: { S: product_id },
       }));
-
-      // console.log(keys,"keysysy")
       const getProductDetails = await dynamoDBClient.send(
         new BatchGetItemCommand({
           RequestItems: {
@@ -58,101 +55,161 @@ class orderServices {
       );
       // console.log(getProductDetails?.Responses?.products, "!!@@  ffffffffffff");
       let simplrProductArr = [];
+      let vendor_id_arr = new Set();
       for (let el of getProductDetails?.Responses?.products) {
         let getSimpleData = simplifyDynamoDBResponse(el);
         simplrProductArr.push(getSimpleData);
+        vendor_id_arr.add(getSimpleData?.created_by);
+      }
+
+      const vendorkeys = Array.from(vendor_id_arr).map((el) => ({
+        id: { S: el }, // Assuming the primary key attribute name is 'id' and type is string
+      }));
+      const vendorDbDetails = await dynamoDBClient.send(
+        new BatchGetItemCommand({
+          RequestItems: {
+            users: {
+              Keys: vendorkeys,
+              ProjectionExpression: "id,title,user_type,email,phone",
+            },
+          },
+        })
+      );
+      let simpleVendorData = [];
+      for (let el of vendorDbDetails?.Responses?.users) {
+        let get = simplifyDynamoDBResponse(el);
+        simpleVendorData.push(get);
       }
       // console.log(simplrProductArr, "simpl    rrrrrrrr");
       let vendorArr = [];
       for (let el of order_detail) {
-        const timestamp = new Date().toISOString();
-        let id = uuidv4()?.replace(/-/g, "")?.slice(0, 19)?.toString() + timestamp
+        const timestamp = Date.now();
+        let id =
+          uuidv4()?.replace(/-/g, "")?.slice(0, 19)?.toString() + timestamp;
         let findProductOBj = simplrProductArr?.find(
           (elem) => elem?.id == el?.product_id
         );
-        console.log(findProductOBj,"find product objbjb");
-        return
+        // console.log(findProductOBj,"find product objbjb");
+        // return
         if (findProductOBj) {
           let findVariationObj = findProductOBj?.variation_arr?.find(
             (e) => e?.id == el?.variant_id
           );
           if (!findVariationObj) {
-            return res.status(400).json({ message: `This variation ${el?.variant_id} is not found`, statusCode: 400, success: false })
-          }
-          // console.log(findVariationObj, "find Variant t !!@#$%^&**()}{() ");
-        } else {
-          return res
-            .status(400)
-            .json({
-              message: `This product ${el?.product_id} is not found`,
+            return res.status(400).json({
+              message: `This variation ${el?.variant_id} is not found`,
               statusCode: 400,
               success: false,
             });
+          }
+          // console.log(findVariationObj, "find Variant t !!@#$%^&**()}{() ");
+        } else {
+          return res.status(400).json({
+            message: `This product ${el?.product_id} is not found`,
+            statusCode: 400,
+            success: false,
+          });
         }
-        //storing the product in array
         let findVendorObj = vendorArr?.find(
           (s) => s?.vendor_id == findProductOBj?.created_by
         );
         if (!findVendorObj) {
+          let getVednorObj = simpleVendorData?.find(
+            (el) => el?.id == findProductOBj?.created_by
+          );
           vendorArr.push({
+            /////////////add new key
+            details_obj: getVednorObj,
+            order_id: id,
             vendor_id: findProductOBj?.created_by,
-            product_arr: [{
-              product_id: findProductOBj?.id,
-              variant_id: el?.variant_id,
-              quantity: el?.quantity
-
-            }]
+            product_arr: [
+              {
+                product_id: findProductOBj?.id,
+                variant_id: el?.variant_id,
+                quantity: el?.quantity,
+              },
+            ],
           });
         } else {
           let findProductExist = findVendorObj?.product_arr?.find(
-            (z) => z?.product_id == el?.product_id && z?.variant_id == el?.variant_id
+            (z) =>
+              z?.product_id == el?.product_id && z?.variant_id == el?.variant_id
           );
           if (!findProductExist) {
             findVendorObj.product_arr.push({
               product_id: findProductOBj?.id,
               variant_id: el?.variant_id,
-              quantity: el?.quantity
+              quantity: el?.quantity,
             });
           } else {
             findProductExist.quantity += el?.quantity;
           }
         }
       }
-      let id = uuidv4();
-      id = id?.replace(/-/g, "");
-      const params = {
-        TableName: "order",
-        Item: {
-          id: { S: id },
-          address: { S: address || "" },
-          po_box: { S: po_box || "" },
-          sub_total: { N: sub_total || "" },
-          delivery_charges: { N: delivery_charges },
-          payment_method: { S: payment_method || "" },
-          country_code: { S: country_code || "" },
-          created_by: { S: req.userData?.id || "" },
-          email: { S: req.userData?.email || "" },
-          order_status: { S: "new" },
-          payment_status: { S: payment_status || "pending" },
-          order_detail: {
-            L:
-              order_detail?.map((el) => ({
-                M: {
-                  variant_id: { S: el?.variant_id || "" },
-                  quantity: { S: el.quantity?.toString() || "" },
-                  variant_name: { S: el.variant_name || "" },
-                  thumbnail_url: { S: el.thumbnail_url || "" },
-                  product_id: { S: el.product_id || "" },
-                  product_price: { S: el.product_price?.toString() || "" },
-                },
-              }))
-          },
-          created_at: { S: new Date().toISOString() },
-          updated_at: { S: new Date().toISOString() },
+      // // Batch write items into DynamoDB
+      // const batchWriteParams = {
+      //   RequestItems: {
+      //     yourTableName: vendorArr.map((item) => ({
+      //       PutRequest: {
+      //         Item: AWS.DynamoDB.Converter.marshall(item),
+      //       },
+      //     })),
+      //   },
+      // };
+
+      // await dynamoDBClient.send(new BatchWriteItemCommand(batchWriteParams));
+      
+      // Convert vendorMap to vendorArr for batchWriteItem
+      const vendorArrTemp = Object.values(vendorArr).map((item) => ({
+        PutRequest: {
+          Item: marshall(item), // Convert object to DynamoDB format
+        },
+      }));
+      // Batch write items into DynamoDB
+      const batchWriteParams = {
+        RequestItems: {
+          yourTableName: vendorArrTemp,
         },
       };
-      console.log(params, "apapapamfr")
+
+      await dynamoDBClient.send(new BatchWriteItemCommand(batchWriteParams));
+
+      // let id = uuidv4();
+      // id = id?.replace(/-/g, "");
+      // const params = {
+      //   TableName: "order",
+      //   Item: {
+      //     id: { S: id },
+      //     address: { S: address || "" },
+      //     po_box: { S: po_box || "" },
+      //     sub_total: { N: sub_total || "" },
+      //     delivery_charges: { N: delivery_charges },
+      //     payment_method: { S: payment_method || "" },
+      //     country_code: { S: country_code || "" },
+      //     created_by: { S: req.userData?.id || "" },
+      //     email: { S: req.userData?.email || "" },
+      //     order_status: { S: "new" },
+      //     payment_status: { S: payment_status || "pending" },
+      //     order_detail: {
+      //       L:
+      //         order_detail?.map((el) => ({
+      //           M: {
+      //             variant_id: { S: el?.variant_id || "" },
+      //             quantity: { S: el.quantity?.toString() || "" },
+      //             variant_name: { S: el.variant_name || "" },
+      //             thumbnail_url: { S: el.thumbnail_url || "" },
+      //             product_id: { S: el.product_id || "" },
+      //             product_price: { S: el.product_price?.toString() || "" },
+      //           },
+      //         }))
+      //     },
+      //     created_at: { S: new Date().toISOString() },
+      //     updated_at: { S: new Date().toISOString() },
+      //   },
+      // };
+      // console.log(params, "apapapamfr")
       // await dynamoDBClient.send(new PutItemCommand(params));
+
       try {
         let user_id = req.userData.id;
         let findCartItem = await dynamoDBClient.send(
@@ -181,7 +238,7 @@ class orderServices {
           );
         }
       } catch (err) {
-        console.log(err)
+        console.log(err);
       }
       return res.status(201).json({
         message: "Order generated successfully",
@@ -190,7 +247,6 @@ class orderServices {
         statusCode: 201,
         success: true,
       });
-
     } catch (err) {
       console.log(err, "errorororro");
       return res
@@ -219,8 +275,13 @@ class orderServices {
           statusCode: 400,
           success: false,
         });
-      } if (findData && findData?.Items[0]?.order_status?.S != 'new') {
-        return res.status(400).json({ message: "Order status cannot be changed", statusCode: 400, success: false })
+      }
+      if (findData && findData?.Items[0]?.order_status?.S != "new") {
+        return res.status(400).json({
+          message: "Order status cannot be changed",
+          statusCode: 400,
+          success: false,
+        });
       }
       const params = {
         TableName: "order",
@@ -254,7 +315,7 @@ class orderServices {
 
   async get_data(req, res) {
     try {
-      let createdBy = req.userData.id
+      let createdBy = req.userData.id;
       const params = {
         TableName: "order",
         IndexName: "created_by", // Ensure this index exists if created_by is a secondary index
