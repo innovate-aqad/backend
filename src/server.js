@@ -6,16 +6,16 @@ import cookieParser from "cookie-parser";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import { environmentVars } from "./config/environmentVar.js";
-import CategoryRoutes from "./routes/user/CategoryRoutes.js";
-import SubCategoryRoutes from "./routes/admin/SubCategoryRoutes.js";
-import ProductRoutes from "./routes/admin/ProductRoutes.js";
-import ApiEndpointRoutes from "./routes/admin/ApiendpointRoutes.js";
-import PermissionRoutes from "./routes/admin/PermissionRoutes.js";
-import BrandRoutes from "./routes/admin/BrandRoutes.js";
-import SiUnitRoutes from "./routes/admin/SiUnitRoutesRoutes.js";
-import RoleRoutes from "./routes/admin/RoleRoutes.js";
-import OrderRoutes from "./routes/admin/OrderRoutes.js";
-import CartRoutes from "./routes/admin/CartRoutes.js";
+// import CategoryRoutes from "./routes/user/CategoryRoutes.js";
+// import SubCategoryRoutes from "./routes/admin/SubCategoryRoutes.js";
+// import ProductRoutes from "./routes/admin/ProductRoutes.js";
+// import ApiEndpointRoutes from "./routes/admin/ApiendpointRoutes.js";
+// import PermissionRoutes from "./routes/admin/PermissionRoutes.js";
+// import BrandRoutes from "./routes/admin/BrandRoutes.js";
+// import SiUnitRoutes from "./routes/admin/SiUnitRoutesRoutes.js";
+// import RoleRoutes from "./routes/admin/RoleRoutes.js";
+// import OrderRoutes from "./routes/admin/OrderRoutes.js";
+// import CartRoutes from "./routes/admin/CartRoutes.js";
 // require('dotenv').config();
 // import dotenv from 'dotenv';
 // dotenv.config();
@@ -84,18 +84,17 @@ app.get("/", async (req, res) => {
   return res.status(200).send("Hello World ! aqad" + Date.now());
 });
 
-
-app.use("/api/user", UserRoutes);
-app.use("/api/product", ProductRoutes);
-app.use("/api/category", CategoryRoutes);
-app.use("/api/sub_category", SubCategoryRoutes);
-app.use("/api/role", RoleRoutes);
-app.use("/api/endpoint", ApiEndpointRoutes);
-app.use("/api/permission", PermissionRoutes);
-app.use("/api/brand", BrandRoutes);
-app.use("/api/si_unit", SiUnitRoutes);
-app.use("/api/cart", CartRoutes);
-app.use("/api/order", OrderRoutes);
+// app.use("/api/user", UserRoutes);
+// app.use("/api/product", ProductRoutes);
+// app.use("/api/category", CategoryRoutes);
+// app.use("/api/sub_category", SubCategoryRoutes);
+// app.use("/api/role", RoleRoutes);
+// app.use("/api/endpoint", ApiEndpointRoutes);
+// app.use("/api/permission", PermissionRoutes);
+// app.use("/api/brand", BrandRoutes);
+// app.use("/api/si_unit", SiUnitRoutes);
+// app.use("/api/cart", CartRoutes);
+// app.use("/api/order", OrderRoutes);
 //   for (let i=0;i<10;i++){
 //     const timestamp =  Date.now();
 //     let id = uuidv4()?.replace(/-/g, "")?.slice(0, 19)?.toString() + timestamp

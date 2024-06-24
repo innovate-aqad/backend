@@ -108,7 +108,6 @@ export const AddSubUserSchema = Joi.object({
     .required()
     .email({ tlds: { allow: false } })
     .label("Email"),
-<<<<<<< HEAD
   name: Joi.string().trim().min(3).max(40).required().label("Name"),
   permission: Joi.array()
     .items(Joi.string())
@@ -125,29 +124,6 @@ export const AddSubUserSchema = Joi.object({
   //       "Invalid Phone number format. It should match the pattern 5(0|2|5|6)xxxxxxxx",
   //   })
   //   .label("Phone"),
-=======
-  name: Joi.string().trim().min(3).max(40).required().label("name"),
-  permission: Joi.when('user_type', {
-    is: 'logistic',
-    then: Joi.array().items(Joi.string()).max(100).label("Permission"),
-    otherwise: Joi.array().items(Joi.string()).min(1).max(100).required().label("Permission")
-  }),
-  // permission: Joi.array()
-  //   .items(Joi.string())
-  //   .min(1)
-  //   .max(100)
-  //   .required()
-  //   .label("permission"),
-  phone: Joi.string()
-    .trim()
-    .required()
-    .regex(phonePattern)
-    .messages({
-      "string.pattern.base":
-        "Invalid Phone number format. It should be in the format +xx-xxxxxxxxxx",
-    })
-    .label("phone"),
->>>>>>> e56e7f4381e5c9bfbdefe48aabf68b9dae4b3ddc
 });
 
 export const assignRoleToSubUserSchema = Joi.object({

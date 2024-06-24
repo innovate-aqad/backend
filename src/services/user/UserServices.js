@@ -61,7 +61,7 @@ const cognitoClient = new CognitoIdentityProviderClient({
   region: process.env.Aws_region,
 });
 
-console.log(dynamoDBClient, "dydb", process.env.Aws_region);
+// console.log(dynamoDBClient, "dydb", process.env.Aws_region);
 
 // AWS.config.update({
 //   region: "us-east-1", //process.env.Aws_region //'us-east-1'  // Change to your region
