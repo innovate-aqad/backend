@@ -44,9 +44,6 @@ app.use(cookieParser());
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
-  "https://vuezen.bastionex.net",
-  "https://test-vuezen.bastionex.net",
-  "https://admin-vuezen.bastionex.net",
 ];
 
 // Use the cors middleware with specific options

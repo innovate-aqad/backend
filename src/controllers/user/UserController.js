@@ -18,6 +18,8 @@ import {
   statusChangeSchema,
   AddWarehouseSchema,
   DeleteWarehouseSchema,
+  RequestBodySchema,
+  changeWarehouseSchema,
 } from "../../helpers/validateUser.js";
 import { getUser } from "../../services/user/cognito.js";
 
@@ -761,7 +763,8 @@ class UserController {
   }
   async add_edit_warehouse_or_retailer_address_data(req, res) {
     try {
-      let { error } = AddWarehouseSchema.validate(req.body, options);
+      // console.log(req.body,"ereeweewwe")
+      let { error } = RequestBodySchema.validate(req.body, options);
       if (error) {
         return res.status(400).json({
           message: error.details[0]?.message,
@@ -769,11 +772,30 @@ class UserController {
           statusCode: 400,
         });
       }
+      
+      console.log("req.body","ereeweewwe")
       await UserServicesObj.add_edit_warehouse_or_retailer_address(req, res);
     } catch (err) {
       return res
         .status(500)
         .json({ message: err?.message, status: false, statusCode: 500 });
+    }
+  }
+
+  async change_warehouse_or_retailer_(req, res) {
+    try {
+      // console.log(req.body,"ereeweewwe")
+      let { error } = changeWarehouseSchema.validate(req.body, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+      await UserServicesObj.change_warehouse_or_retailer_address(req, res);
+    } catch (err) {
+      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
     }
   }
   async delete_warehouse_or_retailer_address(req, res) {
