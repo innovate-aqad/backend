@@ -212,6 +212,12 @@ export const AddWarehouseSchema = Joi.object({
   po_box: Joi.string().required().max(20).label("po_box"),
   is_default: Joi.boolean().label("status"),
 });
+
+export const changeWarehouseSchema = Joi.object({
+  address: Joi.string().max(200).label("address"),
+  po_box: Joi.string().required().max(20).label("po_box"),
+  is_default: Joi.boolean().label("status"),
+});
 export const RequestBodySchema = Joi.object({
   arr: Joi.array().items(AddWarehouseSchema).min(1).required().label("arr"),
 });

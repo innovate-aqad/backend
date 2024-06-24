@@ -121,6 +121,7 @@ UserRoutes.get("/get_warehouse_or_retailer_address", authorize, UserControllerOb
 UserRoutes.post("/add_edit_warehouse_or_retailer_address_data", authorize, UserControllerObj.add_edit_warehouse_or_retailer_address_data); 
 UserRoutes.delete("/delete_warehouse_or_retailer_address", authorize, UserControllerObj.delete_warehouse_or_retailer_address); 
 
+UserRoutes.put("/change_warehouse_or_retailer", authorize, UserControllerObj.change_warehouse_or_retailer_); 
 
 
 
