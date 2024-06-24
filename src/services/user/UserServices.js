@@ -1058,93 +1058,190 @@ class UserServices {
 
 
   //new 
- 
- async  asd (req,res){
 
- } 
+  async asd(req, res) {
 
-  async add_edit_warehouse_or_retailer_address(req,res){
+  }
+
+  async add_edit_warehouse_or_retailer_address(req, res) {
     try {
       let email = req.userData?.email;
-let doc_id = req.userData.id;
-let { arr } = req.body;
+      let doc_id = req.userData.id;
+      let { arr } = req.body;
 
-// Ensure each address in the array has is_default set to false if not specified
-arr = arr.map(item => ({
-  ...item,
-  is_default: item.is_default || false
-}));
+      // Ensure each address in the array has is_default set to false if not specified
+      arr = arr.map(item => ({
+        ...item,
+        is_default: item.is_default || false
+      }));
 
-const find = await dynamoDBClient.send(
-  new QueryCommand({
-    TableName: "users",
-    IndexName: "email", // replace with your GSI name
-    KeyConditionExpression: "email = :email",
-    ExpressionAttributeValues: {
-      ":email": { S: email },
-    },
-  })
-);
+      const find = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          IndexName: "email", // replace with your GSI name
+          KeyConditionExpression: "email = :email",
+          ExpressionAttributeValues: {
+            ":email": { S: email },
+          },
+        })
+      );
 
-if (find?.Count == 0) {
-  return res.status(400).json({ message: "User not found", statusCode: 400, success: false });
-}
+      if (find?.Count == 0) {
+        return res.status(400).json({ message: "User not found", statusCode: 400, success: false });
+      }
 
-let rawData = simplifyDynamoDBResponse(find?.Items[0]);
-let address_arr = rawData?.outlet_addresses || [];
-let msg = 'Warehouse added successfully';
+      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
+      let address_arr = rawData?.outlet_addresses || [];
+      let msg = 'Warehouse added successfully';
 
-if (rawData && rawData?.user_type == 'seller') {
-  if (address_arr.length) {
-    if (arr.some(item => item.is_default)) {
-      address_arr = address_arr.map(el => ({ ...el, is_default: false }));
-    }
-    address_arr = address_arr.concat(arr);
-  } else {
-    address_arr = arr;
-  }
-} else if (rawData && rawData?.user_type == 'vendor') {
-  address_arr = rawData?.warehouse_addresses || [];
-  if (address_arr.length) {
-    if (arr.some(item => item.is_default)) {
-      address_arr = address_arr.map(el => ({ ...el, is_default: false }));
-    }
-    address_arr = address_arr.concat(arr);
-  } else {
-    address_arr = arr;
-  }
-}
+      if (rawData && rawData?.user_type == 'seller') {
+        if (address_arr.length) {
+          if (arr.some(item => item.is_default)) {
+            address_arr = address_arr.map(el => ({ ...el, is_default: false }));
+          }
+          address_arr = address_arr.concat(arr);
+        } else {
+          address_arr = arr;
+        }
+      } else if (rawData && rawData?.user_type == 'vendor') {
+        address_arr = rawData?.warehouse_addresses || [];
+        if (address_arr.length) {
+          if (arr.some(item => item.is_default)) {
+            address_arr = address_arr.map(el => ({ ...el, is_default: false }));
+          }
+          address_arr = address_arr.concat(arr);
+        } else {
+          address_arr = arr;
+        }
+      }
 
-const params = {
-  TableName: "users",
-  Key: { id: { S: doc_id } },
-  UpdateExpression: `SET #addresses = :addresses, #updated_at = :updated_at`,
-  ExpressionAttributeNames: {
-    "#addresses": rawData?.user_type == 'seller' ? "outlet_addresses" : "warehouse_addresses",
-    "#updated_at": "updated_at",
-  },
-  ExpressionAttributeValues: {
-    ":addresses": {
-      L: address_arr.map(address => ({
-        M: {
-          address: { S: address.address },
-          po_box: { S: address.po_box },
-          is_default: { BOOL: address.is_default }
+      const params = {
+        TableName: "users",
+        Key: { id: { S: doc_id } },
+        UpdateExpression: `SET #addresses = :addresses, #updated_at = :updated_at`,
+        ExpressionAttributeNames: {
+          "#addresses": rawData?.user_type == 'seller' ? "outlet_addresses" : "warehouse_addresses",
+          "#updated_at": "updated_at",
         },
-      })) || [],
-    },
-    ":updated_at": { S: new Date().toISOString() },
-  },
-};
+        ExpressionAttributeValues: {
+          ":addresses": {
+            L: address_arr.map(address => ({
+              M: {
+                address: { S: address.address },
+                po_box: { S: address.po_box },
+                is_default: { BOOL: address.is_default }
+              },
+            })) || [],
+          },
+          ":updated_at": { S: new Date().toISOString() },
+        },
+      };
 
-await dynamoDBClient.send(new UpdateItemCommand(params));
+      await dynamoDBClient.send(new UpdateItemCommand(params));
 
-return res.status(200).json({ message: msg, statusCode: 200, success: true });
+      return res.status(200).json({ message: msg, statusCode: 200, success: true });
 
     } catch (error) {
-      
+
     }
   }
+
+  async change_warehouse_or_retailer_address(req, res) {
+    try {
+      let email = req.userData?.email;
+      let doc_id = req.userData.id;
+      let { po_box, is_default } = req.body;
+
+      const find = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          IndexName: "email",
+          KeyConditionExpression: "email = :email",
+          ExpressionAttributeValues: {
+            ":email": { S: email },
+          },
+        })
+      );
+      if (find?.Count == 0) {
+        return res.status(400).json({ message: "User not found", statusCode: 400, success: false });
+      }
+      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
+      let address_arr = rawData?.outlet_addresses || rawData?.warehouse_addresses || [];
+      let msg = "Warehouse address updated successfully";
+
+      // Update logic
+      let find_po_box = address_arr.find(e => e?.po_box == po_box);
+      if (!find_po_box) {
+        return res.status(400).json({ message: "Address not found", statusCode: 400, success: false });
+      }
+
+      if (is_default) {
+        address_arr = address_arr.map(e => {
+          if (e.po_box == po_box) {
+            e.is_default = true;
+          } else {
+            e.is_default = false;
+          }
+          return e;
+        });
+      } else {
+        address_arr = address_arr.map(e => {
+          if (e.po_box == po_box) {
+            e.is_default = false;
+          }
+          return e;
+        });
+      }
+
+      let params = {
+        TableName: "users",
+        Key: { id: { S: doc_id } },
+        UpdateExpression: "",
+        ExpressionAttributeNames: {
+          "#updated_at": "updated_at",
+        },
+        ExpressionAttributeValues: {
+          ":updated_at": { S: new Date().toISOString() },
+        },
+      };
+
+      if (rawData.user_type == 'seller') {
+        params.UpdateExpression = "SET #outlet_addresses = :outlet_addresses, #updated_at = :updated_at";
+        params.ExpressionAttributeNames["#outlet_addresses"] = "outlet_addresses";
+        params.ExpressionAttributeValues[":outlet_addresses"] = {
+          L: address_arr.map(address => ({
+            M: {
+              address: { S: address.address },
+              po_box: { S: address.po_box },
+              is_default: { BOOL: address.is_default }
+            },
+          })) || [],
+        };
+      } else if (rawData.user_type == 'vendor') {
+        params.UpdateExpression = "SET #warehouse_addresses = :warehouse_addresses, #updated_at = :updated_at";
+        params.ExpressionAttributeNames["#warehouse_addresses"] = "warehouse_addresses";
+        params.ExpressionAttributeValues[":warehouse_addresses"] = {
+          L: address_arr.map(address => ({
+            M: {
+              address: { S: address.address },
+              po_box: { S: address.po_box },
+              is_default: { BOOL: address.is_default }
+            },
+          })) || [],
+        };
+      } await dynamoDBClient.send(new UpdateItemCommand(params));
+      return res.status(200).json({
+        message: msg,
+        statusCode: 200,
+        success: true,
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Internal Server Error", statusCode: 500, success: false });
+    }
+  }
+
+
 
   async delete_warehouse_or_retailer_adres(req, res) {
     try {
