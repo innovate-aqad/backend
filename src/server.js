@@ -3,6 +3,7 @@ import cors from "cors";
 // import { environmentVars } from "./src/config/environmentVar.js";
 import UserRoutes from "./routes/user/UserRoutes.js";
 import cookieParser from "cookie-parser";
+import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import { environmentVars } from "./config/environmentVar.js";
 import CategoryRoutes from "./routes/user/CategoryRoutes.js";
@@ -43,9 +44,6 @@ app.use(cookieParser());
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
-  "https://vuezen.bastionex.net",
-  "https://test-vuezen.bastionex.net",
-  "https://admin-vuezen.bastionex.net",
 ];
 
 // Use the cors middleware with specific options
@@ -95,7 +93,11 @@ app.use("/api/brand", BrandRoutes);
 app.use("/api/si_unit", SiUnitRoutes);
 app.use("/api/cart", CartRoutes);
 app.use("/api/order", OrderRoutes);
-
+//   for (let i=0;i<10;i++){
+//     const timestamp =  Date.now();
+//     let id = uuidv4()?.replace(/-/g, "")?.slice(0, 19)?.toString() + timestamp
+// console.log(id,"DASDADS",i)
+// }
 // Start the server
 const PORT = environmentVars.port;
 

@@ -914,111 +914,292 @@ class UserServices {
     }
   }
 
-  async add_edit_warehouse_or_retailer_address(req, res) {
+  // async add_edit_warehouse_or_retailer_address(req, res) {
+  //   try {
+  //     let email = req.userData?.email
+  //     let doc_id = req.userData.id
+  //     let { id, address, po_box, is_default, is_edit } = req.body
+
+  //     const find = await dynamoDBClient.send(
+  //       new QueryCommand({
+  //         TableName: "users",
+  //         IndexName: "email", // replace with your GSI name
+  //         KeyConditionExpression: "email = :email",
+  //         ExpressionAttributeValues: {
+  //           ":email": { S: email },
+  //         },
+  //       })
+  //     )
+  //     let arr = []
+  //     let address_arr;
+  //     if (find?.Count == 0) {
+  //       return res.status(400).json({ message: "User not found", statusCode: 400, success: false })
+  //     }
+  //     let rawData = simplifyDynamoDBResponse(find?.Items[0]);
+  //     address_arr = rawData?.outlet_addresses || []
+  //     let msg="Warehouse address updated successfully"
+  //     if (is_edit) {
+  //       let find_po_box = address_arr?.find((e) => e?.po_box == po_box)
+  //       if (!find_po_box) {
+  //         return res.status(400).json({ message: "Address not found", statusCode: 400, success: false })
+  //       }
+  //       if (is_default) {
+  //         address_arr = address_arr.map((e) => {
+  //           if (e.po_box == po_box) {
+  //             e.address=address
+  //             e.is_default = is_default
+  //           } else {
+  //             e.is_default = false;
+  //           }
+  //           return e;
+  //         });
+  //       } else {
+  //         address_arr = address_arr.map((e) => {
+  //           if(e.po_box==po_box){
+  //             e.is_default = is_default;
+  //             e.address=address
+  //           }
+  //           return e;
+  //         });
+  //       }
+
+  //     } else {
+  //       if (rawData && rawData?.user_type == 'seller') {
+  //         if (address_arr && address_arr?.length) {
+  //           if (is_default) {
+  //             address_arr?.map((el) => el.is_default = false)
+  //           }
+  //           address_arr.push({ address, po_box, is_default })
+  //         } else {
+  //           address_arr = [{ address, po_box, is_default }]
+  //         }
+  //       } else if (rawData && rawData?.user_type == 'vendor') {
+  //         address_arr = rawData?.warehouse_addresses || []
+  //         if (address_arr && address_arr.length) {
+  //           if (is_default) {
+  //             address_arr?.map((el) => el.is_default = false)
+  //           }
+  //           address_arr.push({ address, po_box, is_default })
+  //         } else {
+  //           address_arr = [{ address, po_box, is_default }]
+  //         }
+  //       }
+  //       msg='Warehouse added successfully'
+  //     }
+  //       if (rawData && rawData?.user_type == 'seller') {
+  //         const params = {
+  //           TableName: "users",
+  //           Key: { id: { S: doc_id } },
+  //           UpdateExpression:
+  //             "SET  #outlet_addresses = :outlet_addresses, #updated_at = :updated_at ",
+  //           ExpressionAttributeNames: {
+  //             "#outlet_addresses": "outlet_addresses",
+  //             "#updated_at": "updated_at",
+  //           },
+  //           ExpressionAttributeValues: {
+  //             ":outlet_addresses": {
+  //               L:
+  //                 address_arr?.map((address) => ({
+  //                   M: {
+  //                     address: { S: address.address },
+  //                     po_box: { S: address.po_box },
+  //                     is_default: { BOOL: address?.is_default || false }
+  //                   },
+  //                 })) ||
+  //                 [],
+  //             },
+  //             ":updated_at": { S: new Date().toISOString() },
+  //           },
+  //         };
+  //         // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_adresses",outlet_addreses)
+  //         await dynamoDBClient.send(new UpdateItemCommand(params));
+
+  //       } else if (rawData && rawData?.user_type == 'vendor') {
+  //         const params = {
+  //           TableName: "users",
+  //           Key: { id: { S: doc_id } },
+  //           UpdateExpression:
+  //             "SET  #warehouse_addresses = :warehouse_addresses,  #updated_at = :updated_at ",
+  //           ExpressionAttributeNames: {
+  //             "#warehouse_addresses": "warehouse_addresses",
+  //             "#updated_at": "updated_at",
+  //           },
+  //           ExpressionAttributeValues: {
+  //             ":warehouse_addresses": {
+  //               L:
+  //                 address_arr?.map((address) => ({
+  //                   M: {
+  //                     address: { S: address.address },
+  //                     po_box: { S: address.po_box },
+  //                   },
+  //                 })) ||
+  //                 [],
+  //             },
+  //             ":updated_at": { S: new Date().toISOString() },
+  //           },
+  //         };
+  //         console.log(params, "paramsmsmsmsssmm")
+  //         await dynamoDBClient.send(new UpdateItemCommand(params));
+  //       }
+  //       // console.log(rawData, "rawDataaaaaaaaaaaaa")
+  //       return res.status(200).json({
+  //         message:msg ,
+  //         // data: address_arr,
+  //         statusCode: 200,
+  //         success: true,
+  //       });
+  //   } catch (err) {
+  //     console.error(err, "erroror");
+  //     return res
+  //       .status(500)
+  //       .json({ message: err?.message, statusCode: 500, success: false });
+  //   }
+  // }
+
+
+  //new 
+ 
+ async  asd (req,res){
+
+ } 
+
+  async add_edit_warehouse_or_retailer_address(req,res){
+    try {
+      let email = req.userData?.email;
+let doc_id = req.userData.id;
+let { arr } = req.body;
+
+// Ensure each address in the array has is_default set to false if not specified
+arr = arr.map(item => ({
+  ...item,
+  is_default: item.is_default || false
+}));
+
+const find = await dynamoDBClient.send(
+  new QueryCommand({
+    TableName: "users",
+    IndexName: "email", // replace with your GSI name
+    KeyConditionExpression: "email = :email",
+    ExpressionAttributeValues: {
+      ":email": { S: email },
+    },
+  })
+);
+
+if (find?.Count == 0) {
+  return res.status(400).json({ message: "User not found", statusCode: 400, success: false });
+}
+
+let rawData = simplifyDynamoDBResponse(find?.Items[0]);
+let address_arr = rawData?.outlet_addresses || [];
+let msg = 'Warehouse added successfully';
+
+if (rawData && rawData?.user_type == 'seller') {
+  if (address_arr.length) {
+    if (arr.some(item => item.is_default)) {
+      address_arr = address_arr.map(el => ({ ...el, is_default: false }));
+    }
+    address_arr = address_arr.concat(arr);
+  } else {
+    address_arr = arr;
+  }
+} else if (rawData && rawData?.user_type == 'vendor') {
+  address_arr = rawData?.warehouse_addresses || [];
+  if (address_arr.length) {
+    if (arr.some(item => item.is_default)) {
+      address_arr = address_arr.map(el => ({ ...el, is_default: false }));
+    }
+    address_arr = address_arr.concat(arr);
+  } else {
+    address_arr = arr;
+  }
+}
+
+const params = {
+  TableName: "users",
+  Key: { id: { S: doc_id } },
+  UpdateExpression: `SET #addresses = :addresses, #updated_at = :updated_at`,
+  ExpressionAttributeNames: {
+    "#addresses": rawData?.user_type == 'seller' ? "outlet_addresses" : "warehouse_addresses",
+    "#updated_at": "updated_at",
+  },
+  ExpressionAttributeValues: {
+    ":addresses": {
+      L: address_arr.map(address => ({
+        M: {
+          address: { S: address.address },
+          po_box: { S: address.po_box },
+          is_default: { BOOL: address.is_default }
+        },
+      })) || [],
+    },
+    ":updated_at": { S: new Date().toISOString() },
+  },
+};
+
+await dynamoDBClient.send(new UpdateItemCommand(params));
+
+return res.status(200).json({ message: msg, statusCode: 200, success: true });
+
+    } catch (error) {
+      
+    }
+  }
+
+  async delete_warehouse_or_retailer_adres(req, res) {
     try {
       let email = req.userData?.email
-      let doc_id=req.userData.id
-      let { id, address, po_box, is_default } = req.body
-      if (id) {
+      let doc_id = req.userData.id
+      let { po_box } = req.body
 
-      } else {
-        const find = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "users",
-            IndexName: "email", // replace with your GSI name
-            KeyConditionExpression: "email = :email",
-            ExpressionAttributeValues: {
-              ":email": { S: email },
-            },
-          })
-        )
-        let arr = []
-        let address_arr;
-        let rawData = simplifyDynamoDBResponse(find?.Items[0]);
-        if (rawData && rawData?.user_type == 'seller') {
-          address_arr = rawData?.outlet_addresses || []
-          if (address_arr && address_arr?.length) {
-            if (is_default) {
-              address_arr?.map((el) => el.is_default = false)
-            }
-            address_arr.push({ address, po_box, is_default })
-          } else {
-            address_arr = [{ address, po_box, is_default }]
-          }
-        } else if (rawData && rawData?.user_type == 'vendor') {
-          address_arr = rawData?.warehouse_addresses || []
-          if (address_arr && address_arr.length) {
-            if (is_default) {
-              address_arr?.map((el) => el.is_default = false)
-            }
-            address_arr.push({ address, po_box, is_default })
-          } else {
-            address_arr = [{ address, po_box, is_default }]
-          }
-        }
-        if (rawData && rawData?.user_type == 'seller') {
-          const params = {
-            TableName: "users",
-            Key: { id: { S: doc_id } },
-            UpdateExpression:
-              "SET  #outlet_addresses = :outlet_addresses, #updated_at = :updated_at ",
-            ExpressionAttributeNames: {
-              "#outlet_addresses": "outlet_addresses",
-              "#updated_at": "updated_at",
-            },
-            ExpressionAttributeValues: {
-              ":outlet_addresses": {
-                L:
-                address_arr?.map((address) => ({
-                    M: {
-                      address: { S: address.address },
-                      po_box: { S: address.po_box },
-                      is_default: { BOOL: address?.is_default || false }
-                    },
-                  })) ||
-                  [],
-              },
-              ":updated_at": { S: new Date().toISOString() },
-            },
-          };
-          // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_adresses",outlet_addreses)
-          await dynamoDBClient.send(new UpdateItemCommand(params));
-
-        } else if (rawData && rawData?.user_type == 'vendor') {
-          const params = {
-            TableName: "users",
-            Key: { id: { S: doc_id } },
-            UpdateExpression:
-              "SET  #warehouse_addresses = :warehouse_addresses,  #updated_at = :updated_at ",
-            ExpressionAttributeNames: {
-              "#warehouse_addresses": "warehouse_addresses",
-              "#updated_at": "updated_at",
-            },
-            ExpressionAttributeValues: {
-              ":warehouse_addresses": {
-                L:
-                address_arr?.map((address) => ({
-                    M: {
-                      address: { S: address.address },
-                      po_box: { S: address.po_box },
-                    },
-                  })) ||
-                  [],
-              },
-              ":updated_at": { S: new Date().toISOString() },
-            },
-          };
-          console.log(params, "paramsmsmsmsssmm" )
-          await dynamoDBClient.send(new UpdateItemCommand(params));
-        }
-        // console.log(rawData, "rawDataaaaaaaaaaaaa")
-        return res.status(200).json({
-          message: "Warehouse address updated successfully",
-          // data: address_arr,
-          statusCode: 200,
-          success: true,
-        });
+      const find = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "users",
+          IndexName: "email", // replace with your GSI name
+          KeyConditionExpression: "email = :email",
+          ExpressionAttributeValues: {
+            ":email": { S: email },
+          },
+        })
+      )
+      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
+      let address_arr = rawData?.outlet_addresses
+      let findout_address = address_arr?.find((e) => e?.po_box == po_box)
+      if (!findout_address) {
+        return res.status(400).json({ message: "Warehouse deleted already ", statusCode: 400, success: false })
       }
+      address_arr = address_arr?.filter((e) => e.po_box != po_box)
+      const params = {
+        TableName: "users",
+        Key: { id: { S: doc_id } },
+        UpdateExpression:
+          "SET  #outlet_addresses = :outlet_addresses, #updated_at = :updated_at ",
+        ExpressionAttributeNames: {
+          "#outlet_addresses": "outlet_addresses",
+          "#updated_at": "updated_at",
+        },
+        ExpressionAttributeValues: {
+          ":outlet_addresses": {
+            L:
+              address_arr?.map((address) => ({
+                M: {
+                  address: { S: address.address },
+                  po_box: { S: address.po_box },
+                  is_default: { BOOL: address?.is_default || false }
+                },
+              })) ||
+              [],
+          },
+          ":updated_at": { S: new Date().toISOString() },
+        },
+      };
+      await dynamoDBClient.send(new UpdateItemCommand(params));
+      return res.status(200).json({
+        message: "Warehouse address deleted successfully",
+        // data: address_arr,
+        statusCode: 200,
+        success: true,
+      });
     } catch (err) {
       console.error(err, "erroror");
       return res
