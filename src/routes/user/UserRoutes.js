@@ -54,7 +54,14 @@ UserRoutes.post(
 // //create
 UserRoutes.post("/super_admn", UserControllerObj.super_admin);
 UserRoutes.post("/confirm-signup", UserControllerObj.confirmSignupController);
+// email verification
+UserRoutes.post("/email_signup", UserControllerObj.emailSignupController);
+UserRoutes.post(
+  "/confirm_email_signup",
+  UserControllerObj.confirmSignupEmailController
+);
 
+//
 UserRoutes.get("/get_by_email", UserControllerObj.getByEmail);
 UserRoutes.get("/send_otp_to_email", UserControllerObj.sendOtpOnEmailData);
 UserRoutes.get("/verfy_otp_with_email", UserControllerObj.verifyEmailWithOtp);

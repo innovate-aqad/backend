@@ -34,6 +34,8 @@ const sns = new AWS.SNS({
 const poolData = {
   ClientId: process.env.Client_Id,
   UserPoolId: process.env.UserPool_Id,
+  ClientIdEmail: process.env.Client_Id_Email,
+  UserPoolIdEmail: process.env.UserPool_Id_Email,
 };
 
 export const signup = async (
@@ -144,17 +146,27 @@ export const signin = (body, callback) => {
 
   const cognitoUser = new CognitoUser(userData);
 
+  console.log("Starting authentication for user:", username);
+
   cognitoUser.authenticateUser(authenticationDetails, {
     onSuccess: (result) => {
+      console.log("Authentication successful for user:", username);
       callback(null, {
         success: true,
         result,
       });
     },
     onFailure: (err) => {
+      console.log("Authentication failed for user:", username, "Error:", err);
       callback(err);
     },
     mfaRequired: (codeDeliveryDetails) => {
+      console.log(
+        "MFA required for user:",
+        username,
+        "Code delivery details:",
+        codeDeliveryDetails
+      );
       callback(null, {
         success: true,
         mfaRequired: true,
@@ -163,6 +175,7 @@ export const signin = (body, callback) => {
       });
     },
     newPasswordRequired: (userAttributes, requiredAttributes) => {
+      console.log("New password required for user:", username);
       callback(null, {
         success: false,
         newPasswordRequired: true,
@@ -171,4 +184,29 @@ export const signin = (body, callback) => {
       });
     },
   });
+};
+
+// email field varification
+export const signupEmail = async ({ email, password }, callback) => {
+  const params = {
+    ClientId: poolData.ClientIdEmail,
+    Username: email, // Use email as the username
+    Password: password, // You can generate a temporary password
+    UserAttributes: [{ Name: "email", Value: email }],
+  };
+
+  console.log("Signup params:", params);
+
+  try {
+    const data = await cognitoClient.send(new SignUpCommand(params));
+    console.log("Signup successful:", data);
+    const response = {
+      user_id: data.UserSub,
+      email: params.Username,
+      user_confirmed: data.UserConfirmed,
+    };
+    callback(null, response);
+  } catch (error) {
+    callback(error);
+  }
 };

@@ -21,6 +21,13 @@ import {
   RequestBodySchema,
   changeWarehouseSchema,
 } from "../../helpers/validateUser.js";
+import {
+  sendPasswordViaEmail,
+  forgotPasswordEmail,
+  encryptStringWithKey,
+  sendEmailUser,
+} from "../../helpers/common.js";
+import { signupEmail } from "../../services/user/cognito.js";
 import { getUser } from "../../services/user/cognito.js";
 
 import {
@@ -772,8 +779,8 @@ class UserController {
           statusCode: 400,
         });
       }
-      
-      console.log("req.body","ereeweewwe")
+
+      console.log("req.body", "ereeweewwe");
       await UserServicesObj.add_edit_warehouse_or_retailer_address(req, res);
     } catch (err) {
       return res
@@ -795,7 +802,9 @@ class UserController {
       }
       await UserServicesObj.change_warehouse_or_retailer_address(req, res);
     } catch (err) {
-      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
     }
   }
   async delete_warehouse_or_retailer_address(req, res) {
@@ -1108,10 +1117,81 @@ class UserController {
       ClientId: process.env.Client_Id, // Your Cognito App Client ID
       Username: username,
       ConfirmationCode: code,
+      // ClientIdEmail: process.env.Client_Id_Email,
+    };
+    const paramsEmail = {
+      // ClientId: process.env.Client_Id, // Your Cognito App Client ID
+      // Username: username,
+      ConfirmationCode: code,
+      ClientIdEmail: process.env.Client_Id_Email,
     };
 
     try {
       await cognito.confirmSignUp(params).promise();
+
+      res.status(200).send({
+        success: true,
+        message: "User confirmed successfully",
+      });
+    } catch (error) {
+      res.status(400).send({
+        success: false,
+        message: error.message,
+        error,
+      });
+    }
+  }
+  // /emil verification
+  async emailSignupController(req, res) {
+    const { email } = req.body;
+    let randomPassword = encryptStringWithKey(email.toLowerCase()?.slice(0, 6));
+    randomPassword =
+      randomPassword[0]?.toUpperCase() + randomPassword?.slice(1, 6);
+    try {
+      const cognitoUser = await new Promise((resolve, reject) => {
+        signupEmail({ email, randomPassword }, (err, user) => {
+          if (err) {
+            console.log(
+              "Error during sign-up for email:",
+              email,
+              "Error:",
+              err
+            );
+            reject(err);
+          } else {
+            resolve(user);
+          }
+        });
+      });
+
+      res.status(200).json({
+        success: true,
+        data: { password: randomPassword },
+        message:
+          "User email registered successfully. Please check your email for verification code.",
+        user: cognitoUser.user_id, // Ensure you use the correct property
+      });
+      return;
+    } catch (error) {
+      console.error("Error during registration:", error);
+      res.status(500).send({
+        success: false,
+        message: error.message,
+        error,
+      });
+    }
+  }
+  async confirmSignupEmailController(req, res) {
+    const { code } = req.body;
+
+    const paramsEmail = {
+      ClientIdEmail: process.env.Client_Id_Email, // Your Cognito App Client ID
+      // Username: username,
+      ConfirmationCode: code,
+    };
+
+    try {
+      await cognito.confirmSignUp(paramsEmail).promise();
 
       res.status(200).send({
         success: true,

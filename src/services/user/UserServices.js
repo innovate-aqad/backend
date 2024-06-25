@@ -56,16 +56,16 @@ import {
   CognitoIdentityProviderClient,
   ConfirmSignUpCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
-import { signup, signin } from "./cognito.js";
+import { signup, signin, signupEmail } from "./cognito.js";
 const cognitoClient = new CognitoIdentityProviderClient({
   region: process.env.Aws_region,
 });
 
-// console.log(dynamoDBClient, "dydb", process.env.Aws_region);
+console.log(dynamoDBClient, "dydb", process.env.Aws_region);
 
 // AWS.config.update({
 //   region: "us-east-1", //process.env.Aws_region //'us-east-1'  // Change to your region
-// });
+// });sss
 
 async function getNextSequenceValue(sequenceName) {
   console.log(sequenceName, "sequence nameee");
@@ -763,12 +763,12 @@ class UserServices {
           });
         });
 
-        // res.status(200).send({
-        //   success: true,
-        //   message:
-        //     "User registered successfully. Please check your email for verification code.",
-        //   user: cognitoUser.UserSub, // Ensure you use the correct property
-        // });
+        res.status(200).send({
+          success: true,
+          message:
+            "User registered successfully. Please check your email for verification code.",
+          user: cognitoUser.UserSub, // Ensure you use the correct property
+        });
       } catch (error) {
         console.error("Error during registration:", error);
         // res.status(500).send({
@@ -777,11 +777,51 @@ class UserServices {
         //   error,
         // });
       }
+      // single field email
+      // const { email } = req.body;
+
+      try {
+        const cognitoUser = await new Promise((resolve, reject) => {
+          signupEmail({ email }, (err, user) => {
+            if (err) {
+              console.log(
+                "Error during sign-up for email:",
+                email,
+                "Error:",
+                err
+              );
+              reject(err);
+            } else {
+              resolve(user);
+            }
+          });
+        });
+
+        res.status(200).send({
+          success: true,
+          message:
+            "User registered with email successfully. Please check your email for verification code.",
+          user: cognitoUser.user_id, // Ensure you use the correct property
+        });
+      } catch (error) {
+        console.error("Error during registration:", error);
+        res.status(500).send({
+          success: false,
+          message: error.message,
+          error,
+        });
+      }
 
       // console.log(cognitoUser, "cognitoUsercognitoUsercognitoUsercognitoUser");
 
       let id = uuidv4();
       id = id?.replace(/-/g, "");
+
+      // let salt = environmentVars.salt;
+      let randomPassword = encryptStringWithKey(
+        email.toLowerCase()?.slice(0, 6)
+      );
+
       let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
 
       let profile_photo;
@@ -969,167 +1009,11 @@ class UserServices {
     }
   }
 
-  // async add_edit_warehouse_or_retailer_address(req, res) {
-  //   try {
-  //     let email = req.userData?.email
-  //     let doc_id = req.userData.id
-  //     let { id, address, po_box, is_default, is_edit } = req.body
-
-  //     const find = await dynamoDBClient.send(
-  //       new QueryCommand({
-  //         TableName: "users",
-  //         IndexName: "email", // replace with your GSI name
-  //         KeyConditionExpression: "email = :email",
-  //         ExpressionAttributeValues: {
-  //           ":email": { S: email },
-  //         },
-  //       })
-  //     )
-  //     let arr = []
-  //     let address_arr;
-  //     if (find?.Count == 0) {
-  //       return res.status(400).json({ message: "User not found", statusCode: 400, success: false })
-  //     }
-  //     let rawData = simplifyDynamoDBResponse(find?.Items[0]);
-  //     address_arr = rawData?.outlet_addresses || []
-  //     let msg="Warehouse address updated successfully"
-  //     if (is_edit) {
-  //       let find_po_box = address_arr?.find((e) => e?.po_box == po_box)
-  //       if (!find_po_box) {
-  //         return res.status(400).json({ message: "Address not found", statusCode: 400, success: false })
-  //       }
-  //       if (is_default) {
-  //         address_arr = address_arr.map((e) => {
-  //           if (e.po_box == po_box) {
-  //             e.address=address
-  //             e.is_default = is_default
-  //           } else {
-  //             e.is_default = false;
-  //           }
-  //           return e;
-  //         });
-  //       } else {
-  //         address_arr = address_arr.map((e) => {
-  //           if(e.po_box==po_box){
-  //             e.is_default = is_default;
-  //             e.address=address
-  //           }
-  //           return e;
-  //         });
-  //       }
-
-  //     } else {
-  //       if (rawData && rawData?.user_type == 'seller') {
-  //         if (address_arr && address_arr?.length) {
-  //           if (is_default) {
-  //             address_arr?.map((el) => el.is_default = false)
-  //           }
-  //           address_arr.push({ address, po_box, is_default })
-  //         } else {
-  //           address_arr = [{ address, po_box, is_default }]
-  //         }
-  //       } else if (rawData && rawData?.user_type == 'vendor') {
-  //         address_arr = rawData?.warehouse_addresses || []
-  //         if (address_arr && address_arr.length) {
-  //           if (is_default) {
-  //             address_arr?.map((el) => el.is_default = false)
-  //           }
-  //           address_arr.push({ address, po_box, is_default })
-  //         } else {
-  //           address_arr = [{ address, po_box, is_default }]
-  //         }
-  //       }
-  //       msg='Warehouse added successfully'
-  //     }
-  //       if (rawData && rawData?.user_type == 'seller') {
-  //         const params = {
-  //           TableName: "users",
-  //           Key: { id: { S: doc_id } },
-  //           UpdateExpression:
-  //             "SET  #outlet_addresses = :outlet_addresses, #updated_at = :updated_at ",
-  //           ExpressionAttributeNames: {
-  //             "#outlet_addresses": "outlet_addresses",
-  //             "#updated_at": "updated_at",
-  //           },
-  //           ExpressionAttributeValues: {
-  //             ":outlet_addresses": {
-  //               L:
-  //                 address_arr?.map((address) => ({
-  //                   M: {
-  //                     address: { S: address.address },
-  //                     po_box: { S: address.po_box },
-  //                     is_default: { BOOL: address?.is_default || false }
-  //                   },
-  //                 })) ||
-  //                 [],
-  //             },
-  //             ":updated_at": { S: new Date().toISOString() },
-  //           },
-  //         };
-  //         // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_adresses",outlet_addreses)
-  //         await dynamoDBClient.send(new UpdateItemCommand(params));
-
-  //       } else if (rawData && rawData?.user_type == 'vendor') {
-  //         const params = {
-  //           TableName: "users",
-  //           Key: { id: { S: doc_id } },
-  //           UpdateExpression:
-  //             "SET  #warehouse_addresses = :warehouse_addresses,  #updated_at = :updated_at ",
-  //           ExpressionAttributeNames: {
-  //             "#warehouse_addresses": "warehouse_addresses",
-  //             "#updated_at": "updated_at",
-  //           },
-  //           ExpressionAttributeValues: {
-  //             ":warehouse_addresses": {
-  //               L:
-  //                 address_arr?.map((address) => ({
-  //                   M: {
-  //                     address: { S: address.address },
-  //                     po_box: { S: address.po_box },
-  //                   },
-  //                 })) ||
-  //                 [],
-  //             },
-  //             ":updated_at": { S: new Date().toISOString() },
-  //           },
-  //         };
-  //         console.log(params, "paramsmsmsmsssmm")
-  //         await dynamoDBClient.send(new UpdateItemCommand(params));
-  //       }
-  //       // console.log(rawData, "rawDataaaaaaaaaaaaa")
-  //       return res.status(200).json({
-  //         message:msg ,
-  //         // data: address_arr,
-  //         statusCode: 200,
-  //         success: true,
-  //       });
-  //   } catch (err) {
-  //     console.error(err, "erroror");
-  //     return res
-  //       .status(500)
-  //       .json({ message: err?.message, statusCode: 500, success: false });
-  //   }
-  // }
-
-
-  //new 
-
-  async asd(req, res) {
-
-  }
-
   async add_edit_warehouse_or_retailer_address(req, res) {
     try {
       let email = req.userData?.email;
       let doc_id = req.userData.id;
       let { id, address, po_box, is_default, is_edit } = req.body;
-      let { arr:any } = req.body;
-
-      // Ensure each address in the array has is_default set to false if not specified
-      arr = arr.map(item => ({
-        ...item,
-        is_default: item.is_default || false
-      }));
 
       const find = await dynamoDBClient.send(
         new QueryCommand({
@@ -1147,11 +1031,7 @@ class UserServices {
         return res
           .status(400)
           .json({ message: "User not found", statusCode: 400, success: false });
-
-      if (find?.Count == 0) {
-        return res.status(400).json({ message: "User not found", statusCode: 400, success: false });
       }
-
       let rawData = simplifyDynamoDBResponse(find?.Items[0]);
       address_arr = rawData?.outlet_addresses || [];
       let msg = "Warehouse address updated successfully";
@@ -1202,27 +1082,7 @@ class UserServices {
             address_arr.push({ address, po_box, is_default });
           } else {
             address_arr = [{ address, po_box, is_default }];
-      let address_arr = rawData?.outlet_addresses || [];
-      let msg = 'Warehouse added successfully';
-
-      if (rawData && rawData?.user_type == 'seller') {
-        if (address_arr.length) {
-          if (arr.some(item => item.is_default)) {
-            address_arr = address_arr.map(el => ({ ...el, is_default: false }));
           }
-          address_arr = address_arr.concat(arr);
-        } else {
-          address_arr = arr;
-        }
-      } else if (rawData && rawData?.user_type == 'vendor') {
-        address_arr = rawData?.warehouse_addresses || [];
-        if (address_arr.length) {
-          if (arr.some(item => item.is_default)) {
-            address_arr = address_arr.map(el => ({ ...el, is_default: false }));
-          }
-          address_arr = address_arr.concat(arr);
-        } else {
-          address_arr = arr;
         }
         msg = "Warehouse added successfully";
       }
@@ -1290,135 +1150,8 @@ class UserServices {
       return res
         .status(500)
         .json({ message: err?.message, statusCode: 500, success: false });
-      }
-
-      const params = {
-        TableName: "users",
-        Key: { id: { S: doc_id } },
-        UpdateExpression: `SET #addresses = :addresses, #updated_at = :updated_at`,
-        ExpressionAttributeNames: {
-          "#addresses": rawData?.user_type == 'seller' ? "outlet_addresses" : "warehouse_addresses",
-          "#updated_at": "updated_at",
-        },
-        ExpressionAttributeValues: {
-          ":addresses": {
-            L: address_arr.map(address => ({
-              M: {
-                address: { S: address.address },
-                po_box: { S: address.po_box },
-                is_default: { BOOL: address.is_default }
-              },
-            })) || [],
-          },
-          ":updated_at": { S: new Date().toISOString() },
-        },
-      };
-
-      await dynamoDBClient.send(new UpdateItemCommand(params));
-
-      return res.status(200).json({ message: msg, statusCode: 200, success: true });
-
-    } catch (error) {
-
     }
   }
-
-  async change_warehouse_or_retailer_address(req, res) {
-    try {
-      let email = req.userData?.email;
-      let doc_id = req.userData.id;
-      let { po_box, is_default } = req.body;
-
-      const find = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "users",
-          IndexName: "email",
-          KeyConditionExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-        })
-      );
-      if (find?.Count == 0) {
-        return res.status(400).json({ message: "User not found", statusCode: 400, success: false });
-      }
-      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
-      let address_arr = rawData?.outlet_addresses || rawData?.warehouse_addresses || [];
-      let msg = "Warehouse address updated successfully";
-
-      // Update logic
-      let find_po_box = address_arr.find(e => e?.po_box == po_box);
-      if (!find_po_box) {
-        return res.status(400).json({ message: "Address not found", statusCode: 400, success: false });
-      }
-
-      if (is_default) {
-        address_arr = address_arr.map(e => {
-          if (e.po_box == po_box) {
-            e.is_default = true;
-          } else {
-            e.is_default = false;
-          }
-          return e;
-        });
-      } else {
-        address_arr = address_arr.map(e => {
-          if (e.po_box == po_box) {
-            e.is_default = false;
-          }
-          return e;
-        });
-      }
-
-      let params = {
-        TableName: "users",
-        Key: { id: { S: doc_id } },
-        UpdateExpression: "",
-        ExpressionAttributeNames: {
-          "#updated_at": "updated_at",
-        },
-        ExpressionAttributeValues: {
-          ":updated_at": { S: new Date().toISOString() },
-        },
-      };
-
-      if (rawData.user_type == 'seller') {
-        params.UpdateExpression = "SET #outlet_addresses = :outlet_addresses, #updated_at = :updated_at";
-        params.ExpressionAttributeNames["#outlet_addresses"] = "outlet_addresses";
-        params.ExpressionAttributeValues[":outlet_addresses"] = {
-          L: address_arr.map(address => ({
-            M: {
-              address: { S: address.address },
-              po_box: { S: address.po_box },
-              is_default: { BOOL: address.is_default }
-            },
-          })) || [],
-        };
-      } else if (rawData.user_type == 'vendor') {
-        params.UpdateExpression = "SET #warehouse_addresses = :warehouse_addresses, #updated_at = :updated_at";
-        params.ExpressionAttributeNames["#warehouse_addresses"] = "warehouse_addresses";
-        params.ExpressionAttributeValues[":warehouse_addresses"] = {
-          L: address_arr.map(address => ({
-            M: {
-              address: { S: address.address },
-              po_box: { S: address.po_box },
-              is_default: { BOOL: address.is_default }
-            },
-          })) || [],
-        };
-      } await dynamoDBClient.send(new UpdateItemCommand(params));
-      return res.status(200).json({
-        message: msg,
-        statusCode: 200,
-        success: true,
-      });
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Internal Server Error", statusCode: 500, success: false });
-    }
-  }
-
-
 
   async delete_warehouse_or_retailer_adres(req, res) {
     try {
@@ -1564,6 +1297,92 @@ class UserServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
+  // async verifyEmailWithOtpCheck(req, res) {
+  //   try {
+  //     let { otp, email } = req.query;
+
+  //     // Step 1: Verify OTP from DynamoDB
+  //     const findParams = {
+  //       TableName: "userOtp",
+  //       FilterExpression: "email = :email",
+  //       ExpressionAttributeValues: {
+  //         ":email": { S: email },
+  //       },
+  //     };
+
+  //     const find = await dynamoDBClient.send(new ScanCommand(findParams));
+
+  //     if (find && find.Count > 0) {
+  //       let otpDb = find.Items[0].otp.S;
+  //       let creationTime = parseInt(find.Items[0].creationTime.S, 10);
+  //       let nowTime = Date.now();
+  //       const timeDifference = nowTime - creationTime; // Difference in milliseconds
+  //       const tenMinutes = 600000; // 10 minutes in milliseconds
+
+  //       if (timeDifference > tenMinutes) {
+  //         return res.status(400).json({
+  //           message: "Otp is expired",
+  //           statusCode: 400,
+  //           success: false,
+  //         });
+  //       } else if (otpDb !== otp) {
+  //         return res.status(400).json({
+  //           message: "Invalid otp",
+  //           statusCode: 400,
+  //           success: false,
+  //         });
+  //       } else {
+  //         // Step 2: Confirm Signup in Cognito
+  //         const params = {
+  //           ClientId: "1hvv0kepvqqapp62ac06t46ffu", // Your Cognito App Client ID
+  //           Username: email,
+  //           ConfirmationCode: otp,
+  //         };
+
+  //         try {
+  //           await cognitoClient.send(new ConfirmSignUpCommand(params));
+
+  //           // Step 3: Update DynamoDB to mark email as verified
+  //           const updateParams = {
+  //             TableName: "users",
+  //             Key: { email: { S: email } },
+  //             UpdateExpression: "SET is_email_verified = :is_email_verified",
+  //             ExpressionAttributeValues: {
+  //               ":is_email_verified": { BOOL: true },
+  //             },
+  //           };
+  //           await dynamoDBClient.send(new UpdateItemCommand(updateParams));
+
+  //           return res.status(200).json({
+  //             message: "Email verified successfully",
+  //             statusCode: 200,
+  //             success: true,
+  //           });
+  //         } catch (error) {
+  //           return res.status(400).json({
+  //             message: error.message,
+  //             statusCode: 400,
+  //             success: false,
+  //           });
+  //         }
+  //       }
+  //     } else {
+  //       return res.status(400).json({
+  //         message: "No data found",
+  //         statusCode: 400,
+  //         success: false,
+  //       });
+  //     }
+  //   } catch (err) {
+  //     console.error(err, "Error");
+
+  //     return res.status(500).json({
+  //       message: err?.message,
+  //       statusCode: 500,
+  //       success: false,
+  //     });
+  //   }
+  // }
 
   async verifyEmailWithOtpCheck(req, res) {
     try {
@@ -1587,6 +1406,13 @@ class UserServices {
         const timeDifference = nowTime - creationTime; // Difference in milliseconds
         const tenMinutes = 600000; // 10 minutes in milliseconds
 
+        console.log("OTP from DB:", otpDb);
+        console.log("Provided OTP:", otp);
+        console.log("Creation time:", new Date(creationTime).toISOString());
+        console.log("Current time:", new Date(nowTime).toISOString());
+        console.log("Time difference in milliseconds:", timeDifference);
+        console.log("Time difference in minutes:", timeDifference / 60000);
+
         if (timeDifference > tenMinutes) {
           return res.status(400).json({
             message: "Otp is expired",
@@ -1602,7 +1428,7 @@ class UserServices {
         } else {
           // Step 2: Confirm Signup in Cognito
           const params = {
-            ClientId: "1hvv0kepvqqapp62ac06t46ffu", // Your Cognito App Client ID
+            ClientId: process.env.CLIENT_ID, // Your Cognito App Client ID
             Username: email,
             ConfirmationCode: otp,
           };
@@ -1654,16 +1480,21 @@ class UserServices {
 
   async loginUser(req, res) {
     try {
-      let { email, password } = req.body;
-      const cognitoParams = {
-        username: email,
-        password,
-      };
+      const { email, password } = req.body;
+      const cognitoParams = { username: email, password };
+
+      console.log("Received sign-in request for email:", email);
 
       try {
         const cognitoUser = await new Promise((resolve, reject) => {
           signin(cognitoParams, (err, user) => {
             if (err) {
+              console.log(
+                "Error during sign-in for email:",
+                email,
+                "Error:",
+                err
+              );
               reject(err);
             } else {
               resolve(user);
@@ -1671,18 +1502,38 @@ class UserServices {
           });
         });
 
-        // DB logic here
-        // ...
-
-        res.status(200).send({
-          success: true,
-          message: "User logged in successfully",
-          user: cognitoUser,
-        });
+        if (cognitoUser.mfaRequired) {
+          console.log(
+            "MFA required for email:",
+            email,
+            "Session:",
+            cognitoUser.cognitoUser.Session
+          );
+          return res.status(200).send({
+            success: true,
+            message: "MFA required. Please enter the OTP sent to your email.",
+            session: cognitoUser.cognitoUser.Session,
+            codeDeliveryDetails: cognitoUser.codeDeliveryDetails,
+          });
+        } else {
+          console.log("Sign-in successful for email:", email);
+          return res.status(200).send({
+            success: true,
+            message: "User signed in successfully",
+            user: cognitoUser.result,
+          });
+        }
       } catch (error) {
-        res.status(400).send({ success: false, message: error.message, error });
+        console.error(
+          "Error during sign-in for email:",
+          email,
+          "Error:",
+          error
+        );
+        return res
+          .status(400)
+          .send({ success: false, message: error.message, error });
       }
-
       //
       const findData = await dynamoDBClient.send(
         new QueryCommand({
