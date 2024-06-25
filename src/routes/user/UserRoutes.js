@@ -4,6 +4,8 @@ import { authorize } from "../../middlewares/auth.js";
 import { educationImage, userImage } from "../../helpers/multer.js";
 import { upload, upload_for_sub_user } from "../../helpers/s3.js";
 
+// import { confirmSignupController } from '../../controllers/user/UserController.js';
+//
 const UserRoutes = express.Router();
 
 UserRoutes.post(
@@ -49,9 +51,17 @@ UserRoutes.post(
   UserControllerObj.register
 );
 
-//create
+// //create
 UserRoutes.post("/super_admn", UserControllerObj.super_admin);
+UserRoutes.post("/confirm-signup", UserControllerObj.confirmSignupController);
+// email verification
+UserRoutes.post("/email_signup", UserControllerObj.emailSignupController);
+UserRoutes.post(
+  "/confirm_email_signup",
+  UserControllerObj.confirmSignupEmailController
+);
 
+//
 UserRoutes.get("/get_by_email", UserControllerObj.getByEmail);
 UserRoutes.get("/send_otp_to_email", UserControllerObj.sendOtpOnEmailData);
 UserRoutes.get("/verfy_otp_with_email", UserControllerObj.verifyEmailWithOtp);
@@ -76,21 +86,6 @@ UserRoutes.delete(
   authorize,
   UserControllerObj.delete_sub_user
 );
-
-UserRoutes.put(
-  "/status_sub_user",
-  authorize,
-  UserControllerObj.status_sub_user
-);
-
-UserRoutes.get(
-  "/logout",
-  authorize,
-  UserControllerObj.user_logout
-);
-
-
-
 UserRoutes.put(
   "/role_id_to_aqad_employee",
   authorize,
@@ -109,17 +104,39 @@ UserRoutes.put(
 );
 
 //get all vendor or logistic or seller fetch with its sub_user
-// UserRoutes.get("/fetch_all_user",authorize,UserControllerObj)
+// UserRoutes.get("/fetch_all_user", authorize, UserControllerObj);
 
-UserRoutes.put("/forgot_password", UserControllerObj.forgotPassword); 
+UserRoutes.put("/forgot_password", UserControllerObj.forgotPassword);
 UserRoutes.put("/verify_otp", UserControllerObj.verify_otp);
 UserRoutes.put("/reset_password", UserControllerObj.resetPassword);
 
 UserRoutes.get("/check_user_logged_in", UserControllerObj.check_user_logged_in);
 UserRoutes.get("/user_logout", UserControllerObj.user_logout);
 
+UserRoutes.get(
+  "/get_warehouse_or_retailer_address",
+  authorize,
+  UserControllerObj.get_warehouse_or_retailer_address
+); //fetch data of warehouse or retailer
+UserRoutes.post(
+  "/add_edit_warehouse_or_retailer_address_data",
+  authorize,
+  UserControllerObj.add_edit_warehouse_or_retailer_address_data
+);
+UserRoutes.delete(
+  "/delete_warehouse_or_retailer_address",
+  authorize,
+  UserControllerObj.delete_warehouse_or_retailer_address
+);
+
+UserRoutes.put(
+  "/change_warehouse_or_retailer",
+  authorize,
+  UserControllerObj.change_warehouse_or_retailer_
+);
+
 // UserRoutes.get("/fetch_users", UserControllerObj.FetchUsers);
-UserRoutes.get("/get_allusers", authorize, UserControllerObj.getAllUser);
+// UserRoutes.get("/get_allusers", authorize, UserControllerObj.getAllUser);
 
 UserRoutes.post(
   "/update_user_details",
@@ -139,27 +156,27 @@ UserRoutes.post(
   UserControllerObj.add
 );
 
-//  start code router ram
+// //  start code router ram
 UserRoutes.post(
   "/user_file_uploads",
   userImage.single("user_image"),
   UserControllerObj.userUploadImage
 );
 
-// image upload se bucket
+// // image upload se bucket
 UserRoutes.post(
   "/upload_image_s3_bucket",
   upload.single("image"),
   UserControllerObj.uploadImageS3Bucket
 );
 
-// User Send Email
+// // User Send Email
 UserRoutes.post("/send_email", UserControllerObj.sendEmailUserToAnother);
 
-// Customer All API
+// // Customer All API
 UserRoutes.post("/customer_add", UserControllerObj.customerAddNew);
 
-// Uploads documents start
+// // Uploads documents start
 UserRoutes.post(
   "/uploads_document",
   upload.single("image"),
@@ -169,4 +186,4 @@ UserRoutes.post(
 UserRoutes.post("/vendor_on_board", UserControllerObj.vendorOnBoarding);
 
 export default UserRoutes;
-// userImage
+// // userImage

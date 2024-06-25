@@ -1,4 +1,3 @@
-
 import {
   DynamoDBClient,
   PutItemCommand,
@@ -7,7 +6,7 @@ import {
   QueryCommand,
   GetItemCommand,
   DeleteItemCommand,
-  BatchGetItemCommand
+  BatchGetItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
@@ -23,30 +22,35 @@ const dynamoDBClient = new DynamoDBClient({
 class PermissionServices {
   async addData(req, res) {
     try {
-      let { title, backend_routes, frontend_routes, status, id, } = req.body;
+      let { title, backend_routes, frontend_routes, status, id } = req.body;
       title = title?.trim();
       const timestamp = new Date().toISOString();
 
-      const allRouteIds = Array.from(new Set([...backend_routes, ...frontend_routes]));
-      console.log(allRouteIds, "all routesss indsss")
+      const allRouteIds = Array.from(
+        new Set([...backend_routes, ...frontend_routes])
+      );
+      console.log(allRouteIds, "all routesss indsss");
 
-      const keys = allRouteIds.map(routeId => ({
-        id: { S: routeId }
+      const keys = allRouteIds.map((routeId) => ({
+        id: { S: routeId },
       }));
       // console.log(keys, "keyskeyskeys")
       const batchGetParams = {
         RequestItems: {
-          "api_endpoint": {
-            Keys: keys
-          }
-        }
+          api_endpoint: {
+            Keys: keys,
+          },
+        },
       };
       const batchGetCommand = new BatchGetItemCommand(batchGetParams);
       const data = await dynamoDBClient.send(batchGetCommand);
       // console.log(data,"data............")
+      // console.log(data,"data............")
       const fetchedItems = data.Responses["api_endpoint"];
-      const fetchedIds = new Set(fetchedItems.map(item => item.id.S));
-      const missingIds = allRouteIds.filter(routeId => !fetchedIds.has(routeId));
+      const fetchedIds = new Set(fetchedItems.map((item) => item.id.S));
+      const missingIds = allRouteIds.filter(
+        (routeId) => !fetchedIds.has(routeId)
+      );
       // console.log(missingIds, "missingggggggg")
       if (missingIds.length > 0) {
         // Some IDs are missing, handle this case
@@ -56,7 +60,7 @@ class PermissionServices {
           statusCode: 400,
           success: false,
         });
-        return
+        return;
       }
       if (id) {
         let findData = await dynamoDBClient.send(
@@ -70,12 +74,17 @@ class PermissionServices {
         );
         // console.log(findData, "findata !@#!32")
         if (findData && findData?.Count == 0) {
-          return res.status(400).json({ message: "Document not found", statusCode: 400, success: false })
+          return res.status(400).json({
+            message: "Document not found",
+            statusCode: 400,
+            success: false,
+          });
         }
         const params = {
           TableName: "permission",
           Key: { id: { S: id } },
-          UpdateExpression: "SET #title = :title, #status = :status, #backend_routes =:backend_routes , #frontend_routes =:frontend_routes, #updated_at= :updated_at",
+          UpdateExpression:
+            "SET #title = :title, #status = :status, #backend_routes =:backend_routes , #frontend_routes =:frontend_routes, #updated_at= :updated_at",
           ExpressionAttributeNames: {
             "#title": "title",
             "#status": "status",
@@ -85,15 +94,31 @@ class PermissionServices {
           },
           ExpressionAttributeValues: {
             ":title": { S: title || findData?.Items[0]?.title?.S || "" },
-            ":status": { S: status || findData?.Items[0]?.status?.S || 'active' },
-            ":backend_routes": { L: backend_routes.map(route => ({ S: route })) || findData?.Items[0]?.backend_routes?.S || [] },
-            ":frontend_routes": { L: frontend_routes.map(route => ({ S: route })) || findData?.Items[0]?.frontend_routes?.S || [] },
-            ":updated_at": { S: timestamp }
+            ":status": {
+              S: status || findData?.Items[0]?.status?.S || "active",
+            },
+            ":backend_routes": {
+              L:
+                backend_routes.map((route) => ({ S: route })) ||
+                findData?.Items[0]?.backend_routes?.S ||
+                [],
+            },
+            ":frontend_routes": {
+              L:
+                frontend_routes.map((route) => ({ S: route })) ||
+                findData?.Items[0]?.frontend_routes?.S ||
+                [],
+            },
+            ":updated_at": { S: timestamp },
           },
         };
         // console.log(params, "paramsssss")
         await dynamoDBClient.send(new UpdateItemCommand(params));
-        return res.status(200).json({ message: "Data updated successfully", statusCode: 200, success: true });
+        return res.status(200).json({
+          message: "Data updated successfully",
+          statusCode: 200,
+          success: true,
+        });
       } else {
         const dataExist = await dynamoDBClient.send(
           new QueryCommand({
@@ -113,7 +138,6 @@ class PermissionServices {
           });
         }
 
-
         let id = uuidv4();
         id = id?.replace(/-/g, "");
         const params = {
@@ -121,8 +145,12 @@ class PermissionServices {
           Item: {
             id: { S: id },
             title: { S: title },
-            backend_routes: { L: backend_routes.map(route => ({ S: route })) },
-            frontend_routes: { L: frontend_routes.map(route => ({ S: route })) },
+            backend_routes: {
+              L: backend_routes.map((route) => ({ S: route })),
+            },
+            frontend_routes: {
+              L: frontend_routes.map((route) => ({ S: route })),
+            },
             status: { S: status || "active" },
             created_by: { S: req.userData?.id },
             created_at: { S: timestamp },
@@ -174,16 +202,20 @@ class PermissionServices {
   //   }
   // }
 
-  //get all data 
+  //get all data
 
   async getAllData(req, res) {
     try {
-      console.log(req.userData?.user_type, "req.userData?.user_type  @#@")
+      console.log(req.userData?.user_type, "req.userData?.user_type  @#@");
       // req.userData.user_type = 'seller'
       const params = {
         TableName: "permission",
       };
-      if (!(req.userData.user_type === 'super_admin' && req.query.status === 'all')) {
+      if (
+        !(
+          req.userData.user_type === "super_admin" && req.query.status === "all"
+        )
+      ) {
         params.FilterExpression = "#status = :status";
         params.ExpressionAttributeNames = {
           "#status": "status",
@@ -193,13 +225,10 @@ class PermissionServices {
         };
       }
       let getAll = await dynamoDBClient.send(new ScanCommand(params));
-      let get = []
+      let get = [];
       for (let el of getAll.Items) {
-        let get1 = simplifyDynamoDBResponse(el)
-        get.push(get1)
-      }
-      if (req.userData?.user_type == 'vendor' || req.userData?.user_type == 'seller') {
-        get = get?.filter((el) => el?.title?.toLowerCase()?.includes('product') || el?.title?.toLowerCase()?.includes('order') || el?.title?.toLowerCase()?.includes('inventory'))
+        let get1 = simplifyDynamoDBResponse(el);
+        get.push(get1);
       }
       return res.status(200).json({
         message: "Fetch data",
@@ -219,32 +248,32 @@ class PermissionServices {
     try {
       const { id, status } = req.body;
       const getItemParams = {
-        TableName: 'permission',
+        TableName: "permission",
         Key: {
-          id: { S: id }
-        }
+          id: { S: id },
+        },
       };
       const getItemCommand = new GetItemCommand(getItemParams);
       const getItemResponse = await dynamoDBClient.send(getItemCommand);
       if (!getItemResponse.Item) {
         return res.status(400).json({
-          message: 'Data not found',
+          message: "Data not found",
           statusCode: 400,
-          success: false
+          success: false,
         });
       }
       const updateItemParams = {
-        TableName: 'permission',
+        TableName: "permission",
         Key: {
-          id: { S: id }
+          id: { S: id },
         },
-        UpdateExpression: 'SET #status = :status',
+        UpdateExpression: "SET #status = :status",
         ExpressionAttributeNames: {
-          '#status': 'status'
+          "#status": "status",
         },
         ExpressionAttributeValues: {
-          ':status': { S: status }
-        }
+          ":status": { S: status },
+        },
       };
       const updateItemCommand = new UpdateItemCommand(updateItemParams);
       await dynamoDBClient.send(updateItemCommand);
@@ -260,31 +289,78 @@ class PermissionServices {
     }
   }
 
+  // async deleteEndpointById(req, res) {
+  //   try {
+  //     const { id } = req.query;
+  //     const data = await dynamoDBClient.send(
+  //       new QueryCommand({
+  //         TableName: "permission",
+  //         KeyConditionExpression: "id = :id",
+  //         ExpressionAttributeValues: {
+  //           ":id": { S: id },
+  //         },
+  //       })
+  //     );
+  //     if (data?.Count == 0) {
+  //       return res.status(400).json({ message: "Data not found or deleted already", statusCode: 400, success: false })
+  //     }
+  //     const deleteItemParams = {
+  //       TableName: 'permission',
+  //       Key: {
+  //         id: { S: id }
+  //       }
+  //     };
+  //     const deleteItemCommand = new DeleteItemCommand(deleteItemParams);
+  //     await dynamoDBClient.send(deleteItemCommand);
+  //     return res.status(200).json({
+  //       message: "Data delete successfully",
+  //       statusCode: 200,
+  //       success: true,
+  //     });
+  //   } catch (err) {
+  //     return res
+  //       .status(500)
+  //       .json({ message: err?.message, success: false, statusCode: 500 });
+  //   }
+  // }
   async deleteEndpointById(req, res) {
+    console.log("hellllloooooo");
     try {
       const { id } = req.query;
+
+      // Get the item to ensure it exists
       const data = await dynamoDBClient.send(
-        new QueryCommand({
+        new GetItemCommand({
           TableName: "permission",
-          KeyConditionExpression: "id = :id",
-          ExpressionAttributeValues: {
-            ":id": { S: id },
+          Key: {
+            id: { S: id },
           },
         })
       );
-      if (data?.Count == 0) {
-        return res.status(400).json({ message: "Data not found or deleted already", statusCode: 400, success: false })
+
+      console.log("Fetched Item:", data.Item); // Log the fetched item
+
+      if (!data.Item) {
+        return res.status(400).json({
+          message: "Data not found or deleted already",
+          statusCode: 400,
+          success: false,
+        });
       }
+
+      // Delete the item
       const deleteItemParams = {
-        TableName: 'permission',
+        TableName: "permission",
         Key: {
-          id: { S: id }
-        }
+          id: { S: id },
+        },
       };
+
       const deleteItemCommand = new DeleteItemCommand(deleteItemParams);
       await dynamoDBClient.send(deleteItemCommand);
+
       return res.status(200).json({
-        message: "Data delete successfully",
+        message: "Data deleted successfully",
         statusCode: 200,
         success: true,
       });
@@ -294,7 +370,6 @@ class PermissionServices {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
 }
 
 const PermissionServicesObj = new PermissionServices();

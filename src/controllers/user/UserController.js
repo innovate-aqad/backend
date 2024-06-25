@@ -16,17 +16,42 @@ import {
   AccountDeactivateOrActiveSchema,
   delete_sub_user_schema,
   statusChangeSchema,
+  AddWarehouseSchema,
+  DeleteWarehouseSchema,
+  RequestBodySchema,
+  changeWarehouseSchema,
 } from "../../helpers/validateUser.js";
+import {
+  sendPasswordViaEmail,
+  forgotPasswordEmail,
+  encryptStringWithKey,
+  sendEmailUser,
+} from "../../helpers/common.js";
+import { signupEmail } from "../../services/user/cognito.js";
+import { getUser } from "../../services/user/cognito.js";
+
+import {
+  CognitoIdentityProviderClient,
+  ConfirmSignUpCommand,
+} from "@aws-sdk/client-cognito-identity-provider";
+
 import bcrypt from "bcrypt";
+
 import UserServicesObj from "../../services/user/UserServices.js";
 import jwt from "jsonwebtoken";
 import { environmentVars } from "../../config/environmentVar.js";
 import UserModel from "../../models/UserModel.js";
-import { deleteImageFRomLocal, storeImageMetadata, uploadImageToS3 } from "../../helpers/s3.js";
+import {
+  deleteImageFRomLocal,
+  storeImageMetadata,
+  uploadImageToS3,
+} from "../../helpers/s3.js";
 import UploadsDocumentModel from "../../models/UploadsDocumentModel.js";
 import docClient from "../../config/dbConfig.js";
 import vendorOnBoardModel from "../../models/VendorOnBoard.js";
 import { ImageFileCheck } from "../../helpers/validateImageFile.js";
+import AWS from "aws-sdk";
+const cognito = new AWS.CognitoIdentityServiceProvider();
 // import axios from "axios";
 
 const options = {
@@ -38,7 +63,7 @@ const options = {
 class UserController {
   async super_admin(req, res) {
     try {
-      console.log(req.body, "req.bodyyyyyyyyyy")
+      console.log(req.body, "req.bodyyyyyyyyyy");
       let { error } = AddSuperUserSchema.validate(req.body, options);
       if (error) {
         return res.status(400).json({
@@ -49,7 +74,9 @@ class UserController {
       }
       await UserServicesObj.super_admin(req, res);
     } catch (er) {
-      return res.status(500).json({ message: er?.message, statusCode: 500, success: false })
+      return res
+        .status(500)
+        .json({ message: er?.message, statusCode: 500, success: false });
     }
   }
   async register(req, res) {
@@ -88,7 +115,8 @@ class UserController {
           }
         } else {
           // console.log(req.body, "req.bodyyyyyyyyyyy", req.files, "asas req.files")
-          if (req.body.doc_id && !req.body.db_vat_certificate) {// here need to  uncomment 
+          if (req.body.doc_id && !req.body.db_vat_certificate) {
+            // here need to  uncomment
             return res.status(400).json({
               message: "Vat certificate is required...",
               statusCode: 400,
@@ -97,7 +125,7 @@ class UserController {
           }
         }
       }
-      // trade license 
+      // trade license
       if (
         (user_type == "vendor" && slide == 3) ||
         (user_type == "seller" && slide == 3) ||
@@ -117,7 +145,11 @@ class UserController {
           } else {
           }
         } else {
-          if (user_type == "logistic" && slide == 3 && !req.body.db_trade_license) {
+          if (
+            user_type == "logistic" &&
+            slide == 3 &&
+            !req.body.db_trade_license
+          ) {
             return res.status(400).json({
               message: "trade_license is required",
               statusCode: 400,
@@ -159,7 +191,8 @@ class UserController {
       if (
         (user_type == "vendor" && slide == 3) ||
         (user_type == "seller" && slide == 3) ||
-        (user_type == "logistic" && slide == 3) || (user_type == "employee" && slide == 2)
+        (user_type == "logistic" && slide == 3) ||
+        (user_type == "employee" && slide == 2)
       ) {
         if (req.files && req.files?.emirate_id_pic?.length) {
           let name = req.files?.emirate_id_pic[0]?.filename;
@@ -176,11 +209,7 @@ class UserController {
           }
         }
       }
-      if (
-        req.files &&
-        req.files?.profile_photo?.length &&
-        slide == 1
-      ) {
+      if (req.files && req.files?.profile_photo?.length && slide == 1) {
         let name = req.files?.profile_photo[0]?.filename;
         let size = req.files?.profile_photo[0].size;
         let get = await ImageFileCheck(name, user_type, size);
@@ -196,7 +225,11 @@ class UserController {
         }
       } else {
         if (user_type == "employee" && slide == 1) {
-          return res.status(400).json({ message: "Profile_picture is required", statusCode: 400, success: false })
+          return res.status(400).json({
+            message: "Profile_picture is required",
+            statusCode: 400,
+            success: false,
+          });
         }
       }
 
@@ -283,10 +316,12 @@ class UserController {
           } else {
           }
         }
-      }
-      else if (!db_driver_details_array?.length && !req.files?.driver_images?.length &&
+      } else if (
+        !db_driver_details_array?.length &&
+        !req.files?.driver_images?.length &&
         user_type == "logistic" &&
-        slide == 4) {
+        slide == 4
+      ) {
         return res.status(400).json({
           message: "Driver image is mandatory",
           statusCode: 400,
@@ -313,7 +348,8 @@ class UserController {
           } else {
           }
         }
-      } else if (!db_driver_details_array?.length &&
+      } else if (
+        !db_driver_details_array?.length &&
         !req.files?.driving_license?.length &&
         user_type == "logistic" &&
         slide == 4
@@ -326,7 +362,7 @@ class UserController {
       }
       await UserServicesObj.createUser(req, res);
     } catch (err) {
-      console.error(err, "errrrrrrrrr")
+      console.error(err, "errrrrrrrrr");
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
@@ -346,7 +382,7 @@ class UserController {
       // console.log(req.query,"eeeeeeeeeeeeee")
       await UserServicesObj.getUserByEmail(req, res);
     } catch (err) {
-      console.error(err, "Eeeeee")
+      console.error(err, "Eeeeee");
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
@@ -392,9 +428,14 @@ class UserController {
   // fetch user logged in details
   async get_data(req, res) {
     try {
-      let data = req.userData
-      delete data.password
-      return res.status(200).json({ message: "user details", details: data, statusCode: 400, success: true })
+      let data = req.userData;
+      delete data.password;
+      return res.status(200).json({
+        message: "user details",
+        details: data,
+        statusCode: 400,
+        success: true,
+      });
     } catch (err) {
       return res
         .status(500)
@@ -405,8 +446,8 @@ class UserController {
   // add sub_user created
   async add_sub_user(req, res) {
     try {
-      if (!req.body.doc_id || req.body.doc_id == '') {
-        req.body.user_type=req.userData?.user_type
+      if (!req.body.doc_id || req.body.doc_id == "") {
+        req.body.user_type = req.userData?.user_type;
         let { error } = AddSubUserSchema.validate(req.body, options);
         if (error) {
           return res.status(400).json({
@@ -416,36 +457,43 @@ class UserController {
           });
         }
       }
-      if(req.files.profile_photo){
+      if (req.files.profile_photo) {
         for (let el of req.files.profile_photo) {
-          let get = await ImageFileCheck(el?.filename, 'vendor_user', el?.size);
+          let get = await ImageFileCheck(el?.filename, "vendor_user", el?.size);
           if (get == "invalid file") {
-          return res.status(400).json({
-            message:
-              "Image must be png or jpeg or webp file and size must be less than 500 kb",
-            statusCode: 400,
-            success: false,
-          });
-        } else {
-         let filePath = `./uploads/${req.body.user_type}/sub_user/${el?.filename}`;
-          try{deleteImageFRomLocal(filePath)
-          }catch(er){console.log(er)}
-          // uploadImageToS3(el?.filename, el?.path);
+            return res.status(400).json({
+              message:
+                "Image must be png or jpeg or webp file and size must be less than 500 kb",
+              statusCode: 400,
+              success: false,
+            });
+          } else {
+            let filePath = `./uploads/${req.body.user_type}/sub_user/${el?.filename}`;
+            try {
+              deleteImageFRomLocal(filePath);
+            } catch (er) {
+              console.log(er);
+            }
+            // uploadImageToS3(el?.filename, el?.path);
+          }
         }
-      }
       }
       await UserServicesObj.addSubUser(req, res);
     } catch (err) {
-      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
     }
   }
 
   async role_id_to_aqad_employee(req, res) {
     try {
-      if(req.userData?.user_type!='super_admin'){
-        return res.status(400).json({message:"Not authorise",statusCode:400,success:false})
+      if (req.userData?.user_type != "super_admin") {
+        return res
+          .status(400)
+          .json({ message: "Not authorise", statusCode: 400, success: false });
       }
-      if (!req.body.doc_id || req.body.doc_id == '') {
+      if (!req.body.doc_id || req.body.doc_id == "") {
         let { error } = assignRoleToSubUserSchema.validate(req.body, options);
         if (error) {
           return res.status(400).json({
@@ -457,11 +505,13 @@ class UserController {
       }
       await UserServicesObj.addSubUser(req, res);
     } catch (err) {
-      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
     }
   }
 
-  //for super_admin fetch all user_type 
+  //for super_admin fetch all user_type
   async get_sub_user(req, res) {
     try {
       let { error } = GetSubUserSchema.validate(req.body, options);
@@ -474,48 +524,37 @@ class UserController {
       }
       await UserServicesObj.get_all_user(req, res);
     } catch (err) {
-      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
     }
   }
 
   async delete_sub_user(req, res) {
     try {
-      // 
-      let { error } = delete_sub_user_schema.validate(req.query, options);
-      if (error) {
-        return res.status(400).json({
-          message: error.details[0]?.message,
-          success: false,
-          statusCode: 400,
-        });
-      }
+      // let { error } = GetSubUserSchema.validate(req.body, options);
+      // if (error) {
+      //   return res.status(400).json({
+      //     message: error.details[0]?.message,
+      //     success: false,
+      //     statusCode: 400,
+      //   });
+      // }
       await UserServicesObj.delete_user(req, res);
     } catch (err) {
-      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
-    }
-  }
-
-  async status_sub_user(req, res) {
-    try {
-      let { error } = statusChangeSchema.validate(req.query, options);
-      if (error) {
-        return res.status(400).json({
-          message: error.details[0]?.message,
-          success: false,
-          statusCode: 400,
-        });
-      }
-      await UserServicesObj.change_status_user(req, res);
-    } catch (err) {
-      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
     }
   }
 
   // get all vendors, logistics,seller filter data according to the user_type
   async fetch_all_user(req, res) {
     try {
-      if (req.userData.user_type != 'super_admin') {
-        return res.status(400).json({ message: "Not authorise", statusCode: 400, success: false })
+      if (req.userData.user_type != "super_admin") {
+        return res
+          .status(400)
+          .json({ message: "Not authorise", statusCode: 400, success: false });
       }
       // let { error } = GetSubUserSchema.validate(req.body, options);
       // if (error) {
@@ -527,14 +566,11 @@ class UserController {
       // }
       await UserServicesObj.all_user_fetch(req, res);
     } catch (err) {
-      return res.status(500).json({ message: err?.message, status: false, statusCode: 500 })
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
     }
   }
-
-
-
-
-
 
   async login(req, res) {
     try {
@@ -552,7 +588,6 @@ class UserController {
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
 
   async login_with_otp(req, res) {
     try {
@@ -607,7 +642,10 @@ class UserController {
 
   async User_account_deactivate_or_activate(req, res) {
     try {
-      let { error } = AccountDeactivateOrActiveSchema.validate(req?.body, options);
+      let { error } = AccountDeactivateOrActiveSchema.validate(
+        req?.body,
+        options
+      );
       if (error) {
         return res
           .status(400)
@@ -630,6 +668,7 @@ class UserController {
           .status(400)
           .json({ message: error.details[0]?.message, success: false });
       }
+
       UserServicesObj.verify_otp_data(req, res);
     } catch (err) {
       // console.log(err, "Eeee reset password");
@@ -652,16 +691,6 @@ class UserController {
       UserServicesObj.resetUserPassword(req, res);
     } catch (err) {
       // console.log(err, "Eeee reset password");
-      return res
-        .status(500)
-        .json({ message: err?.message, success: false, statusCode: 500 });
-    }
-  }
-
-  async getAllUser(req, res) {
-    try {
-      UserServicesObj.getAllUSerData(req, res);
-    } catch (err) {
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
@@ -711,15 +740,18 @@ class UserController {
 
   async user_logout(req, res) {
     try {
-      // return (
-      //   res
-      //     .clearCookie("_token")
-      //     // .clearCookie()
+      return (
+        res
+          .clearCookie("_token")
+          // .clearCookie()
 
+          .status(200)
+          .json({ success: true, message: "Logout successful" })
+      );
       //     .status(200)
       //     .json({ success: true, message: "Logout successful" })
       // );
-      UserServicesObj.user_logout_data(req,res)
+      UserServicesObj.user_logout_data(req, res);
     } catch (err) {
       return res
         .status(500)
@@ -727,6 +759,71 @@ class UserController {
     }
   }
 
+  async get_warehouse_or_retailer_address(req, res) {
+    try {
+      await UserServicesObj.get_warehouse_or_retailer_address_arr(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
+    }
+  }
+  async add_edit_warehouse_or_retailer_address_data(req, res) {
+    try {
+      // console.log(req.body,"ereeweewwe")
+      let { error } = RequestBodySchema.validate(req.body, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+
+      console.log("req.body", "ereeweewwe");
+      await UserServicesObj.add_edit_warehouse_or_retailer_address(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
+    }
+  }
+
+  async change_warehouse_or_retailer_(req, res) {
+    try {
+      // console.log(req.body,"ereeweewwe")
+      let { error } = changeWarehouseSchema.validate(req.body, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+      await UserServicesObj.change_warehouse_or_retailer_address(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
+    }
+  }
+  async delete_warehouse_or_retailer_address(req, res) {
+    try {
+      let { error } = DeleteWarehouseSchema.validate(req.body, options);
+      if (error) {
+        return res.status(400).json({
+          message: error.details[0]?.message,
+          success: false,
+          statusCode: 400,
+        });
+      }
+      await UserServicesObj.delete_warehouse_or_retailer_adres(req, res);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, status: false, statusCode: 500 });
+    }
+  }
 
   async updateUserInfo(req, res) {
     try {
@@ -1008,6 +1105,103 @@ class UserController {
         message: "Error Vendor On Board",
         error: err.message,
         status: 404,
+      });
+    }
+  }
+  // sign-up confirm cognito
+
+  async confirmSignupController(req, res) {
+    const { username, code } = req.body;
+
+    const params = {
+      ClientId: process.env.Client_Id, // Your Cognito App Client ID
+      Username: username,
+      ConfirmationCode: code,
+      // ClientIdEmail: process.env.Client_Id_Email,
+    };
+    const paramsEmail = {
+      // ClientId: process.env.Client_Id, // Your Cognito App Client ID
+      // Username: username,
+      ConfirmationCode: code,
+      ClientIdEmail: process.env.Client_Id_Email,
+    };
+
+    try {
+      await cognito.confirmSignUp(params).promise();
+
+      res.status(200).send({
+        success: true,
+        message: "User confirmed successfully",
+      });
+    } catch (error) {
+      res.status(400).send({
+        success: false,
+        message: error.message,
+        error,
+      });
+    }
+  }
+  // /emil verification
+  async emailSignupController(req, res) {
+    const { email } = req.body;
+    let randomPassword = encryptStringWithKey(email.toLowerCase()?.slice(0, 6));
+    randomPassword =
+      randomPassword[0]?.toUpperCase() + randomPassword?.slice(1, 6);
+    try {
+      const cognitoUser = await new Promise((resolve, reject) => {
+        signupEmail({ email, randomPassword }, (err, user) => {
+          if (err) {
+            console.log(
+              "Error during sign-up for email:",
+              email,
+              "Error:",
+              err
+            );
+            reject(err);
+          } else {
+            resolve(user);
+          }
+        });
+      });
+
+      res.status(200).json({
+        success: true,
+        data: { password: randomPassword },
+        message:
+          "User email registered successfully. Please check your email for verification code.",
+        user: cognitoUser.user_id, // Ensure you use the correct property
+      });
+      return;
+    } catch (error) {
+      console.error("Error during registration:", error);
+      res.status(500).send({
+        success: false,
+        message: error.message,
+        error,
+      });
+    }
+  }
+  async confirmSignupEmailController(req, res) {
+    const { code } = req.body;
+
+    const paramsEmail = {
+      ClientIdEmail: process.env.Client_Id_Email, // Your Cognito App Client ID
+      // Username: username,
+      ConfirmationCode: code,
+    };
+
+    try {
+      await cognito.confirmSignUp(paramsEmail).promise();
+
+      res.status(200).send({
+        success: true,
+        message: "User confirmed successfully",
+      });
+    } catch (error) {
+      res.status(400).send({
+        success: false,
+        message: error.message,
+        error,
       });
     }
   }

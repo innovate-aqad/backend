@@ -3,6 +3,7 @@ import cors from "cors";
 // import { environmentVars } from "./src/config/environmentVar.js";
 import UserRoutes from "./routes/user/UserRoutes.js";
 import cookieParser from "cookie-parser";
+import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import { environmentVars } from "./config/environmentVar.js";
 import CategoryRoutes from "./routes/user/CategoryRoutes.js";
@@ -15,10 +16,10 @@ import SiUnitRoutes from "./routes/admin/SiUnitRoutesRoutes.js";
 import RoleRoutes from "./routes/admin/RoleRoutes.js";
 import OrderRoutes from "./routes/admin/OrderRoutes.js";
 import CartRoutes from "./routes/admin/CartRoutes.js";
-// require('dotenv').config();
-// import dotenv from 'dotenv';
-// dotenv.config();
-// import mysql from 'mysql2';
+
+import dotenv from "dotenv";
+dotenv.config();
+import mysql from "mysql2";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const app = express();
@@ -40,13 +41,7 @@ app.use(express.json({ limit: "1mb" })); // Adjust the limit as needed
 app.use(express.urlencoded({ limit: "10mb", extended: true })); // Adjust the limit as needed
 app.use(cookieParser());
 // Define the allowed origins
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "https://vuezen.bastionex.net",
-  "https://test-vuezen.bastionex.net",
-  "https://admin-vuezen.bastionex.net",
-];
+const allowedOrigins = ["http://localhost:3000", "http://localhost:3001"];
 
 // Use the cors middleware with specific options
 // app.use(
@@ -64,18 +59,18 @@ const allowedOrigins = [
 // );
 
 // const connection = mysql.createConnection({
-//   host:  "mysql-db.c328giyw47da.me-central-1.rds.amazonaws.com:3306",  // process.env.DB_HOST,
-//   user: 'admin',
-//   password: "03ycTZRKOxofr6L2IgZY"  ,
+//   host: "mysql-db.c328giyw47da.me-central-1.rds.amazonaws.com:3306", // process.env.DB_HOST,
+//   user: "admin",
+//   password: "03ycTZRKOxofr6L2IgZY",
 //   // database: process.env.DB_NAME
 // });
 
 // connection.connect((err) => {
 //   if (err) {
-//     console.error('Error connecting to the database:', err.stack);
+//     console.error("Error connecting to the database:", err.stack);
 //     return;
 //   }
-//   console.log('Connected to the database as id', connection.threadId);
+//   console.log("Connected to the database as id", connection.threadId);
 // });
 
 app.get("/", async (req, res) => {
@@ -94,7 +89,11 @@ app.use("/api/brand", BrandRoutes);
 app.use("/api/si_unit", SiUnitRoutes);
 app.use("/api/cart", CartRoutes);
 app.use("/api/order", OrderRoutes);
-
+for (let i = 0; i < 10; i++) {
+  const timestamp = Date.now();
+  let id = uuidv4()?.replace(/-/g, "")?.slice(0, 19)?.toString() + timestamp;
+  console.log(id, "DASDADS", i);
+}
 // Start the server
 const PORT = environmentVars.port;
 

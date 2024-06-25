@@ -23,6 +23,7 @@ export const addProductchema = Joi.object({
     .label("description"),
   category_id: Joi.string().trim().required().label("category_id"),
   sub_category_id: Joi.string().trim().required().label("sub_category_id"),
+  condition:Joi.string().allow("",null).valid("top_sales",'features','popular'),
   shape_id: Joi.string()
     .trim()
     // .required()

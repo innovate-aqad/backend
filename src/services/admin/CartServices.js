@@ -209,7 +209,7 @@ class cartServices {
         const keysToDelete = findCartItem.Items.map((item) => ({
           id: { S: item.id.S },
         }));
-        console.log(keysToDelete, "keys -to----delete");
+        // console.log(keysToDelete, "keys -to----delete");
         await dynamoDBClient.send(
           new BatchWriteItemCommand({
             RequestItems: {
@@ -251,9 +251,10 @@ class cartServices {
           },
         })
       );
-      // console.log(findCartItem, "findCart)");
+      // console.log(findCartItem, "!@@ findCart)");
       let mainCartArr = [];
       if (findCartItem && findCartItem?.Items?.length > 0) {
+
         let productArr = [];
         findCartItem.Items.forEach((item) => productArr.push(item.product_id.S));
         productArr = new Set(productArr);
@@ -282,25 +283,47 @@ class cartServices {
           })
         );
         let data = [];
-        let mainCat = [];
-        let subCat = [];
+        // let mainCat = [];
+        // let subCat = [];
+        // for (let el of getProductDetails?.Responses?.products) {
+        //   mainCat.push({ id: { S: el?.category_id?.S } });
+        //   subCat.push({ id: { S: el?.sub_category_id?.S } });
+        //   data.push(simplifyDynamoDBResponse(el));
+        // }
+        // console.log(mainCat, "m ttttttttt", keys, "asdf", subCat);
+        // const requestItems = {};
+        // if (mainCat.length > 0) {
+        //   requestItems['category'] = {
+        //     Keys: mainCat,
+        //   };
+        // }
+        // if (subCat.length > 0) {
+        //   requestItems['sub_category'] = {
+        //     Keys: subCat,
+        //   };
+        // }
+        let mainCatSet = new Set();
+        let subCatSet = new Set();
+        
         for (let el of getProductDetails?.Responses?.products) {
-          mainCat.push({ id: { S: el?.category_id?.S } });
-          subCat.push({ id: { S: el?.sub_category_id?.S } });
+          mainCatSet.add(el?.category_id?.S);
+          subCatSet.add(el?.sub_category_id?.S);
           data.push(simplifyDynamoDBResponse(el));
         }
-        // console.log(mainCat, "m ttttttttt", keys, "asdf", subCat);
         const requestItems = {};
-        if (mainCat.length > 0) {
+        if (mainCatSet.size > 0) {
           requestItems['category'] = {
-            Keys: mainCat,
+            Keys: Array.from(mainCatSet).map(id => ({ id: { S: id } })),
           };
         }
-        if (subCat.length > 0) {
+        
+        if (subCatSet.size > 0) {
           requestItems['sub_category'] = {
-            Keys: subCat,
+            Keys: Array.from(subCatSet).map(id => ({ id: { S: id } })),
           };
         }
+        
+        // console.log(requestItems,"requesttsttstts");
         const fetchMainCatData = await dynamoDBClient.send(
           new BatchGetItemCommand({
             RequestItems: requestItems,
@@ -360,13 +383,12 @@ class cartServices {
         });
       }
     } catch (err) {
-      console.error(err);
+      console.error(err,"aaaaaaaaaa");
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
     }
   }
-
 
 }
 
