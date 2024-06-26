@@ -1,5 +1,4 @@
 import UserModel from "../../models/UserModel.js";
-
 import bcrypt from "bcrypt";
 import {
   sendPasswordViaEmail,
@@ -37,13 +36,15 @@ import {
   uploadImageToS3,
 } from "../../helpers/s3.js";
 import { removefIle } from "../../helpers/validateImageFile.js";
-import AWS from "aws-sdk";
-const cognito = new AWS.CognitoIdentityServiceProvider();
 import {
   del_image_local_and_s3_and_upload_image,
   simplifyDynamoDBResponse,
 } from "../../helpers/datafetch.js";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
+import generatePassword from 'generate-password';
+import { signup, signin, confirmUser } from "../../services/cognito/cognito.js";
+import AWS from "aws-sdk";
+const cognito = new AWS.CognitoIdentityServiceProvider();
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -52,20 +53,10 @@ const dynamoDBClient = new DynamoDBClient({
     secretAccessKey: process.env.Aws_secretAccessKey,
   },
 });
-import {
-  CognitoIdentityProviderClient,
-  ConfirmSignUpCommand,
-} from "@aws-sdk/client-cognito-identity-provider";
-import { signup, signin, signupEmail } from "./cognito.js";
-const cognitoClient = new CognitoIdentityProviderClient({
-  region: process.env.Aws_region,
-});
 
-console.log(dynamoDBClient, "dydb", process.env.Aws_region);
+console.log(dynamoDBClient, "dydb", process.env.Aws_region)
 
-// AWS.config.update({
-//   region: "us-east-1", //process.env.Aws_region //'us-east-1'  // Change to your region
-// });sss
+
 
 async function getNextSequenceValue(sequenceName) {
   console.log(sequenceName, "sequence nameee");
@@ -88,6 +79,7 @@ let salt = environmentVars.salt;
 class UserServices {
   async createUser(req, res) {
     try {
+      console.log("phonenumber--->",req.body.phone)
       let {
         name,
         email,
@@ -118,9 +110,10 @@ class UserServices {
       console.log(req.body, " @@@  a  aaaaaa!@#!@#aa req.body");
       console.log(req.files, "req.filesssss");
       email = email?.trim();
+      console.log(req.files, "req.fil");
 
       let findData;
-      if ((slide == 2 || slide == 3 || slide == 4) && doc_id == "") {
+      if ((slide== 1 || slide == 2 || slide == 3 || slide == 4) && doc_id == "") {
         return res.status(400).json({
           message: "Doc_id is mandatory",
           statusCode: 400,
@@ -141,11 +134,9 @@ class UserServices {
         );
         // console.log(findData, "findataaaaaaaa222222111");
       }
-
-      // cog
-      // console.log(findData, "findDatafindData22", "findData");
+      console.log(findData, "findDatafindData22", "findData");
       // return
-      if (findData?.Count > 0 && slide == 1) {
+      if (findData?.Count > 0 && slide == 1 && !password) {
         let profile_photo = findData?.Items[0]?.profile_photo?.S;
         if (req.files && req.files?.profile_photo?.length) {
           profile_photo = req.files?.profile_photo[0]?.filename;
@@ -282,7 +273,6 @@ class UserServices {
                     M: {
                       address: { S: address.address },
                       po_box: { S: address.po_box },
-                      is_default: { BOOL: address?.is_default || false },
                     },
                   })) ||
                   findData?.Items[0]?.outlet_addresses?.L ||
@@ -291,7 +281,7 @@ class UserServices {
               ":updated_at": { S: new Date().toISOString() },
             },
           };
-          // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_adresses",outlet_addreses)
+          // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_addresses",outlet_addresses)
           await dynamoDBClient.send(new UpdateItemCommand(params));
           return res.status(200).json({
             message: "User data updated successfully",
@@ -383,7 +373,7 @@ class UserServices {
           : findData?.Items[0]?.trade_license?.S || "";
         if (req.files && req.files?.trade_license?.length) {
           let filePath = `./uploads/${user_type}/${findData?.Items[0]?.trade_license?.S}`;
-          // console.log(filePath, "filepathhhhhhh");
+          console.log(filePath, "filepathhhhhhh");
           try {
             deleteImageFRomLocal(filePath);
           } catch (err) {
@@ -694,7 +684,7 @@ class UserServices {
         })
       );
       // console.log(findEmailExist, "@@@!!!  email check ");
-      if (findEmailExist.Count > 0) {
+      if (findEmailExist.Count > 0 && !password) {
         if (
           req.files &&
           req.files?.profile_photo?.length &&
@@ -743,119 +733,128 @@ class UserServices {
         }
       }
       let salt = environmentVars.salt;
+      //let randomPassword =  encryptStringWithKey(req.body.email.toLowerCase()?.slice(0, 6));
+     // const formattedPhoneNumber = `+${phone}`
+     //const convertPhone=phone.split("-")
+     const phoneNumber = parsePhoneNumberFromString(phone, "IN");
+     const phoneNum=phoneNumber.number
+      //const formattedNumber= `+ ${phoneNumber}`
+      // console.log(randomPassword, "randomPasswordrandomPassword");
+      //let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+    //   const cognitoParams = {
+    //     name,
+    //     email,
+    //     phone:phoneNum
+    //   };
+    // console.log(cognitoParams)
+    //   const cognitoUser = await new Promise((resolve, reject) => {
+    //     signup(cognitoParams, (err, user) => {
+    //       if (err) {
+    //         reject(err);
+    //       } else {
+    //         resolve(user);
+    //       }
+    //     });
+    //   });
 
-      try {
+      //const phoneNumber = parsePhoneNumberFromString(phone, "IN"); // 'IN' for India, adjust as needed
+
+        if (!phoneNumber || !phoneNumber.isValid()) {
+          return res.status(400).send({
+            success: false,
+            message: "Invalid phone number format.",
+            error: {
+              name: "InvalidParameterException",
+              code: "InvalidParameterException",
+            },
+          });
+        }
+
+        const formattedPhoneNumber = phoneNumber.number; // Get the E.164 formatted phone number
+
         const cognitoParams = {
           email,
           name,
           dob,
-          phone,
+          phone: formattedPhoneNumber,
           password: "Fathima@123", // Ensure the password is passed
         };
 
-        const cognitoUser = await new Promise((resolve, reject) => {
-          signup(cognitoParams, (err, user) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(user);
-            }
-          });
-        });
-
-        res.status(200).send({
-          success: true,
-          message:
-            "User registered successfully. Please check your email for verification code.",
-          user: cognitoUser.UserSub, // Ensure you use the correct property
-        });
-      } catch (error) {
-        console.error("Error during registration:", error);
-        // res.status(500).send({
-        //   success: false,
-        //   message: error.message,
-        //   error,
+        // const cognitoUser = await new Promise((resolve, reject) => {
+        //   signup(cognitoParams, (err, user) => {
+        //     if (err) {
+        //       reject(err);
+        //     } else {
+        //       resolve(user);
+        //     }
+        //   });
         // });
-      }
-      // single field email
-      // const { email } = req.body;
-
-      try {
-        const cognitoUser = await new Promise((resolve, reject) => {
-          signupEmail({ email }, (err, user) => {
-            if (err) {
-              console.log(
-                "Error during sign-up for email:",
-                email,
-                "Error:",
-                err
-              );
-              reject(err);
-            } else {
-              resolve(user);
-            }
-          });
-        });
-
-        res.status(200).send({
-          success: true,
-          message:
-            "User registered with email successfully. Please check your email for verification code.",
-          user: cognitoUser.user_id, // Ensure you use the correct property
-        });
-      } catch (error) {
-        console.error("Error during registration:", error);
-        res.status(500).send({
-          success: false,
-          message: error.message,
-          error,
-        });
-      }
-
-      // console.log(cognitoUser, "cognitoUsercognitoUsercognitoUsercognitoUser");
 
       let id = uuidv4();
       id = id?.replace(/-/g, "");
-
-      // let salt = environmentVars.salt;
-      let randomPassword = encryptStringWithKey(
-        email.toLowerCase()?.slice(0, 6)
-      );
-
-      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
 
       let profile_photo;
       if (req.files && req.files?.profile_photo?.length) {
         profile_photo = req.files?.profile_photo[0]?.filename;
       }
+      // const params = {
+      //   TableName: "users",
+      //   Item: {
+      //     profile_photo: { S: profile_photo || "" },
+      //     id: { S: id },
+      //     name: { S: name },
+      //     email: { S: email },
+      //     phone: { S: phone || "" },
+      //     dob: { S: dob || "" },
+      //     user_type: { S: user_type },
+      //     role: { S: role || "" },
+      //     country: { S: country || "" },
+      //     //password: { S: hashPassword },
+      //     created_at: { S: new Date().toISOString() },
+      //     updated_at: { S: new Date().toISOString() },
+      //     account_status: { S: "activated" },
+      //     is_verified: { BOOL: false },
+      //   },
+      // };
+      //console.log("docClient", "docccleint", params);
+      //await dynamoDBClient.send(new PutItemCommand(params));
+
       const params = {
         TableName: "users",
-        Item: {
-          profile_photo: { S: profile_photo || "" },
-          id: { S: id },
-          name: { S: name },
-          email: { S: email },
-          phone: { S: phone || "" },
-          dob: { S: dob || "" },
-          user_type: { S: user_type },
-          role: { S: role || "" },
-          country: { S: country || "" },
-          password: { S: hashPassword },
-          created_at: { S: new Date().toISOString() },
-          updated_at: { S: new Date().toISOString() },
-          account_status: { S: "activated" },
-          is_verified: { BOOL: false },
+        Key: { id: { S: doc_id } },
+        UpdateExpression:
+          "SET #profile_photo = :profile_photo, #name = :name,#phone = :phone, #dob = :dob, #user_type = :user_type,#role =:role, #country = :country ,#account_status = :account_status,#is_verified =:is_verified,#updated_at = :updated_at",
+        ExpressionAttributeNames: {
+          "#profile_photo": "profile_photo",
+          "#name": "name",
+          "#phone": "phone",
+          "#dob": "dob",
+          "#user_type": "user_type",
+          "#role": "role",
+          "#country": "country",
+          "#account_status":"account_status",
+          "#is_verified": "is_verified",
+          "#updated_at": "updated_at",
+        },
+        ExpressionAttributeValues: {
+          ":profile_photo": { S: profile_photo || "" },
+          ":name": { S: name },
+          ":phone": { S: phone || "" },
+          ":dob": { S: dob || "" },
+          ":user_type": { S: user_type },
+          ":role": { S: role || "" },
+          ":country": { S: country || "" },
+          //password: { S: hashPassword },
+          ":account_status": { S: "activated" },
+          ":is_verified": { BOOL: false },
+          ":updated_at": { S: new Date().toISOString() },
         },
       };
-      // let salt = environmentVars.salt;
-
-      // console.log(randomPassword, "randomPasswordrandomPassword");
-
-      console.log("docClient", "docccleint", params);
-      await dynamoDBClient.send(new PutItemCommand(params));
+      // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_addresses",outlet_addresses)
+      await dynamoDBClient.send(new UpdateItemCommand(params));
       let obj = {
         email,
-        randomPassword,
+        password,
         name,
       };
       sendPasswordViaEmailOf(obj);
@@ -972,314 +971,107 @@ class UserServices {
     }
   }
 
-  async get_warehouse_or_retailer_address_arr(req, res) {
-    try {
-      let email = req.userData?.email;
-      const find = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "users",
-          IndexName: "email", // replace with your GSI name
-          KeyConditionExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-        })
-      );
-
-      let arr = [];
-
-      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
-      if (rawData && rawData?.user_type == "seller") {
-        arr = rawData?.outlet_addresses || [];
-      } else if (rawData && rawData?.user_type == "vendor") {
-        arr = rawData?.warehouse_addresses || [];
-      }
-      // console.log(rawData, "rawDataaaaaaaaaaaaa")
-      return res.status(200).json({
-        message: "Get data",
-        data: arr,
-        statusCode: 200,
-        success: true,
-      });
-    } catch (err) {
-      console.error(err, "erroror");
-      return res
-        .status(500)
-        .json({ message: err?.message, statusCode: 500, success: false });
-    }
-  }
-
-  async add_edit_warehouse_or_retailer_address(req, res) {
-    try {
-      let email = req.userData?.email;
-      let doc_id = req.userData.id;
-      let { id, address, po_box, is_default, is_edit } = req.body;
-
-      const find = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "users",
-          IndexName: "email", // replace with your GSI name
-          KeyConditionExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-        })
-      );
-      let arr = [];
-      let address_arr;
-      if (find?.Count == 0) {
-        return res
-          .status(400)
-          .json({ message: "User not found", statusCode: 400, success: false });
-      }
-      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
-      address_arr = rawData?.outlet_addresses || [];
-      let msg = "Warehouse address updated successfully";
-      if (is_edit) {
-        let find_po_box = address_arr?.find((e) => e?.po_box == po_box);
-        if (!find_po_box) {
-          return res.status(400).json({
-            message: "Address not found",
-            statusCode: 400,
-            success: false,
-          });
-        }
-        if (is_default) {
-          address_arr = address_arr.map((e) => {
-            if (e.po_box == po_box) {
-              e.address = address;
-              e.is_default = is_default;
-            } else {
-              e.is_default = false;
-            }
-            return e;
-          });
-        } else {
-          address_arr = address_arr.map((e) => {
-            if (e.po_box == po_box) {
-              e.is_default = is_default;
-              e.address = address;
-            }
-            return e;
-          });
-        }
-      } else {
-        if (rawData && rawData?.user_type == "seller") {
-          if (address_arr && address_arr?.length) {
-            if (is_default) {
-              address_arr?.map((el) => (el.is_default = false));
-            }
-            address_arr.push({ address, po_box, is_default });
-          } else {
-            address_arr = [{ address, po_box, is_default }];
-          }
-        } else if (rawData && rawData?.user_type == "vendor") {
-          address_arr = rawData?.warehouse_addresses || [];
-          if (address_arr && address_arr.length) {
-            if (is_default) {
-              address_arr?.map((el) => (el.is_default = false));
-            }
-            address_arr.push({ address, po_box, is_default });
-          } else {
-            address_arr = [{ address, po_box, is_default }];
-          }
-        }
-        msg = "Warehouse added successfully";
-      }
-      if (rawData && rawData?.user_type == "seller") {
-        const params = {
-          TableName: "users",
-          Key: { id: { S: doc_id } },
-          UpdateExpression:
-            "SET  #outlet_addresses = :outlet_addresses, #updated_at = :updated_at ",
-          ExpressionAttributeNames: {
-            "#outlet_addresses": "outlet_addresses",
-            "#updated_at": "updated_at",
-          },
-          ExpressionAttributeValues: {
-            ":outlet_addresses": {
-              L:
-                address_arr?.map((address) => ({
-                  M: {
-                    address: { S: address.address },
-                    po_box: { S: address.po_box },
-                    is_default: { BOOL: address?.is_default || false },
-                  },
-                })) || [],
-            },
-            ":updated_at": { S: new Date().toISOString() },
-          },
-        };
-        // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_adresses",outlet_addreses)
-        await dynamoDBClient.send(new UpdateItemCommand(params));
-      } else if (rawData && rawData?.user_type == "vendor") {
-        const params = {
-          TableName: "users",
-          Key: { id: { S: doc_id } },
-          UpdateExpression:
-            "SET  #warehouse_addresses = :warehouse_addresses,  #updated_at = :updated_at ",
-          ExpressionAttributeNames: {
-            "#warehouse_addresses": "warehouse_addresses",
-            "#updated_at": "updated_at",
-          },
-          ExpressionAttributeValues: {
-            ":warehouse_addresses": {
-              L:
-                address_arr?.map((address) => ({
-                  M: {
-                    address: { S: address.address },
-                    po_box: { S: address.po_box },
-                  },
-                })) || [],
-            },
-            ":updated_at": { S: new Date().toISOString() },
-          },
-        };
-        console.log(params, "paramsmsmsmsssmm");
-        await dynamoDBClient.send(new UpdateItemCommand(params));
-      }
-      // console.log(rawData, "rawDataaaaaaaaaaaaa")
-      return res.status(200).json({
-        message: msg,
-        // data: address_arr,
-        statusCode: 200,
-        success: true,
-      });
-    } catch (err) {
-      console.error(err, "erroror");
-      return res
-        .status(500)
-        .json({ message: err?.message, statusCode: 500, success: false });
-    }
-  }
-
-  async delete_warehouse_or_retailer_adres(req, res) {
-    try {
-      let email = req.userData?.email;
-      let doc_id = req.userData.id;
-      let { po_box } = req.body;
-
-      const find = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "users",
-          IndexName: "email", // replace with your GSI name
-          KeyConditionExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-        })
-      );
-      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
-      let address_arr = rawData?.outlet_addresses;
-      let findout_address = address_arr?.find((e) => e?.po_box == po_box);
-      if (!findout_address) {
-        return res.status(400).json({
-          message: "Warehouse deleted already ",
-          statusCode: 400,
-          success: false,
-        });
-      }
-      address_arr = address_arr?.filter((e) => e.po_box != po_box);
-      const params = {
-        TableName: "users",
-        Key: { id: { S: doc_id } },
-        UpdateExpression:
-          "SET  #outlet_addresses = :outlet_addresses, #updated_at = :updated_at ",
-        ExpressionAttributeNames: {
-          "#outlet_addresses": "outlet_addresses",
-          "#updated_at": "updated_at",
-        },
-        ExpressionAttributeValues: {
-          ":outlet_addresses": {
-            L:
-              address_arr?.map((address) => ({
-                M: {
-                  address: { S: address.address },
-                  po_box: { S: address.po_box },
-                  is_default: { BOOL: address?.is_default || false },
-                },
-              })) || [],
-          },
-          ":updated_at": { S: new Date().toISOString() },
-        },
-      };
-      await dynamoDBClient.send(new UpdateItemCommand(params));
-      return res.status(200).json({
-        message: "Warehouse address deleted successfully",
-        // data: address_arr,
-        statusCode: 200,
-        success: true,
-      });
-    } catch (err) {
-      console.error(err, "erroror");
-      return res
-        .status(500)
-        .json({ message: err?.message, statusCode: 500, success: false });
-    }
-  }
-
   async sendOtpEmail(req, res) {
     try {
-      let otp = await generateOTP();
-      if (otp.length == 3) {
-        otp = otp + "0";
-      } else if (otp.length == 2) {
-        otp = otp + "00";
-      } else if (otp.length == 1) {
-        otp = otp + "000";
-      }
-      let currentTime = Date.now();
-      currentTime = currentTime?.toString();
-      let get = await pinePointServices(req.query.email, otp);
-      console.log(get, "GEtgge");
 
-      if (get) {
-        const find = await dynamoDBClient.send(
-          new ScanCommand({
-            TableName: "userOtp",
-            FilterExpression: "email = :email",
-            ExpressionAttributeValues: {
-              ":email": { S: req.query.email },
-            },
-          })
-        );
-        // console.log(find, "Asdad", find?.Items[0])
-        if (find && find?.Count > 0) {
-          const params = {
-            TableName: "userOtp",
-            Key: { id: { S: find?.Items[0]?.id?.S } },
-            UpdateExpression:
-              "SET #otp = :otp, #creationTime = :creationTime, #updatedAt =:updatedAt ",
-            ExpressionAttributeNames: {
-              "#otp": "otp",
-              "#creationTime": "creationTime",
-              "#updatedAt": "updatedAt",
-            },
-            ExpressionAttributeValues: {
-              ":otp": { S: otp },
-              ":creationTime": { S: currentTime },
-              ":updatedAt": { S: currentTime },
-            },
-          };
-          // console.log(params, "parmansns")
-          await dynamoDBClient.send(new UpdateItemCommand(params));
-        } else {
-          let id = uuidv4()?.replace(/-/g, "");
-          const params = {
-            TableName: "userOtp",
-            Item: {
-              email: { S: req.query.email },
-              otp: { S: otp },
-              creationTime: { N: currentTime },
-              createdAt: { N: currentTime },
-              updatedAt: { N: currentTime },
-              id: { S: id },
-            },
-          };
-          let Data = await dynamoDBClient.send(new PutItemCommand(params));
-        }
+      // let otp = await generateOTP();
+      // if (otp.length == 3) {
+      //   otp = otp + "0";
+      // } else if (otp.length == 2) {
+      //   otp = otp + "00";
+      // } else if (otp.length == 1) {
+      //   otp = otp + "000";
+      // }
+      // let currentTime = Date.now();
+      // currentTime = currentTime?.toString();
+      // let get = await pinePointServices(req.query.email, otp);
+      // console.log(get, "GEtgge");
+      let salt = environmentVars.salt;
+      let randomPassword = generatePassword.generate({
+        length: 12,
+        numbers: true,
+        symbols: true,
+        uppercase: true,
+        lowercase: true,
+        excludeSimilarCharacters: true,
+        strict: true
+      });
+      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+      let id = uuidv4();
+      id = id?.replace(/-/g, "");
+      const params = {
+        TableName: "users",
+        Item: {
+          id: { S: id },
+          email: { S: req.query.email },
+          password: { S: hashPassword },
+          created_at: { S: new Date().toISOString() },
+          updated_at: { S: new Date().toISOString() },
+          is_verified: { BOOL: false },
+        },
+      };
+      console.log("docClient", "docccleint", params);
+      const newData=await dynamoDBClient.send(new PutItemCommand(params));
+      const cognitoUser = await new Promise((resolve, reject) => {
+        signup(req.query.email,randomPassword, (err, user) => {
+          if (err) {
+            reject(err);
+          } else {
+            console.log(user,"user-->data")
+            resolve(user);
+          }
+        });
+      });
+      let a=1
+      if (a==1) {
+        params.password=randomPassword
+        // const find = await dynamoDBClient.send(
+        //   new ScanCommand({
+        //     TableName: "userOtp",
+        //     FilterExpression: "email = :email",
+        //     ExpressionAttributeValues: {
+        //       ":email": { S: req.query.email },
+        //     },
+        //   })
+        // );
+        // // console.log(find, "Asdad", find?.Items[0])
+        // if (find && find?.Count > 0) {
+        //   const params = {
+        //     TableName: "userOtp",
+        //     Key: { id: { S: find?.Items[0]?.id?.S } },
+        //     UpdateExpression:
+        //       "SET #otp = :otp, #creationTime = :creationTime, #updatedAt =:updatedAt ",
+        //     ExpressionAttributeNames: {
+        //       "#otp": "otp",
+        //       "#creationTime": "creationTime",
+        //       "#updatedAt": "updatedAt",
+        //     },
+        //     ExpressionAttributeValues: {
+        //       ":otp": { S: otp },
+        //       ":creationTime": { S: currentTime },
+        //       ":updatedAt": { S: currentTime },
+        //     },
+        //   };
+        //   // console.log(params, "parmansns")
+        //   await dynamoDBClient.send(new UpdateItemCommand(params));
+        // } else {
+        //   let id = uuidv4()?.replace(/-/g, "");
+        //   const params = {
+        //     TableName: "userOtp",
+        //     Item: {
+        //       email: { S: req.query.email },
+        //       otp: { S: otp },
+        //       creationTime: { N: currentTime },
+        //       createdAt: { N: currentTime },
+        //       updatedAt: { N: currentTime },
+        //       id: { S: id },
+        //     },
+        //   };
+        //   let Data = await dynamoDBClient.send(new PutItemCommand(params));
+        // }
         return res.status(200).json({
           message: "Otp send to email for verify",
+          data:params,
           statusCode: 200,
           success: true,
         });
@@ -1297,244 +1089,137 @@ class UserServices {
         .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
-  // async verifyEmailWithOtpCheck(req, res) {
-  //   try {
-  //     let { otp, email } = req.query;
-
-  //     // Step 1: Verify OTP from DynamoDB
-  //     const findParams = {
-  //       TableName: "userOtp",
-  //       FilterExpression: "email = :email",
-  //       ExpressionAttributeValues: {
-  //         ":email": { S: email },
-  //       },
-  //     };
-
-  //     const find = await dynamoDBClient.send(new ScanCommand(findParams));
-
-  //     if (find && find.Count > 0) {
-  //       let otpDb = find.Items[0].otp.S;
-  //       let creationTime = parseInt(find.Items[0].creationTime.S, 10);
-  //       let nowTime = Date.now();
-  //       const timeDifference = nowTime - creationTime; // Difference in milliseconds
-  //       const tenMinutes = 600000; // 10 minutes in milliseconds
-
-  //       if (timeDifference > tenMinutes) {
-  //         return res.status(400).json({
-  //           message: "Otp is expired",
-  //           statusCode: 400,
-  //           success: false,
-  //         });
-  //       } else if (otpDb !== otp) {
-  //         return res.status(400).json({
-  //           message: "Invalid otp",
-  //           statusCode: 400,
-  //           success: false,
-  //         });
-  //       } else {
-  //         // Step 2: Confirm Signup in Cognito
-  //         const params = {
-  //           ClientId: "1hvv0kepvqqapp62ac06t46ffu", // Your Cognito App Client ID
-  //           Username: email,
-  //           ConfirmationCode: otp,
-  //         };
-
-  //         try {
-  //           await cognitoClient.send(new ConfirmSignUpCommand(params));
-
-  //           // Step 3: Update DynamoDB to mark email as verified
-  //           const updateParams = {
-  //             TableName: "users",
-  //             Key: { email: { S: email } },
-  //             UpdateExpression: "SET is_email_verified = :is_email_verified",
-  //             ExpressionAttributeValues: {
-  //               ":is_email_verified": { BOOL: true },
-  //             },
-  //           };
-  //           await dynamoDBClient.send(new UpdateItemCommand(updateParams));
-
-  //           return res.status(200).json({
-  //             message: "Email verified successfully",
-  //             statusCode: 200,
-  //             success: true,
-  //           });
-  //         } catch (error) {
-  //           return res.status(400).json({
-  //             message: error.message,
-  //             statusCode: 400,
-  //             success: false,
-  //           });
-  //         }
-  //       }
-  //     } else {
-  //       return res.status(400).json({
-  //         message: "No data found",
-  //         statusCode: 400,
-  //         success: false,
-  //       });
-  //     }
-  //   } catch (err) {
-  //     console.error(err, "Error");
-
-  //     return res.status(500).json({
-  //       message: err?.message,
-  //       statusCode: 500,
-  //       success: false,
-  //     });
-  //   }
-  // }
 
   async verifyEmailWithOtpCheck(req, res) {
     try {
-      let { otp, email } = req.query;
-
-      // Step 1: Verify OTP from DynamoDB
-      const findParams = {
-        TableName: "userOtp",
-        FilterExpression: "email = :email",
-        ExpressionAttributeValues: {
-          ":email": { S: email },
-        },
-      };
-
-      const find = await dynamoDBClient.send(new ScanCommand(findParams));
-
-      if (find && find.Count > 0) {
-        let otpDb = find.Items[0].otp.S;
-        let creationTime = parseInt(find.Items[0].creationTime.S, 10);
-        let nowTime = Date.now();
-        const timeDifference = nowTime - creationTime; // Difference in milliseconds
-        const tenMinutes = 600000; // 10 minutes in milliseconds
-
-        console.log("OTP from DB:", otpDb);
-        console.log("Provided OTP:", otp);
-        console.log("Creation time:", new Date(creationTime).toISOString());
-        console.log("Current time:", new Date(nowTime).toISOString());
-        console.log("Time difference in milliseconds:", timeDifference);
-        console.log("Time difference in minutes:", timeDifference / 60000);
-
-        if (timeDifference > tenMinutes) {
+      let { otp, email,password,docId } = req.query;
+      console.log(email,otp,"email----->")
+      // const find = await dynamoDBClient.send(
+      //   new ScanCommand({
+      //     TableName: "users",
+      //     FilterExpression: "email = :email",
+      //     ExpressionAttributeValues: {
+      //       ":email": { S: email },
+      //     },
+      //   })
+      // );
+      //  console.log(email,"email----->")
+      // if(find && find?.Count >0){
+      //   let username = find?.Items[0]?.email?.S;
+      //   console.log(find,username,otp)
+        let data=await confirmUser(email,otp);
+        console.log(Object.keys(data).length,data.success,"data length--->")
+        if(data.success==true){
+          return res.status(200).json({
+            message: "Email verified successfully",
+            data:{password:password,docId:docId},
+            statusCode: 200,
+            success: true,
+          });
+        }else{
           return res.status(400).json({
-            message: "Otp is expired",
-            statusCode: 400,
+            message: data.code,
+            statusCode: data.statusCode,
             success: false,
           });
-        } else if (otpDb !== otp) {
-          return res.status(400).json({
-            message: "Invalid otp",
-            statusCode: 400,
-            success: false,
-          });
-        } else {
-          // Step 2: Confirm Signup in Cognito
-          const params = {
-            ClientId: process.env.CLIENT_ID, // Your Cognito App Client ID
-            Username: email,
-            ConfirmationCode: otp,
-          };
-
-          try {
-            await cognitoClient.send(new ConfirmSignUpCommand(params));
-
-            // Step 3: Update DynamoDB to mark email as verified
-            const updateParams = {
-              TableName: "users",
-              Key: { email: { S: email } },
-              UpdateExpression: "SET is_email_verified = :is_email_verified",
-              ExpressionAttributeValues: {
-                ":is_email_verified": { BOOL: true },
-              },
-            };
-            await dynamoDBClient.send(new UpdateItemCommand(updateParams));
-
-            return res.status(200).json({
-              message: "Email verified successfully",
-              statusCode: 200,
-              success: true,
-            });
-          } catch (error) {
-            return res.status(400).json({
-              message: error.message,
-              statusCode: 400,
-              success: false,
-            });
-          }
         }
-      } else {
-        return res.status(400).json({
-          message: "No data found",
-          statusCode: 400,
-          success: false,
-        });
-      }
-    } catch (err) {
-      console.error(err, "Error");
+       
+      //}
+      // console.log(find, "Asdad", find?.Items[0]);
+      // if (find && find?.Count > 0) {
+      //   let otpDb = find?.Items[0]?.otp?.S;
+      //   let creationTime = parseInt(find?.Items[0]?.creationTime?.S, 10);
+      //   let nowTime = Date.now();
+      //   const timeDifference = nowTime - creationTime; // Difference in milliseconds
+      //   const tenMinutes = 600000; //10 minutes in milliseconds
+      //   if (timeDifference > tenMinutes) {
+      //     return res.status(400).json({
+      //       message: "Otp is expired",
+      //       statusCode: 400,
+      //       success: false,
+      //     });
+      //   } else if (otpDb != otp) {
+      //     return res
+      //       .status(400)
+      //       .json({ message: "In-valid otp", statusCode: 400, success: false });
+      //   } else {
+      //     return res.status(200).json({
+      //       message: "Email verified successfully",
+      //       statusCode: 200,
+      //       success: true,
+      //     });
+      //   }
+      //   // console.log("otpDb", "as",
+      //   //   creationTime,
+      //   //   nowTime, "timeDifferencetimeDifference", timeDifference)
+      //   // const findData = await dynamoDBClient.send(new QueryCommand({
+      //   //   TableName: "users",
+      //   //   IndexName: "email", // replace with your GSI name
+      //   //   KeyConditionExpression: "email = :email",
+      //   //   ExpressionAttributeValues: {
+      //   //     ":email": { S: email },
+      //   //   },
+      //   // }));
+      //   // console.log(findData, "findDatafindData")
 
-      return res.status(500).json({
-        message: err?.message,
-        statusCode: 500,
-        success: false,
-      });
+      //   // if (findData && findData?.Count == 0) {
+      //   //   return res.status(400).json({ message: "No data found", statusCode: 400, success: false })
+      //   // // } else if (findData&&findData?.Items[0]?.is_email_verified?.) {
+      //   // } else  {
+      //   //   const params = {
+      //   //     TableName: "users",
+      //   //     Key: { id: { S: findData?.Items[0]?.id?.S } },
+      //   //     UpdateExpression:
+      //   //       "SET #is_email_verified = :is_email_verified",
+      //   //     ExpressionAttributeNames: {
+      //   //       "#is_email_verified": "is_email_verified",
+      //   //       "#is_email_verified": "is_email_verified",
+      //   //     },
+      //   //     ExpressionAttributeValues: {
+      //   //       ":is_email_verified": {
+      //   //         Bool: true
+      //   //       },
+      //   //     },
+      //   //   };
+      //   //   await dynamoDBClient.send(new UpdateItemCommand(params));
+      //   // }
+      // } else {
+      //   return res
+      //     .status(400)
+      //     .json({ message: "No data found", statusCode: 400, success: false });
+      // }
+    } catch (err) {
+      console.error(err, "Eeee");
+
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
     }
   }
 
   async loginUser(req, res) {
     try {
-      const { email, password } = req.body;
-      const cognitoParams = { username: email, password };
+      let { email, password } = req.body;
 
-      console.log("Received sign-in request for email:", email);
-
-      try {
-        const cognitoUser = await new Promise((resolve, reject) => {
-          signin(cognitoParams, (err, user) => {
-            if (err) {
-              console.log(
-                "Error during sign-in for email:",
-                email,
-                "Error:",
-                err
-              );
-              reject(err);
-            } else {
-              resolve(user);
-            }
-          });
-        });
-
-        if (cognitoUser.mfaRequired) {
-          console.log(
-            "MFA required for email:",
-            email,
-            "Session:",
-            cognitoUser.cognitoUser.Session
-          );
-          return res.status(200).send({
-            success: true,
-            message: "MFA required. Please enter the OTP sent to your email.",
-            session: cognitoUser.cognitoUser.Session,
-            codeDeliveryDetails: cognitoUser.codeDeliveryDetails,
-          });
+    // Step 1: Authenticate User with Cognito
+    try {
+      const tokens = await signin(req.body,(err, user) => {
+        if (err) {
+          return err;
         } else {
-          console.log("Sign-in successful for email:", email);
-          return res.status(200).send({
-            success: true,
-            message: "User signed in successfully",
-            user: cognitoUser.result,
-          });
+          console.log(user,"user-->data")
+          return res.status(200).send({message:"Logged in ",data:user});
         }
-      } catch (error) {
-        console.error(
-          "Error during sign-in for email:",
-          email,
-          "Error:",
-          error
-        );
-        return res
-          .status(400)
-          .send({ success: false, message: error.message, error });
-      }
-      //
+      });
+      console.log('Cognito tokens:', tokens);
+    } catch (err) {
+      console.error('Cognito Authentication error:', err);
+      return res.status(400).json({
+        message: "Authentication failed",
+        statusCode: 400,
+        success: false,
+      });
+    }
       const findData = await dynamoDBClient.send(
         new QueryCommand({
           TableName: "users",
@@ -1815,8 +1500,8 @@ class UserServices {
           }
         }
         let token = generateAccessToken(obj);
-        // let expiryDate = new Date();
-        // expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 days
+        let expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 days
         // expiryDate.setTime(expiryDate.getTime() + (60 * 1000)); // Current time + 1 minute
 
         const updateParams = {
@@ -1831,12 +1516,13 @@ class UserServices {
           ReturnValues: "UPDATED_NEW",
         };
         await dynamoDBClient.send(new UpdateItemCommand(updateParams));
+        const result = await confirmUser(findData?.name);
         res
           .cookie("_token", token, {
             httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
             secure: true, // Requires HTTPS connection
             sameSite: "strict", // Restricts the cookie to be sent only in same-site requests
-            // expires: expiryDate, // Set the expiry date
+            expires: expiryDate, // Set the expiry date
           })
           .status(200)
           .json({
@@ -2050,7 +1736,7 @@ class UserServices {
           req.files.profile_photo[0]?.filename ||
           findEmailExist?.Items[0]?.profile_photo?.S ||
           "";
-        // console.log(findEmailExist ?.Items[0]?.,"aa")
+        // console.log(findEmailExist ?.Items[0]?.,"aa")   
         const params = {
           TableName: "users",
           Key: { id: { S: doc_id } },
@@ -2890,6 +2576,23 @@ class UserServices {
       });
     } catch (err) {
       console.error(err);
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
+
+  async getAllUSerData(req, res) {
+    try {
+      let fetchArray = await UserModel.findAll();
+      res.status(200).json({
+        message: "fetch user data",
+        data: fetchArray,
+        success: true,
+        statusCode: 200,
+      });
+      return;
+    } catch (err) {
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
