@@ -19,7 +19,7 @@ import CartRoutes from "./routes/admin/CartRoutes.js";
 // require('dotenv').config();
 // import dotenv from 'dotenv';
 // dotenv.config();
-// import mysql from 'mysql2';
+import mysql from 'mysql2';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const app = express();
@@ -61,20 +61,22 @@ const allowedOrigins = [
 //   })
 // );
 
-// const connection = mysql.createConnection({
-//   host:  "mysql-db.c328giyw47da.me-central-1.rds.amazonaws.com:3306",  // process.env.DB_HOST,
-//   user: 'admin',
-//   password: "03ycTZRKOxofr6L2IgZY"  ,
-//   // database: process.env.DB_NAME
-// });
+const connection = mysql.createConnection({
+  host: process.env.host  ,//'aqad-mysql-db.c328giyw47da.me-central-1.rds.amazonaws.com',
+  user: process.env.user , // 'admin',
+  password: process.env.password,//'AkElk1xqyG7UIUZjPIdN',
+  database: '', // Replace with your actual database name
+  port: 3306 // Default MySQL port
+});
 
-// connection.connect((err) => {
-//   if (err) {
-//     console.error('Error connecting to the database:', err.stack);
-//     return;
-//   }
-//   console.log('Connected to the database as id', connection.threadId);
-// });
+// Open the MySQL connection
+connection.connect(error => {
+  if (error) {
+    console.error('Error connecting to the database:', error.stack);
+    return;
+  }
+  console.log('Connected to the database as id :  ', connection.threadId);
+});
 
 app.get("/", async (req, res) => {
   console.log("Hello World ! aqad" + Date.now());

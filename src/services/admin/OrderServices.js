@@ -119,6 +119,7 @@ class orderServices {
           );
           vendorArr.push({
             /////////////add new key
+            address:address,po_box:po_box,
             details_obj: getVednorObj,
             order_id: id,
             vendor_id: findProductOBj?.created_by,
