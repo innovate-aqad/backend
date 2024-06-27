@@ -62,11 +62,11 @@ const allowedOrigins = [
 // );
 
 const connection = mysql.createConnection({
-  host: process.env.host  ,//'aqad-mysql-db.c328giyw47da.me-central-1.rds.amazonaws.com',
-  user: process.env.user , // 'admin',
-  password: process.env.password,//'AkElk1xqyG7UIUZjPIdN',
-  database: '', // Replace with your actual database name
-  port: 3306 // Default MySQL port
+  host: process.env.HOST,
+  user: process.env.USER, 
+  password: process.env.PASSWORD,
+  database: process.env.DBNAME, 
+  port: process.env.DBPORT
 });
 
 // Open the MySQL connection
