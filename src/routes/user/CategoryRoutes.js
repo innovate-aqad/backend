@@ -1,10 +1,10 @@
 import express from "express";
-import CategoryControllerObj from "../../controllers/category/CategoryController.js";
+import CategoryControllerObj from "../../controllers/admin/CategoryController.js";
 import { authorize } from "../../middlewares/auth.js";
 import { educationImage, userImage } from "../../helpers/multer.js";
-import {  uploadCategory } from "../../helpers/s3.js";
+import { uploadCategory } from "../../helpers/s3.js";
 
-const  CategoryRoutes = express.Router();
+const CategoryRoutes = express.Router();
 
 CategoryRoutes.post(
   "/add",

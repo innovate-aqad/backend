@@ -1,5 +1,5 @@
 import express from "express";
-import CategoryControllerObj from "../../controllers/category/CategoryController.js";
+import CategoryControllerObj from "../../controllers/admin/CategoryController.js";
 import { authorize } from "../../middlewares/auth.js";
 import { upload } from "../../helpers/s3.js";
 import BrandControllerObj from "../../controllers/admin/BrandController.js";
