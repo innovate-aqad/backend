@@ -15,18 +15,18 @@ class OrderController {
   async create_order(req, res) {// only for seller/retailor
     try {
       // console.log(req.body, "req.bod!@#!@#",req.userData,"er00")
-      if(req.userData?.user_type!='seller'){
-        return res.status(400).json({message:"Only Seller can place order",statusCode:400,success:false})
-      }
+      // if(req.userData?.user_type!='seller'){
+      //   return res.status(400).json({message:"Only Seller can place order",statusCode:400,success:false})
+      // }
       // return 
-      let { error } = OrderSchema.validate(req.body, options);
-      if (error) {
-        return res.status(400).json({
-          message: error.details[0]?.message,
-          success: false,
-          statusCode: 400,
-        });
-      }
+      // let { error } = OrderSchema.validate(req.body, options);
+      // if (error) {
+      //   return res.status(400).json({
+      //     message: error.details[0]?.message,
+      //     success: false,
+      //     statusCode: 400,
+      //   });
+      // }
       await OrderServicesObj.add(req, res);
     } catch (err) {
       return res

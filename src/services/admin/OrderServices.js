@@ -13,6 +13,7 @@ import {
   BatchWriteItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
+import OrderModel from "../../models/OrderModel.js";
 
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -21,8 +22,9 @@ const dynamoDBClient = new DynamoDBClient({
     secretAccessKey: process.env.Aws_secretAccessKey,
   },
 });
-
 class orderServices {
+
+
   async add(req, res) {
     try {
       let {
@@ -35,24 +37,26 @@ class orderServices {
         country_code,
         payment_status,
       } = req.body;
-      let tempProductId = new Set();
-      for (let le of order_detail) {
-        tempProductId.add(le?.product_id);
-      }
-      const keys = Array.from(tempProductId).map((product_id) => ({
-        id: { S: product_id },
-      }));
-      const getProductDetails = await dynamoDBClient.send(
-        new BatchGetItemCommand({
-          RequestItems: {
-            products: {
-              Keys: keys,
-              ProjectionExpression:
-                "variation_arr,id ,category_id,sub_category_id,title,created_by",
-            },
-          },
-        })
-      );
+      // let tempProductId = new Set();
+      // for (let le of order_detail) {
+      //   tempProductId.add(le?.product_id);
+      // }
+      // const keys = Array.from(tempProductId).map((product_id) => ({
+      //   id: { S: product_id },
+      // }));
+      // const getProductDetails = await dynamoDBClient.send(
+      //   new BatchGetItemCommand({
+      //     RequestItems: {
+      //       products: {
+      //         Keys: keys,
+      //         ProjectionExpression:
+      //           "variation_arr,id ,category_id,sub_category_id,title,created_by",
+      //       },
+      //     },
+      //   })
+      // );
+      await OrderModel.create(req.body)
+      return res.status(400).json({message:"Temp-Order generate",statusCode:200,success:true})
       // console.log(getProductDetails?.Responses?.products, "!!@@  ffffffffffff");
       let simplrProductArr = [];
       let vendor_id_arr = new Set();
