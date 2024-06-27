@@ -58,9 +58,9 @@ const allowedOrigins = [
 // console.log(environmentVars,"environmentVars");
 const connection = mysql.createConnection({
   host:environmentVars.host, //process.env.HOST,
-  user:environmentVars. dbUser, //    process.env.USER, 
+  user:environmentVars.dbUser, //    process.env.USER, 
   password: environmentVars.dbPass , // process.env.PASSWORD,
-  database:  environmentVars. dbName, // process.env.DBNAME, 
+  database:  environmentVars.dbName, // process.env.DBNAME, 
   port:  environmentVars.dbPort , // process.env.DBPORT
 });
 
