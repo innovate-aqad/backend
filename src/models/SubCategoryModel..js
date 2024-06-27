@@ -1,5 +1,4 @@
 import dynamoose from "dynamoose";
-// import AWS from "aws-sdk";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { DataMapper } from "@aws/dynamodb-data-mapper";

@@ -7,7 +7,6 @@
 //   QueryCommand, BatchWriteItemCommand
 // } from "@aws-sdk/client-dynamodb";
 
-// // import AWS from "aws-sdk";
 // import { v4 as uuidv4 } from "uuid";
 
 // import formidable from "formidable";
@@ -31,7 +30,6 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
-// import AWS from "aws-sdk";
 
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
