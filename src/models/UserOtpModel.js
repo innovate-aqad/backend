@@ -1,41 +1,46 @@
-import dynamoose from "dynamoose";
-// import AWS from "aws-sdk";
-import { DynamoDB } from "@aws-sdk/client-dynamodb";
-import { marshall } from "@aws-sdk/util-dynamodb";
-import { DataMapper } from "@aws/dynamodb-data-mapper";
-import { v4 as uuidv4 } from "uuid";
+import { Sequelize, DataTypes } from 'sequelize';
+import { v4 as uuidv4 } from 'uuid';
 
-// Update AWS configuration
-const dynamoDBClient = new DynamoDB({ region: process.env.Aws_region });
-dynamoose.aws.sdk = dynamoDBClient;
-
-const schema = new dynamoose.Schema(
-  {
-    id: {
-      type: String,
-      required: false,
-    },
-    otp: {
-      type: Number,
-      required: true,
-    },
-    creationTime:{type:String,required:true},
-    status: {
-      type: string,
-      required: false,
-      default: 'active'
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-const mapper = new DataMapper({
-  client: dynamoDBClient, // Use the AWS SDK v3 client
+// Initialize Sequelize
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+  host: process.env.DB_HOST,
+  dialect: 'mysql',
+  logging: false,
 });
 
-const UserOtpModel = dynamoose.model("userOtp", schema
-);
+// Define the UserOtp model
+const UserOtp = sequelize.define('UserOtp', {
+  id: {
+    type: DataTypes.STRING,
+    defaultValue: uuidv4,
+    primaryKey: true,
+  },
+  otp: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  creationTime: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  status: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'active',
+  },
+  createdAt: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW,
+  },
+  updatedAt: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW,
+  },
+}, {
+  timestamps: true,
+  tableName: 'userOtp'
+});
 
-export default UserOtpModel;
+export default UserOtp;

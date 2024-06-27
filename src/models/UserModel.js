@@ -1,108 +1,108 @@
-import dynamoose from "dynamoose";
-// import AWS from "aws-sdk";
-import { DynamoDB } from "@aws-sdk/client-dynamodb";
-import { marshall } from "@aws-sdk/util-dynamodb";
-import { DataMapper } from "@aws/dynamodb-data-mapper";
-import { v4 as uuidv4 } from "uuid";
+import { Sequelize, DataTypes } from 'sequelize';
+import { v4 as uuidv4 } from 'uuid';
 
-// Update AWS configuration
-const dynamoDBClient = new DynamoDB({ region: process.env.Aws_region });
-dynamoose.aws.sdk = dynamoDBClient;
-
-
-// AWS.config.update({
-//   region: process.env.Aws_region,
-// });
-
-// dynamoose.aws.sdk = AWS;
-
-const schema = new dynamoose.Schema(
-  {
-    id: {
-      type: String,
-      required: false,
-    },
-
-    user_type: {
-      type: String,
-      required: true,
-      enum: ["vendor", "logistic", "seller", "employee", "admin"],
-    },
-    profile_photo: {
-      type: String,
-      required: false,
-    },
-    // _id: {
-    //   type: String,
-    //   hashKey: true,
-    // },
-    name: {
-      type: String,
-      required: true,
-    },
-    email: {
-      type: String,
-      required: false,
-    },
-    phone: {
-      type: String,
-      required: true,
-    },
-    dob: { type: String, required: false },
-
-    //slide 2
-    company_name: { type: String },
-    company_address: { type: String },
-    designation: { type: String },
-    emirates_id: { type: String },
-    residence_visa: { type: String },
-    passport: { type: String },
-    
-    //slide 3
-    trade_license: { type: String },
-    cheque_scan: { type: String },
-    vat_certificate: { type: String },
-    country: {
-      type: String,
-      required: true,
-    },
-    country_code: {
-      type: String,
-      required: true,
-    },
-    password: {
-      type: String,
-      required: false,
-    },
-
-    role: {
-      type: String,
-      required: false,
-    },
-    is_verified: {
-      type: Boolean,
-      default: false,
-    },
-    is_social_login: {
-      type: Number,
-      default: 0,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-const mapper = new DataMapper({
-  client: dynamoDBClient, // Use the AWS SDK v3 client
+// Initialize Sequelize
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+  host: process.env.DB_HOST,
+  dialect: 'mysql',
+  logging: false,
 });
 
+// Define the User model
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.STRING,
+    defaultValue: uuidv4,
+    primaryKey: true,
+  },
+  user_type: {
+    type: DataTypes.ENUM,
+    values: ['vendor', 'logistic', 'seller', 'employee', 'admin'],
+    
+  },
+  profile_photo: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  name: {
+    type: DataTypes.STRING,
+   
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  phone: {
+    type: DataTypes.STRING,
+    
+  },
+  dob: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  company_name: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  company_address: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  designation: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  emirates_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  residence_visa: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  passport: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  trade_license: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  cheque_scan: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  vat_certificate: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  country: {
+    type: DataTypes.STRING,
+    
+  },
+  country_code: {
+    type: DataTypes.STRING,
+    
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  role: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  is_verified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  is_social_login: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+}, {
+  timestamps: true,
+  tableName: 'users'
+});
 
-const UserModel = dynamoose.model("users", schema
-  // , {
-  //   create: true,
-  //   throughput: "ON_DEMAND",
-  // }
-);
-
-export default UserModel;
+export default User;

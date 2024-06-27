@@ -40,7 +40,12 @@ import {
   del_image_local_and_s3_and_upload_image,
   simplifyDynamoDBResponse,
 } from "../../helpers/datafetch.js";
-
+import { parsePhoneNumberFromString } from "libphonenumber-js";
+import generatePassword from 'generate-password';
+import { signup, signin, confirmUser,resendOTP,getUserStatus} from "../../services/cognito/cognito.js";
+import User from "../../models/UserModel.js";
+import AWS from "aws-sdk";
+const cognito = new AWS.CognitoIdentityServiceProvider();
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -50,9 +55,9 @@ const dynamoDBClient = new DynamoDBClient({
   },
 });
 
-// AWS.config.update({
-//   region: "us-east-1", //process.env.Aws_region //'us-east-1'  // Change to your region
-// });
+console.log(dynamoDBClient, "dydb", process.env.Aws_region)
+
+
 
 async function getNextSequenceValue(sequenceName) {
   console.log(sequenceName, "sequence nameee");
@@ -74,743 +79,551 @@ async function getNextSequenceValue(sequenceName) {
 let salt = environmentVars.salt;
 class UserServices {
   async createUser(req, res) {
-    try {
-      let {
-        name,
-        email,
-        phone,
-        country,
-        user_type,
-        slide,
-        role,
-        dob,
-        company_name,
-        company_address,
-        company_address_line_2,
-        designation,
-        doc_id,
-        emirates_id,
-        trade_license_number,
-        po_box,
-        warehouse_addresses,
-        outlet_addresses,
-        iban,
-        vehicle_details_array,
-        driver_name_array,
-        driver_license_number_array,
-        db_driver_details_array,
-        term_and_condition,
-      } = req.body;
-      console.log(req.body, " @@@  a  aaaaaa!@#!@#aa req.body");
-      console.log(req.files, "req.filesssss");
-      email = email?.trim();
-      let findData;
-      if ((slide == 2 || slide == 3 || slide == 4) && doc_id == "") {
+  try {
+    console.log("phonenumber--->", req.body.phone);
+    let {
+      name,
+      email,
+      phone,
+      country,
+      user_type,
+      slide,
+      password,
+      role,
+      dob,
+      company_name,
+      company_address,
+      company_address_line_2,
+      designation,
+      doc_id,
+      emirates_id,
+      trade_license_number,
+      po_box,
+      warehouse_addresses,
+      outlet_addresses,
+      iban,
+      vehicle_details_array,
+      driver_name_array,
+      driver_license_number_array,
+      db_driver_details_array,
+      term_and_condition,
+    } = req.body;
+    console.log(req.body, " @@@  a  aaaaaa!@#!@#aa req.body");
+    console.log(req.files, "req.filesssss");
+    email = email?.trim();
+
+    let findData;
+    if ((slide == 1 || slide == 2 || slide == 3 || slide == 4) && !doc_id) {
+      return res.status(400).json({
+        message: "Doc_id is mandatory",
+        statusCode: 400,
+        success: false,
+      });
+    }
+    
+    if (slide == 2 || slide == 3 || doc_id) {
+      console.log(req.files, "req.files is here");
+
+      findData = await User.findOne({ where: { id: doc_id } });
+
+      if (!findData) {
         return res.status(400).json({
-          message: "Doc_id is mandatory",
+          message: "User not found",
           statusCode: 400,
           success: false,
         });
       }
-      if (slide == 2 || slide == 3 || doc_id) {
-        findData = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "users",
-            KeyConditionExpression: "id = :id",
-            ExpressionAttributeValues: {
-              ":id": { S: doc_id },
-            },
-          })
-        );
-        // console.log(findData, "findataaaaaaaa222222111");
-      }
-      console.log(findData?.Items[0], "findDatafindData22", "findData");
-      // return
-      if (findData?.Count > 0 && slide == 1) {
-        let profile_photo = findData?.Items[0]?.profile_photo?.S;
-        if (req.files && req.files?.profile_photo?.length) {
-          profile_photo = req.files?.profile_photo[0]?.filename;
-          let filePath = `./uploads/${user_type}/${findData?.Items[0]?.profile_photo?.S}`;
-          try {
-            deleteImageFRomLocal(filePath);
-          } catch (err) {
-            console.error(err, "deleteImageFRomLocal");
-          }
-          try {
-            deleteImageFromS3(findData?.Items[0]?.profile_photo?.S, user_type);
-          } catch (err) {
-            console.error(err, "deleteImageFromS3");
-          }
-          try {
-            uploadImageToS3(
-              req.files?.profile_photo[0]?.filename,
-              req.files?.profile_photo[0]?.path,
-              user_type
-            );
-          } catch (er) {
-            console.error(er, "uploadageToS3 ");
-          }
+    }
+
+    console.log(findData, "findDatafindData22", "findData");
+
+    if (findData && slide == 1 && !password) {
+      let profile_photo = findData.profile_photo;
+      if (req.files && req.files.profile_photo.length) {
+        profile_photo = req.files.profile_photo[0].filename;
+        let filePath = `./uploads/${user_type}/${findData.profile_photo}`;
+        try {
+          deleteImageFromLocal(filePath);
+        } catch (err) {
+          console.error(err, "deleteImageFromLocal");
         }
-        const params = {
-          TableName: "users",
-          Key: { id: { S: doc_id } },
-          UpdateExpression:
-            "SET #profile_photo = :profile_photo, #name = :name, #dob = :dob, #updated_at =:updated_at",
-          ExpressionAttributeNames: {
-            "#profile_photo": "profile_photo",
-            "#name": "name",
-            "#dob": "dob",
-            "#updated_at": "updated_at",
-          },
-          ExpressionAttributeValues: {
-            ":profile_photo": { S: profile_photo },
-            ":name": { S: name || findData?.Items[0]?.name?.S },
-            ":dob": { S: dob || findData?.Items[0]?.dob?.S },
-            ":updated_at": { S: new Date().toISOString() },
-          },
-        };
-        await dynamoDBClient.send(new UpdateItemCommand(params));
+        try {
+          deleteImageFromS3(findData.profile_photo, user_type);
+        } catch (err) {
+          console.error(err, "deleteImageFromS3");
+        }
+        try {
+          uploadImageToS3(
+            req.files.profile_photo[0].filename,
+            req.files.profile_photo[0].path,
+            user_type
+          );
+        } catch (er) {
+          console.error(er, "uploadImageToS3 ");
+        }
+      }
+      await findData.update({
+        profile_photo,
+        name: name || findData.name,
+        dob: dob || findData.dob,
+        updatedAt: new Date(),
+      });
+
+      return res.status(200).json({
+        message: "User data updated successfully",
+        statusCode: 200,
+        success: true,
+        data: { id: doc_id },
+      });
+    }
+
+    if (findData && slide == 2) {
+      if (["vendor", "seller", "logistic"].includes(user_type.toLowerCase()) && slide == 2) {
+        if (slide == 2 && user_type == "vendor" && (!warehouse_addresses || warehouse_addresses.length == 0)) {
+          return res.status(400).json({
+            message: "At least one warehouse is mandatory",
+            statusCode: 400,
+            success: false,
+          });
+        } else if (slide == 2 && user_type == "seller" && (!outlet_addresses || outlet_addresses.length == 0)) {
+          return res.status(400).json({
+            message: "At least one outlet address is mandatory",
+            statusCode: 400,
+            success: false,
+          });
+        }
+
+        await findData.update({
+          company_name: company_name || findData.company_name,
+          company_address: company_address || findData.company_address,
+          company_address_line_2: company_address_line_2 || findData.company_address_line_2,
+          designation: designation || findData.designation,
+          trade_license_number: trade_license_number || findData.trade_license_number,
+          country: country || findData.country,
+          po_box: po_box || findData.po_box,
+          warehouse_addresses: warehouse_addresses || findData.warehouse_addresses,
+          outlet_addresses: outlet_addresses || findData.outlet_addresses,
+          updatedAt: new Date(),
+        });
+
         return res.status(200).json({
           message: "User data updated successfully",
           statusCode: 200,
           success: true,
           data: { id: doc_id },
         });
-      }
-
-      if (findData?.Count > 0 && slide == 2) {
-        if (
-          ["vendor", "seller", "logistic"].includes(user_type?.toLowerCase()) &&
-          slide == 2
-        ) {
-          if (slide == 2 && user_type == "vendor") {
-            if (!warehouse_addresses || warehouse_addresses?.length == 0) {
-              return res.status(400).json({
-                message: "Atleast one warehouse is mandatory",
-                statusCode: 400,
-                success: false,
-              });
-            }
-          } else if (slide == 2 && user_type == "seller") {
-            if (!outlet_addresses || outlet_addresses?.length == 0) {
-              return res.status(400).json({
-                message: "Atleast one outlet_addresses is mandatory",
-                statusCode: 400,
-                success: false,
-              });
-            }
-          }
-          const params = {
-            TableName: "users",
-            Key: { id: { S: doc_id } },
-            UpdateExpression:
-              "SET #company_name = :company_name, #company_address = :company_address,#company_address_line_2 = :company_address_line_2, #designation = :designation, #trade_license_number = :trade_license_number, #country = :country, #po_box= :po_box, #warehouse_addresses = :warehouse_addresses, #outlet_addresses = :outlet_addresses, #updated_at = :updated_at ",
-            ExpressionAttributeNames: {
-              "#company_name": "company_name",
-              "#company_address": "company_address",
-              "#company_address_line_2": "company_address_line_2",
-              "#designation": "designation",
-              "#trade_license_number": "trade_license_number",
-              "#country": "country",
-              "#po_box": "po_box",
-              "#warehouse_addresses": "warehouse_addresses",
-              "#outlet_addresses": "outlet_addresses",
-              "#updated_at": "updated_at",
-            },
-            ExpressionAttributeValues: {
-              ":company_name": {
-                S: company_name || findData?.Items[0]?.company_name?.S || "",
-              },
-              ":company_address": {
-                S:
-                  company_address ||
-                  findData?.Items[0]?.company_address?.S ||
-                  "",
-              },
-              ":company_address_line_2": {
-                S:
-                  company_address_line_2 ||
-                  findData?.Items[0]?.company_address_line_2?.S ||
-                  "",
-              },
-              ":designation": {
-                S: designation || findData?.Items[0]?.designation?.S || "",
-              },
-              ":trade_license_number": {
-                S:
-                  trade_license_number ||
-                  findData?.Items[0]?.trade_license_number?.S ||
-                  "",
-              },
-              ":country": {
-                S: country || findData?.Items[0]?.country?.S || "",
-              },
-              ":po_box": { S: po_box || findData?.Items[0]?.po_box?.S || "" },
-              ":warehouse_addresses": {
-                L:
-                  warehouse_addresses?.map((address) => ({
-                    M: {
-                      address: { S: address.address },
-                      po_box: { S: address.po_box },
-                    },
-                  })) ||
-                  findData?.Items[0]?.warehouse_addresses?.L ||
-                  [],
-              },
-              ":outlet_addresses": {
-                L:
-                  outlet_addresses?.map((address) => ({
-                    M: {
-                      address: { S: address.address },
-                      po_box: { S: address.po_box },
-                      is_default: { BOOL: address?.is_default || false }
-                    },
-                  })) ||
-                  findData?.Items[0]?.outlet_addresses?.L ||
-                  [],
-              },
-              ":updated_at": { S: new Date().toISOString() },
-            },
-          };
-          // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_adresses",outlet_addreses)
-          await dynamoDBClient.send(new UpdateItemCommand(params));
-          return res.status(200).json({
-            message: "User data updated successfully",
-            statusCode: 200,
-            success: true,
-            data: { id: doc_id },
-          });
-        } else if (user_type == "employee" && slide == 2) {
-          // console.log(req.files, "req.filesssss employee");
-          if (
-            req?.files?.residence_visa &&
-            req?.files?.residence_visa[0]?.filename
-          ) {
-            let filePath = `./uploads/${user_type}/${findData?.Items[0]?.residence_visa?.S}`;
-            try {
-              deleteImageFRomLocal(filePath);
-            } catch (err) {
-              console.error(err, "deleteImageFRomLocal");
-            }
-            try {
-              deleteImageFromS3(
-                findData?.Items[0]?.residence_visa?.S,
-                user_type
-              );
-            } catch (err) {
-              console.error(err, "deleteImageFromS3");
-            }
-            try {
-              uploadImageToS3(
-                req.files?.residence_visa[0]?.filename,
-                req.files?.residence_visa[0]?.path,
-                user_type
-              );
-            } catch (er) {
-              console.error(er, "uploadImaeToS3 ");
-            }
-          }
-          let passport = req?.files?.passport[0]?.filename;
-          let residence_visa = req?.files.residence_visa[0]?.filename;
-          let emirate_id_pic = req?.files?.emirate_id_pic[0]?.filename;
-          const params = {
-            TableName: "users",
-            Key: { id: { S: doc_id } },
-            UpdateExpression:
-              "SET #emirates_id = :emirates_id, #passport = :passport, #residence_visa = :residence_visa,#emirate_id_pic = :emirate_id_pic",
-            ExpressionAttributeNames: {
-              "#emirates_id": "emirates_id",
-              "#passport": "passport",
-              "#residence_visa": "residence_visa",
-              "#emirate_id_pic": "emirate_id_pic",
-            },
-            ExpressionAttributeValues: {
-              ":emirates_id": {
-                S: emirates_id || findData?.Items[0]?.emirates_id?.S || "",
-              },
-              ":passport": {
-                S: passport || findData?.Items[0]?.passport?.S || "",
-              },
-              ":residence_visa": {
-                S:
-                  residence_visa || findData?.Items[0]?.residence_visa?.S || "",
-              },
-              ":emirate_id_pic": {
-                S:
-                  emirate_id_pic || findData?.Items[0]?.emirate_id_pic?.S || "",
-              },
-            },
-          };
-          // console.log(params, "paramsnasdas");
-          await dynamoDBClient.send(new UpdateItemCommand(params));
-          return res.status(200).json({
-            message: "User data updated successfully",
-            statusCode: 200,
-            success: true,
-            data: { id: doc_id },
-          });
-        } else {
-          return res.status(400).json({
-            success: false,
-            message: "Email already exist!..",
-            statusCode: 400,
-          });
-        }
-      }
-
-      if (findData?.Count > 0 && slide == 3) {
-        let trade_license = req?.files?.trade_license?.length
-          ? req?.files?.trade_license[0]?.filename
-          : findData?.Items[0]?.trade_license?.S || "";
-        if (req.files && req.files?.trade_license?.length) {
-          let filePath = `./uploads/${user_type}/${findData?.Items[0]?.trade_license?.S}`;
-          // console.log(filePath, "filepathhhhhhh");
+      } else if (user_type == "employee" && slide == 2) {
+        if (req.files?.residence_visa && req.files?.residence_visa[0]?.filename) {
+          let filePath = `./uploads/${user_type}/${findData.residence_visa}`;
           try {
-            deleteImageFRomLocal(filePath);
+            deleteImageFromLocal(filePath);
           } catch (err) {
-            console.error(err, "deleteImageFRomLocal");
+            console.error(err, "deleteImageFromLocal");
           }
           try {
-            deleteImageFromS3(findData?.Items[0]?.trade_license?.S, user_type);
+            deleteImageFromS3(findData.residence_visa, user_type);
           } catch (err) {
             console.error(err, "deleteImageFromS3");
           }
           try {
             uploadImageToS3(
-              req.files?.trade_license[0]?.filename,
-              req.files?.trade_license[0]?.path,
-              user_type
-            );
-          } catch (er) {
-            console.error(er, "uploadmageToS3 ");
-          }
-        }
-        let cheque_scan = req.files?.cheque_scan?.length
-          ? req.files?.cheque_scan[0]?.filename
-          : findData?.Items[0]?.cheque_scan?.S || "";
-        if (req.files && req.files?.cheque_scan?.length) {
-          let filePath = `./uploads/${user_type}/${findData?.Items[0]?.cheque_scan?.S}`;
-          try {
-            deleteImageFRomLocal(filePath);
-          } catch (err) {
-            console.error(err, "deleteImageFRomLocal");
-          }
-          try {
-            deleteImageFromS3(findData?.Items[0]?.cheque_scan?.S, user_type);
-          } catch (err) {
-            console.error(err, "deleteImageFromS3");
-          }
-          try {
-            uploadImageToS3(
-              req.files?.cheque_scan[0]?.filename,
-              req.files?.cheque_scan[0]?.path,
-              user_type
-            );
-          } catch (er) {
-            console.error(er, "uploadImgeToS3 ");
-          }
-        }
-        let vat_certificate = req.files?.vat_certificate?.length
-          ? req.files?.vat_certificate[0]?.filename
-          : findData?.Items[0]?.vat_certificate?.S || "";
-        if (req.files && req.files?.vat_certificate?.length) {
-          let filePath = `./uploads/${user_type}/${findData?.Items[0]?.vat_certificate?.S}`;
-          try {
-            deleteImageFRomLocal(filePath);
-          } catch (err) {
-            console.error(err, "deleteImageFRomLocal");
-          }
-          try {
-            deleteImageFromS3(
-              findData?.Items[0]?.vat_certificate?.S,
-              user_type
-            );
-          } catch (err) {
-            console.error(err, "deleteImageFromS3");
-          }
-          try {
-            uploadImageToS3(
-              req.files?.vat_certificate[0]?.filename,
-              req.files?.vat_certificate[0]?.path,
-              user_type
-            );
-          } catch (er) {
-            console.error(er, "uploadmageToS3 ");
-          }
-        }
-        let residence_visa = req.files?.residence_visa?.length
-          ? req.files?.residence_visa[0]?.filename
-          : findData?.Items[0]?.residence_visa?.S || "";
-        if (req.files && req.files?.residence_visa?.length) {
-          let filePath = `./uploads/${user_type}/${findData?.Items[0]?.residence_visa?.S}`;
-          try {
-            deleteImageFRomLocal(filePath);
-          } catch (err) {
-            console.error(err, "deleteImageFRomLocal");
-          }
-          try {
-            deleteImageFromS3(findData?.Items[0]?.residence_visa?.S, user_type);
-          } catch (err) {
-            console.error(err, "deleteImageFromS3");
-          }
-          try {
-            uploadImageToS3(
-              req.files?.residence_visa[0]?.filename,
-              req.files?.residence_visa[0]?.path,
+              req.files.residence_visa[0].filename,
+              req.files.residence_visa[0].path,
               user_type
             );
           } catch (er) {
             console.error(er, "uploadImageToS3 ");
           }
         }
-        let emirate_id_pic = req.files?.emirate_id_pic?.length
-          ? req.files?.emirate_id_pic[0]?.filename
-          : findData?.Items[0]?.emirate_id_pic?.S || "";
-        if (req.files && req.files?.emirate_id_pic?.length) {
-          let filePath = `./uploads/${user_type}/${findData?.Items[0]?.emirate_id_pic?.S}`;
-          try {
-            deleteImageFRomLocal(filePath);
-          } catch (err) {
-            console.error(err, "deleteImageFRomLocal");
-          }
-          try {
-            deleteImageFromS3(findData?.Items[0]?.emirate_id_pic?.S, user_type);
-          } catch (err) {
-            console.error(err, "deleteImageFromS3");
-          }
-          try {
-            uploadImageToS3(
-              req.files?.emirate_id_pic[0]?.filename,
-              req.files?.emirate_id_pic[0]?.path,
-              user_type
-            );
-          } catch (er) {
-            console.error(er, "uploadImeToS3 ");
-          }
-        }
-        if (
-          ["vendor", "seller", "logistic"].includes(user_type?.toLowerCase()) &&
-          slide == 3
-        ) {
-          const params = {
-            TableName: "users",
-            Key: { id: { S: doc_id } },
-            UpdateExpression:
-              "SET #trade_license = :trade_license, #cheque_scan = :cheque_scan, #vat_certificate = :vat_certificate, #residence_visa = :residence_visa , #emirates_id = :emirates_id, #iban = :iban , #emirate_id_pic= :emirate_id_pic, #updated_at=:updated_at, #term_and_condition = :term_and_condition",
-            ExpressionAttributeNames: {
-              "#trade_license": "trade_license",
-              "#cheque_scan": "cheque_scan",
-              "#vat_certificate": "vat_certificate",
-              "#residence_visa": "residence_visa",
-              "#emirates_id": "emirates_id",
-              "#iban": "iban",
-              "#emirate_id_pic": "emirate_id_pic",
-              "#updated_at": "updated_at",
-              "#term_and_condition": "term_and_condition",
-            },
-            ExpressionAttributeValues: {
-              ":trade_license": { S: trade_license },
-              ":cheque_scan": { S: cheque_scan },
-              ":vat_certificate": { S: vat_certificate },
-              ":residence_visa": { S: residence_visa },
-              ":emirates_id": { S: emirates_id || "" },
-              ":iban": { S: iban || "" },
-              ":emirate_id_pic": { S: emirate_id_pic || "" },
-              ":updated_at": { S: new Date().toISOString() },
-              ":term_and_condition": { S: term_and_condition || "inactive" },
-            },
-          };
-          console.log(params, "apra slide 3");
-          await dynamoDBClient.send(new UpdateItemCommand(params));
-          return res.status(200).json({
-            message: "User data updated successfully",
-            statusCode: 200,
-            success: true,
-            data: { id: doc_id },
-          });
-        } else {
-          return res.status(400).json({
-            success: false,
-            message: "Email already exist!..",
-            statusCode: 400,
-          });
-        }
-      }
-      if (findData?.Count > 0 && slide == 4 && user_type == "logistic") {
-        if (
-          !db_driver_details_array &&
-          (driver_name_array?.length == 0 ||
-            req.files?.driver_image?.length == 0 ||
-            req.files?.driving_license?.length == 0)
-        ) {
-          return res.status(400).json({
-            message: "Atleast one driver_details required",
-            statusCode: 400,
-            success: false,
-          });
-        }
 
-        if (vehicle_details_array?.length == 0) {
-          return res.status(400).json({
-            message: "Atleast one vehicle details required",
-            statusCode: 400,
-            success: false,
-          });
-        }
-        let driver_details_array = db_driver_details_array?.length
-          ? [...db_driver_details_array]
-          : [];
-        let driver_images_arr = req?.files?.driver_images;
-        let driving_license_arr = req.files?.driving_license;
-        for (let i = 0; i < driver_name_array?.length; i++) {
-          let obj = {
-            id: Date.now(),
-            name: driver_name_array[i],
-            drive_image: driver_images_arr[i]?.filename || "",
-            driving_license: driving_license_arr[i]?.filename || "",
-            driving_license_number: driver_license_number_array
-              ? driver_license_number_array[i]
-              : "",
-          };
-          driver_details_array.push(obj);
-          if (
-            driving_license_arr &&
-            driving_license_arr?.length &&
-            driving_license_arr[i]?.filename
-          ) {
-            try {
-              uploadImageToS3(
-                driving_license_arr[i]?.filename,
-                driving_license_arr[i]?.path,
-                user_type
-              );
-            } catch (er) {
-              console.error(er, "uploadImaeToS3 ");
-            }
-          }
-          if (
-            driver_images_arr &&
-            driver_images_arr?.length &&
-            driver_images_arr[i]?.filename
-          ) {
-            try {
-              uploadImageToS3(
-                driver_images_arr[i]?.filename,
-                driver_images_arr[i]?.path,
-                user_type
-              );
-            } catch (er) {
-              console.error(er, "uploadImageoS3 user_type 4 ");
-            }
-          }
-        }
-        // console.log(driver_details_array, "req.filesssssssssssssss");
+        const passport = req.files?.passport?.[0]?.filename;
+        const residence_visa = req.files?.residence_visa?.[0]?.filename;
+        const emirate_id_pic = req.files?.emirate_id_pic?.[0]?.filename;
 
-        const params = {
-          TableName: "users",
-          Key: { id: { S: doc_id } },
-          UpdateExpression:
-            "SET #vehicle_details_array = :vehicle_details_array, #driver_details_array = :driver_details_array , #updated_at=:updated_at",
-          ExpressionAttributeNames: {
-            "#vehicle_details_array": "vehicle_details_array",
-            "#driver_details_array": "driver_details_array",
-            "#updated_at": "updated_at",
-          },
-          ExpressionAttributeValues: {
-            ":vehicle_details_array": {
-              L:
-                vehicle_details_array?.map((el) => ({
-                  M: {
-                    brand: { S: el?.brand || "" },
-                    number: { S: el?.number || "" },
-                    vehicleType: { S: el?.vehicleType || "" },
-                  },
-                })) ||
-                findData?.Items[0]?.vehicle_details_array?.L ||
-                [],
-            },
-            ":driver_details_array": {
-              L:
-                driver_details_array?.map((el) => ({
-                  M: {
-                    name: { S: el?.name },
-                    drive_image: { S: el?.drive_image },
-                    driving_license: { S: el?.driving_license },
-                    driving_license_number: { S: el?.driving_license_number },
-                  },
-                })) ||
-                findData?.Items[0]?.driver_details_array?.L ||
-                [],
-            },
-            ":updated_at": { S: new Date().toISOString() },
-          },
-        };
-        // console.log(
-        //   params,
-        //   "apransnsnsn params",
-        //   slide,
-        //   "1!@!@!@@ sl l ideeeeeee"
-        // );
-        await dynamoDBClient.send(new UpdateItemCommand(params));
+        await findData.update({
+          emirates_id: emirates_id || findData.emirates_id,
+          passport: passport || findData.passport,
+          residence_visa: residence_visa || findData.residence_visa,
+          emirate_id_pic: emirate_id_pic || findData.emirate_id_pic,
+          updatedAt: new Date(),
+        });
+
         return res.status(200).json({
           message: "User data updated successfully",
           statusCode: 200,
           success: true,
           data: { id: doc_id },
         });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exists!..",
+          statusCode: 400,
+        });
       }
-      if (doc_id && findData?.Count == 0) {
-        return res
-          .status(400)
-          .json({ message: "Data not found", statusCode: 400, success: false });
+    }
+
+    if (findData && slide == 3) {
+      let trade_license = req?.files?.trade_license?.[0]?.filename || findData.trade_license || "";
+      if (req.files?.trade_license?.[0]?.filename) {
+        let filePath = `./uploads/${user_type}/${findData.trade_license}`;
+        try {
+          deleteImageFromLocal(filePath);
+        } catch (err) {
+          console.error(err, "deleteImageFromLocal");
+        }
+        try {
+          deleteImageFromS3(findData.trade_license, user_type);
+        } catch (err) {
+          console.error(err, "deleteImageFromS3");
+        }
+        try {
+          uploadImageToS3(
+            req.files.trade_license[0].filename,
+            req.files.trade_license[0].path,
+            user_type
+          );
+        } catch (er) {
+          console.error(er, "uploadImageToS3 ");
+        }
       }
-      const findEmailExist = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "users",
-          IndexName: "email",
-          KeyConditionExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-        })
-      );
-      // console.log(findEmailExist, "@@@!!!  email check ");
-      if (findEmailExist.Count > 0) {
-        if (
-          req.files &&
-          req.files?.profile_photo?.length &&
-          req.files?.profile_photo?.length > 0
-        ) {
+
+      let cheque_scan = req.files?.cheque_scan?.[0]?.filename || findData.cheque_scan || "";
+      if (req.files?.cheque_scan?.[0]?.filename) {
+        let filePath = `./uploads/${user_type}/${findData.cheque_scan}`;
+        try {
+          deleteImageFromLocal(filePath);
+        } catch (err) {
+          console.error(err, "deleteImageFromLocal");
+        }
+        try {
+          deleteImageFromS3(findData.cheque_scan, user_type);
+        } catch (err) {
+          console.error(err, "deleteImageFromS3");
+        }
+        try {
+          uploadImageToS3(
+            req.files.cheque_scan[0].filename,
+            req.files.cheque_scan[0].path,
+            user_type
+          );
+        } catch (er) {
+          console.error(er, "uploadImageToS3 ");
+        }
+      }
+
+      let vat_certificate = req.files?.vat_certificate?.[0]?.filename || findData.vat_certificate || "";
+      if (req.files?.vat_certificate?.[0]?.filename) {
+        let filePath = `./uploads/${user_type}/${findData.vat_certificate}`;
+        try {
+          deleteImageFromLocal(filePath);
+        } catch (err) {
+          console.error(err, "deleteImageFromLocal");
+        }
+        try {
+          deleteImageFromS3(findData.vat_certificate, user_type);
+        } catch (err) {
+          console.error(err, "deleteImageFromS3");
+        }
+        try {
+          uploadImageToS3(
+            req.files.vat_certificate[0].filename,
+            req.files.vat_certificate[0].path,
+            user_type
+          );
+        } catch (er) {
+          console.error(er, "uploadImageToS3 ");
+        }
+      }
+
+      let residence_visa = req.files?.residence_visa?.[0]?.filename || findData.residence_visa || "";
+      if (req.files?.residence_visa?.[0]?.filename) {
+        let filePath = `./uploads/${user_type}/${findData.residence_visa}`;
+        try {
+          deleteImageFromLocal(filePath);
+        } catch (err) {
+          console.error(err, "deleteImageFromLocal");
+        }
+        try {
+          deleteImageFromS3(findData.residence_visa, user_type);
+        } catch (err) {
+          console.error(err, "deleteImageFromS3");
+        }
+        try {
+          uploadImageToS3(
+            req.files.residence_visa[0].filename,
+            req.files.residence_visa[0].path,
+            user_type
+          );
+        } catch (er) {
+          console.error(er, "uploadImageToS3 ");
+        }
+      }
+
+      let emirate_id_pic = req.files?.emirate_id_pic?.[0]?.filename || findData.emirate_id_pic || "";
+      if (req.files?.emirate_id_pic?.[0]?.filename) {
+        let filePath = `./uploads/${user_type}/${findData.emirate_id_pic}`;
+        try {
+          deleteImageFromLocal(filePath);
+        } catch (err) {
+          console.error(err, "deleteImageFromLocal");
+        }
+        try {
+          deleteImageFromS3(findData.emirate_id_pic, user_type);
+        } catch (err) {
+          console.error(err, "deleteImageFromS3");
+        }
+        try {
+          uploadImageToS3(
+            req.files.emirate_id_pic[0].filename,
+            req.files.emirate_id_pic[0].path,
+            user_type
+          );
+        } catch (er) {
+          console.error(er, "uploadImageToS3 ");
+        }
+      }
+
+      if (["vendor", "seller", "logistic"].includes(user_type.toLowerCase()) && slide == 3) {
+        await findData.update({
+          trade_license,
+          cheque_scan,
+          vat_certificate,
+          residence_visa,
+          emirates_id: emirates_id || "",
+          iban: iban || "",
+          emirate_id_pic,
+          updatedAt: new Date(),
+          term_and_condition: term_and_condition || "inactive",
+        });
+
+        return res.status(200).json({
+          message: "User data updated successfully",
+          statusCode: 200,
+          success: true,
+          data: { id: doc_id },
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exists!..",
+          statusCode: 400,
+        });
+      }
+    }
+
+    if (findData && slide == 4 && user_type == "logistic") {
+      if (
+        !db_driver_details_array &&
+        (driver_name_array.length == 0 ||
+          req.files.driver_image.length == 0 ||
+          req.files.driving_license.length == 0)
+      ) {
+        return res.status(400).json({
+          message: "At least one driver detail is required",
+          statusCode: 400,
+          success: false,
+        });
+      }
+
+      if (vehicle_details_array.length == 0) {
+        return res.status(400).json({
+          message: "At least one vehicle detail is required",
+          statusCode: 400,
+          success: false,
+        });
+      }
+
+      let driver_details_array = db_driver_details_array?.length ? [...db_driver_details_array] : [];
+      let driver_images_arr = req.files.driver_images;
+      let driving_license_arr = req.files.driving_license;
+      for (let i = 0; i < driver_name_array.length; i++) {
+        let obj = {
+          id: Date.now(),
+          name: driver_name_array[i],
+          drive_image: driver_images_arr[i]?.filename || "",
+          driving_license: driving_license_arr[i]?.filename || "",
+          driving_license_number: driver_license_number_array ? driver_license_number_array[i] : "",
+        };
+        driver_details_array.push(obj);
+        if (driving_license_arr?.[i]?.filename) {
           try {
-            deleteImageFRomLocal(req.files?.profile_photo[0]?.path);
+            uploadImageToS3(
+              driving_license_arr[i].filename,
+              driving_license_arr[i].path,
+              user_type
+            );
+          } catch (er) {
+            console.error(er, "uploadImageToS3 ");
+          }
+        }
+        if (driver_images_arr?.[i]?.filename) {
+          try {
+            uploadImageToS3(
+              driver_images_arr[i].filename,
+              driver_images_arr[i].path,
+              user_type
+            );
+          } catch (er) {
+            console.error(er, "uploadImageToS3 ");
+          }
+        }
+      }
+
+      await findData.update({
+        vehicle_details_array,
+        driver_details_array,
+        updatedAt: new Date(),
+      });
+
+      return res.status(200).json({
+        message: "User data updated successfully",
+        statusCode: 200,
+        success: true,
+        data: { id: doc_id },
+      });
+    }
+
+    if (doc_id && !findData) {
+      return res.status(400).json({
+        message: "Data not found",
+        statusCode: 400,
+        success: false,
+      });
+    }
+
+    const findEmailExist = await User.findOne({ where: { email } });
+    if (findEmailExist && !password) {
+      if (req.files?.profile_photo?.length) {
+        try {
+          deleteImageFromLocal(req.files.profile_photo[0].path);
+        } catch (err) {
+          console.error(err, "deleteImageFromLocal");
+        }
+      }
+      return res.status(400).json({
+        success: false,
+        message: "Email already exists!",
+        statusCode: 400,
+      });
+    }
+
+    if (phone) {
+      const findPhoneExist = await User.findOne({ where: { phone } });
+      if (findPhoneExist) {
+        if (req.files?.profile_photo?.length) {
+          try {
+            deleteImageFromLocal(req.files.profile_photo[0].path);
           } catch (err) {
-            console.error(err, "deleteImageFRomLocal");
+            console.error(err, "deleteImageFromLocal");
           }
         }
         return res.status(400).json({
           success: false,
-          message: "Email already exist!",
+          message: "Phone number already exists!",
           statusCode: 400,
         });
       }
-      if (phone) {
-        const findPhoneExist = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "users",
-            IndexName: "phone", // replace with your GSI name
-            KeyConditionExpression: "phone = :phone",
-            ExpressionAttributeValues: {
-              ":phone": { S: phone },
-            },
-          })
-        );
-        if (findPhoneExist.Count > 0) {
-          if (
-            req.files &&
-            req.files?.profile_photo?.length &&
-            req.files?.profile_photo?.length > 0
-          ) {
-            try {
-              deleteImageFRomLocal(req.files?.profile_photo[0]?.path);
-            } catch (err) {
-              console.error(err, "deleteImageFRomLocal");
-            }
-          }
-          return res.status(400).json({
-            success: false,
-            message: "Phone number already exists!",
-            statusCode: 400,
-          });
-        }
-      }
-      let salt = environmentVars.salt;
-      let randomPassword = encryptStringWithKey(
-        req.body.email.toLowerCase()?.slice(0, 6)
-      );
-      // console.log(randomPassword, "randomPasswordrandomPassword");
-      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
-
-      let id = uuidv4();
-      id = id?.replace(/-/g, "");
-
-      let profile_photo;
-      if (req.files && req.files?.profile_photo?.length) {
-        profile_photo = req.files?.profile_photo[0]?.filename;
-      }
-      const params = {
-        TableName: "users",
-        Item: {
-          profile_photo: { S: profile_photo || "" },
-          id: { S: id },
-          name: { S: name },
-          email: { S: email },
-          phone: { S: phone || "" },
-          dob: { S: dob || "" },
-          user_type: { S: user_type },
-          role: { S: role || "" },
-          country: { S: country || "" },
-          password: { S: hashPassword },
-          created_at: { S: new Date().toISOString() },
-          updated_at: { S: new Date().toISOString() },
-          account_status: { S: "activated" },
-          is_verified: { BOOL: false },
-        },
-      };
-      console.log("docClient", "docccleint", params);
-      await dynamoDBClient.send(new PutItemCommand(params));
-      let obj = {
-        email,
-        randomPassword,
-        name,
-      };
-      sendPasswordViaEmailOf(obj);
-      if (req.files?.profile_photo && req.files?.profile_photo[0]?.filename) {
-        try {
-          uploadImageToS3(
-            req.files?.profile_photo[0]?.filename,
-            req.files?.profile_photo[0]?.path,
-            user_type
-          );
-        } catch (er) {
-          console.error(er, "uploadImageoS3 ");
-        }
-      }
-      return res.status(201).json({
-        message: "User register successfully",
-        statusCode: 201,
-        success: true,
-        data: { id },
-      });
-    } catch (err) {
-      try {
-        if (req.files) {
-          for (let el in req?.files) {
-            for (let ele of req?.files[el]) {
-              // console.log(ele, "eleleellel")
-              try {
-                await deleteImageFromS3(ele?.filename, req.body.user_type);
-              } catch (err) {
-                console.log("error delete image frm s3");
-              }
-              try {
-                await removefIle(ele?.filename, req.body.user_type);
-              } catch (error) {
-                console.log("remove fie");
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.error(err, "eee");
-      }
-      console.log(err, "errorororro");
-      return res
-        .status(500)
-        .json({ message: err?.message, success: false, statusCode: 500 });
     }
-  }
 
-  async getUserByEmail(req, res) {
+    let salt = bcrypt.genSaltSync(10);
+    let hashPassword = password ? bcrypt.hashSync(password, salt) : null;
+    const phoneNumber = parsePhoneNumberFromString(phone, "IN");
+
+    if (!phoneNumber || !phoneNumber.isValid()) {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid phone number format.",
+        error: {
+          name: "InvalidParameterException",
+          code: "InvalidParameterException",
+        },
+      });
+    }
+
+    const formattedPhoneNumber = phoneNumber.number;
+
+    const cognitoParams = {
+      email,
+      name,
+      dob,
+      phone: formattedPhoneNumber,
+      password: "Fathima@123",
+    };
+
+    let id = uuidv4();
+    id = id.replace(/-/g, "");
+
+    let profile_photo;
+    if (req.files?.profile_photo?.length) {
+      profile_photo = req.files.profile_photo[0].filename;
+    }
+
+    const newUser = await User.create({
+      id,
+      profile_photo: profile_photo || "",
+      name,
+      email,
+      phone,
+      dob,
+      user_type,
+      role: role || "",
+      country,
+      password: hashPassword,
+      account_status: "activated",
+      is_verified: false,
+    });
+
+    let obj = {
+      email,
+      randomPassword: password,
+      name,
+    };
+    console.log(obj, "password data is here---->");
+    sendPasswordViaEmailOf(obj);
+    if (req.files?.profile_photo?.length) {
+      try {
+        uploadImageToS3(
+          req.files.profile_photo[0].filename,
+          req.files.profile_photo[0].path,
+          user_type
+        );
+      } catch (er) {
+        console.error(er, "uploadImageToS3 ");
+      }
+    }
+    return res.status(201).json({
+      message: "User registered successfully",
+      statusCode: 201,
+      success: true,
+      data: { id },
+    });
+  } catch (err) {
+    try {
+      if (req.files) {
+        for (let el in req.files) {
+          for (let ele of req.files[el]) {
+            try {
+              await deleteImageFromS3(ele.filename, req.body.user_type);
+            } catch (err) {
+              console.log("error delete image from s3");
+            }
+            try {
+              await removeFile(ele.filename, req.body.user_type);
+            } catch (error) {
+              console.log("remove file");
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err, "eee");
+    }
+    console.log(err, "errorororro");
+    return res.status(500).json({ message: err.message, success: false, statusCode: 500 });
+  }
+}
+async getUserByEmail(req, res) {
     try {
       // const find = await dynamoDBClient.send(
       //   new ScanCommand({
@@ -877,590 +690,177 @@ class UserServices {
     }
   }
 
-  async get_warehouse_or_retailer_address_arr(req, res) {
-    try {
-      let email = req.userData?.email
-      const find = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "users",
-          IndexName: "email", // replace with your GSI name
-          KeyConditionExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-        })
-      )
-
-      let arr = []
-
-      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
-      if (rawData && rawData?.user_type == 'seller') {
-        arr = rawData?.outlet_addresses || []
-      } else if (rawData && rawData?.user_type == 'vendor') {
-        arr = rawData?.warehouse_addresses || []
-      }
-      // console.log(rawData, "rawDataaaaaaaaaaaaa")
-      return res.status(200).json({
-        message: "Get data",
-        data: arr,
-        statusCode: 200,
-        success: true,
-      });
-    } catch (err) {
-      console.error(err, "erroror");
-      return res
-        .status(500)
-        .json({ message: err?.message, statusCode: 500, success: false });
-    }
-  }
-
-  // async add_edit_warehouse_or_retailer_address(req, res) {
-  //   try {
-  //     let email = req.userData?.email
-  //     let doc_id = req.userData.id
-  //     let { id, address, po_box, is_default, is_edit } = req.body
-
-  //     const find = await dynamoDBClient.send(
-  //       new QueryCommand({
-  //         TableName: "users",
-  //         IndexName: "email", // replace with your GSI name
-  //         KeyConditionExpression: "email = :email",
-  //         ExpressionAttributeValues: {
-  //           ":email": { S: email },
-  //         },
-  //       })
-  //     )
-  //     let arr = []
-  //     let address_arr;
-  //     if (find?.Count == 0) {
-  //       return res.status(400).json({ message: "User not found", statusCode: 400, success: false })
-  //     }
-  //     let rawData = simplifyDynamoDBResponse(find?.Items[0]);
-  //     address_arr = rawData?.outlet_addresses || []
-  //     let msg="Warehouse address updated successfully"
-  //     if (is_edit) {
-  //       let find_po_box = address_arr?.find((e) => e?.po_box == po_box)
-  //       if (!find_po_box) {
-  //         return res.status(400).json({ message: "Address not found", statusCode: 400, success: false })
-  //       }
-  //       if (is_default) {
-  //         address_arr = address_arr.map((e) => {
-  //           if (e.po_box == po_box) {
-  //             e.address=address
-  //             e.is_default = is_default
-  //           } else {
-  //             e.is_default = false;
-  //           }
-  //           return e;
-  //         });
-  //       } else {
-  //         address_arr = address_arr.map((e) => {
-  //           if(e.po_box==po_box){
-  //             e.is_default = is_default;
-  //             e.address=address
-  //           }
-  //           return e;
-  //         });
-  //       }
-
-  //     } else {
-  //       if (rawData && rawData?.user_type == 'seller') {
-  //         if (address_arr && address_arr?.length) {
-  //           if (is_default) {
-  //             address_arr?.map((el) => el.is_default = false)
-  //           }
-  //           address_arr.push({ address, po_box, is_default })
-  //         } else {
-  //           address_arr = [{ address, po_box, is_default }]
-  //         }
-  //       } else if (rawData && rawData?.user_type == 'vendor') {
-  //         address_arr = rawData?.warehouse_addresses || []
-  //         if (address_arr && address_arr.length) {
-  //           if (is_default) {
-  //             address_arr?.map((el) => el.is_default = false)
-  //           }
-  //           address_arr.push({ address, po_box, is_default })
-  //         } else {
-  //           address_arr = [{ address, po_box, is_default }]
-  //         }
-  //       }
-  //       msg='Warehouse added successfully'
-  //     }
-  //       if (rawData && rawData?.user_type == 'seller') {
-  //         const params = {
-  //           TableName: "users",
-  //           Key: { id: { S: doc_id } },
-  //           UpdateExpression:
-  //             "SET  #outlet_addresses = :outlet_addresses, #updated_at = :updated_at ",
-  //           ExpressionAttributeNames: {
-  //             "#outlet_addresses": "outlet_addresses",
-  //             "#updated_at": "updated_at",
-  //           },
-  //           ExpressionAttributeValues: {
-  //             ":outlet_addresses": {
-  //               L:
-  //                 address_arr?.map((address) => ({
-  //                   M: {
-  //                     address: { S: address.address },
-  //                     po_box: { S: address.po_box },
-  //                     is_default: { BOOL: address?.is_default || false }
-  //                   },
-  //                 })) ||
-  //                 [],
-  //             },
-  //             ":updated_at": { S: new Date().toISOString() },
-  //           },
-  //         };
-  //         // console.log(params, "paramsmsmsmsssmm", warehouse_addresses,"outlet_adresses",outlet_addreses)
-  //         await dynamoDBClient.send(new UpdateItemCommand(params));
-
-  //       } else if (rawData && rawData?.user_type == 'vendor') {
-  //         const params = {
-  //           TableName: "users",
-  //           Key: { id: { S: doc_id } },
-  //           UpdateExpression:
-  //             "SET  #warehouse_addresses = :warehouse_addresses,  #updated_at = :updated_at ",
-  //           ExpressionAttributeNames: {
-  //             "#warehouse_addresses": "warehouse_addresses",
-  //             "#updated_at": "updated_at",
-  //           },
-  //           ExpressionAttributeValues: {
-  //             ":warehouse_addresses": {
-  //               L:
-  //                 address_arr?.map((address) => ({
-  //                   M: {
-  //                     address: { S: address.address },
-  //                     po_box: { S: address.po_box },
-  //                   },
-  //                 })) ||
-  //                 [],
-  //             },
-  //             ":updated_at": { S: new Date().toISOString() },
-  //           },
-  //         };
-  //         console.log(params, "paramsmsmsmsssmm")
-  //         await dynamoDBClient.send(new UpdateItemCommand(params));
-  //       }
-  //       // console.log(rawData, "rawDataaaaaaaaaaaaa")
-  //       return res.status(200).json({
-  //         message:msg ,
-  //         // data: address_arr,
-  //         statusCode: 200,
-  //         success: true,
-  //       });
-  //   } catch (err) {
-  //     console.error(err, "erroror");
-  //     return res
-  //       .status(500)
-  //       .json({ message: err?.message, statusCode: 500, success: false });
-  //   }
-  // }
-
-
-  //new 
-
-  async asd(req, res) {
-
-  }
-
-  async add_edit_warehouse_or_retailer_address(req, res) {
-    try {
-      let email = req.userData?.email;
-      let doc_id = req.userData.id;
-      let { arr } = req.body;
-
-      // Ensure each address in the array has is_default set to false if not specified
-      arr = arr.map(item => ({
-        ...item,
-        is_default: item.is_default || false
-      }));
-
-      const find = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "users",
-          IndexName: "email", // replace with your GSI name
-          KeyConditionExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-        })
-      );
-
-      if (find?.Count == 0) {
-        return res.status(400).json({ message: "User not found", statusCode: 400, success: false });
-      }
-
-      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
-      let address_arr = rawData?.outlet_addresses || [];
-      let msg = 'Warehouse added successfully';
-
-      if (rawData && rawData?.user_type == 'seller') {
-        if (address_arr.length) {
-          if (arr.some(item => item.is_default)) {
-            address_arr = address_arr.map(el => ({ ...el, is_default: false }));
-          }
-          address_arr = address_arr.concat(arr);
-        } else {
-          address_arr = arr;
-        }
-      } else if (rawData && rawData?.user_type == 'vendor') {
-        address_arr = rawData?.warehouse_addresses || [];
-        if (address_arr.length) {
-          if (arr.some(item => item.is_default)) {
-            address_arr = address_arr.map(el => ({ ...el, is_default: false }));
-          }
-          address_arr = address_arr.concat(arr);
-        } else {
-          address_arr = arr;
-        }
-      }
-
-      const params = {
-        TableName: "users",
-        Key: { id: { S: doc_id } },
-        UpdateExpression: `SET #addresses = :addresses, #updated_at = :updated_at`,
-        ExpressionAttributeNames: {
-          "#addresses": rawData?.user_type == 'seller' ? "outlet_addresses" : "warehouse_addresses",
-          "#updated_at": "updated_at",
-        },
-        ExpressionAttributeValues: {
-          ":addresses": {
-            L: address_arr.map(address => ({
-              M: {
-                address: { S: address.address },
-                po_box: { S: address.po_box },
-                is_default: { BOOL: address.is_default }
-              },
-            })) || [],
-          },
-          ":updated_at": { S: new Date().toISOString() },
-        },
-      };
-
-      await dynamoDBClient.send(new UpdateItemCommand(params));
-
-      return res.status(200).json({ message: msg, statusCode: 200, success: true });
-
-    } catch (error) {
-
-    }
-  }
-
-  async change_warehouse_or_retailer_address(req, res) {
-    try {
-      let email = req.userData?.email;
-      let doc_id = req.userData.id;
-      let { po_box, is_default } = req.body;
-
-      const find = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "users",
-          IndexName: "email",
-          KeyConditionExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-        })
-      );
-      if (find?.Count == 0) {
-        return res.status(400).json({ message: "User not found", statusCode: 400, success: false });
-      }
-      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
-      let address_arr = rawData?.outlet_addresses || rawData?.warehouse_addresses || [];
-      let msg = "Warehouse address updated successfully";
-
-      // Update logic
-      let find_po_box = address_arr.find(e => e?.po_box == po_box);
-      if (!find_po_box) {
-        return res.status(400).json({ message: "Address not found", statusCode: 400, success: false });
-      }
-
-      if (is_default) {
-        address_arr = address_arr.map(e => {
-          if (e.po_box == po_box) {
-            e.is_default = true;
-          } else {
-            e.is_default = false;
-          }
-          return e;
-        });
-      } else {
-        address_arr = address_arr.map(e => {
-          if (e.po_box == po_box) {
-            e.is_default = false;
-          }
-          return e;
-        });
-      }
-
-      let params = {
-        TableName: "users",
-        Key: { id: { S: doc_id } },
-        UpdateExpression: "",
-        ExpressionAttributeNames: {
-          "#updated_at": "updated_at",
-        },
-        ExpressionAttributeValues: {
-          ":updated_at": { S: new Date().toISOString() },
-        },
-      };
-
-      if (rawData.user_type == 'seller') {
-        params.UpdateExpression = "SET #outlet_addresses = :outlet_addresses, #updated_at = :updated_at";
-        params.ExpressionAttributeNames["#outlet_addresses"] = "outlet_addresses";
-        params.ExpressionAttributeValues[":outlet_addresses"] = {
-          L: address_arr.map(address => ({
-            M: {
-              address: { S: address.address },
-              po_box: { S: address.po_box },
-              is_default: { BOOL: address.is_default }
-            },
-          })) || [],
-        };
-      } else if (rawData.user_type == 'vendor') {
-        params.UpdateExpression = "SET #warehouse_addresses = :warehouse_addresses, #updated_at = :updated_at";
-        params.ExpressionAttributeNames["#warehouse_addresses"] = "warehouse_addresses";
-        params.ExpressionAttributeValues[":warehouse_addresses"] = {
-          L: address_arr.map(address => ({
-            M: {
-              address: { S: address.address },
-              po_box: { S: address.po_box },
-              is_default: { BOOL: address.is_default }
-            },
-          })) || [],
-        };
-      } await dynamoDBClient.send(new UpdateItemCommand(params));
-      return res.status(200).json({
-        message: msg,
-        statusCode: 200,
-        success: true,
-      });
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Internal Server Error", statusCode: 500, success: false });
-    }
-  }
-
-
-
-  async delete_warehouse_or_retailer_adres(req, res) {
-    try {
-      let email = req.userData?.email
-      let doc_id = req.userData.id
-      let { po_box } = req.body
-
-      const find = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "users",
-          IndexName: "email", // replace with your GSI name
-          KeyConditionExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-        })
-      )
-      let rawData = simplifyDynamoDBResponse(find?.Items[0]);
-      let address_arr = rawData?.outlet_addresses
-      let findout_address = address_arr?.find((e) => e?.po_box == po_box)
-      if (!findout_address) {
-        return res.status(400).json({ message: "Warehouse deleted already ", statusCode: 400, success: false })
-      }
-      address_arr = address_arr?.filter((e) => e.po_box != po_box)
-      const params = {
-        TableName: "users",
-        Key: { id: { S: doc_id } },
-        UpdateExpression:
-          "SET  #outlet_addresses = :outlet_addresses, #updated_at = :updated_at ",
-        ExpressionAttributeNames: {
-          "#outlet_addresses": "outlet_addresses",
-          "#updated_at": "updated_at",
-        },
-        ExpressionAttributeValues: {
-          ":outlet_addresses": {
-            L:
-              address_arr?.map((address) => ({
-                M: {
-                  address: { S: address.address },
-                  po_box: { S: address.po_box },
-                  is_default: { BOOL: address?.is_default || false }
-                },
-              })) ||
-              [],
-          },
-          ":updated_at": { S: new Date().toISOString() },
-        },
-      };
-      await dynamoDBClient.send(new UpdateItemCommand(params));
-      return res.status(200).json({
-        message: "Warehouse address deleted successfully",
-        // data: address_arr,
-        statusCode: 200,
-        success: true,
-      });
-    } catch (err) {
-      console.error(err, "erroror");
-      return res
-        .status(500)
-        .json({ message: err?.message, statusCode: 500, success: false });
-    }
-  }
-
-
   async sendOtpEmail(req, res) {
     try {
-      let otp = await generateOTP();
-      if (otp.length == 3) {
-        otp = otp + "0";
-      } else if (otp.length == 2) {
-        otp = otp + "00";
-      } else if (otp.length == 1) {
-        otp = otp + "000";
-      }
-      let currentTime = Date.now();
-      currentTime = currentTime?.toString();
-      let get = await pinePointServices(req.query.email, otp);
-      console.log(get, "GEtgge");
-
-      if (get) {
-        const find = await dynamoDBClient.send(
-          new ScanCommand({
-            TableName: "userOtp",
-            FilterExpression: "email = :email",
-            ExpressionAttributeValues: {
-              ":email": { S: req.query.email },
-            },
-          })
-        );
-        // console.log(find, "Asdad", find?.Items[0])
-        if (find && find?.Count > 0) {
-          const params = {
-            TableName: "userOtp",
-            Key: { id: { S: find?.Items[0]?.id?.S } },
-            UpdateExpression:
-              "SET #otp = :otp, #creationTime = :creationTime, #updatedAt =:updatedAt ",
-            ExpressionAttributeNames: {
-              "#otp": "otp",
-              "#creationTime": "creationTime",
-              "#updatedAt": "updatedAt",
-            },
-            ExpressionAttributeValues: {
-              ":otp": { S: otp },
-              ":creationTime": { S: currentTime },
-              ":updatedAt": { S: currentTime },
-            },
-          };
-          // console.log(params, "parmansns")
-          await dynamoDBClient.send(new UpdateItemCommand(params));
+      console.log("floww---->1")
+      const userStatus = await getUserStatus(req.query.email);
+  if (userStatus && !userStatus.UserStatus.includes('CONFIRMED')) {
+    const findData = await User.findOne({
+      where: {
+        email: email,
+      },
+    });
+    //let rawData = simplifyDynamoDBResponse(findData?.Items[0]);
+    let sendData={password:findData.password,doc_id:findData.id}
+    console.log('User exists but is not verified, resending OTP...');
+    await resendOTP(req.query.email,sendData);
+  }else{
+    let salt = environmentVars.salt;
+      let randomPassword = generatePassword.generate({
+        length: 12,
+        numbers: true,
+        symbols: true,
+        uppercase: true,
+        lowercase: true,
+        excludeSimilarCharacters: true,
+        strict: true
+      });
+      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+      let id = uuidv4();
+      id = id?.replace(/-/g, "");
+      const newUser = await User.create({
+        id: id,
+        email: req.query.email,
+        password: hashPassword, // Ensure hashPassword is defined and contains the hashed password
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        is_verified: false,
+      });
+  
+    const cognitoUser = await new Promise((resolve, reject) => {
+      signup(req.query.email,randomPassword, (err, user) => {
+        if (err) {
+          reject(err);
         } else {
-          let id = uuidv4()?.replace(/-/g, "");
-          const params = {
-            TableName: "userOtp",
-            Item: {
-              email: { S: req.query.email },
-              otp: { S: otp },
-              creationTime: { N: currentTime },
-              createdAt: { N: currentTime },
-              updatedAt: { N: currentTime },
-              id: { S: id },
-            },
-          };
-          let Data = await dynamoDBClient.send(new PutItemCommand(params));
+          console.log(user,"user-->data")
+          resolve(user);
         }
-        return res.status(200).json({
-          message: "Otp send to email for verify",
-          statusCode: 200,
-          success: true,
-        });
-      } else {
-        return res.status(400).json({
-          message: "Not able to send otp on email , kindly do after some time",
-          statusCode: 400,
-          success: false,
-        });
+      });
+    });
+    
+      let data= {password:randomPassword,
+              doc_id:id
       }
+      return res.status(200).json({
+        message: "Otp send to email for verify",
+        data:data,
+        statusCode: 200,
+        success: true,
+      });
+    
+  }
     } catch (err) {
+      if (err.code === 'UsernameExistsException') {
+        console.log('Email already exists, resending OTP...');
+        await resendOTP(req.query.email);
+      } else {
+        console.error('Error signing up:', err);
       console.error(err, "Eeee");
       return res
         .status(500)
         .json({ message: err?.message, statusCode: 500, success: false });
+      }
     }
   }
 
   async verifyEmailWithOtpCheck(req, res) {
     try {
-      let { otp, email } = req.query;
-      const find = await dynamoDBClient.send(
-        new ScanCommand({
-          TableName: "userOtp",
-          FilterExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-        })
-      );
-      // console.log(find, "Asdad", find?.Items[0]);
-      if (find && find?.Count > 0) {
-        let otpDb = find?.Items[0]?.otp?.S;
-        let creationTime = parseInt(find?.Items[0]?.creationTime?.S, 10);
-        let nowTime = Date.now();
-        const timeDifference = nowTime - creationTime; // Difference in milliseconds
-        const tenMinutes = 600000; //10 minutes in milliseconds
-        if (timeDifference > tenMinutes) {
-          return res.status(400).json({
-            message: "Otp is expired",
-            statusCode: 400,
-            success: false,
-          });
-        } else if (otpDb != otp) {
-          return res
-            .status(400)
-            .json({ message: "In-valid otp", statusCode: 400, success: false });
-        } else {
+      let { otp, email,password,docId } = req.query;
+      console.log(email,otp,"email----->")
+      // const find = await dynamoDBClient.send(
+      //   new ScanCommand({
+      //     TableName: "users",
+      //     FilterExpression: "email = :email",
+      //     ExpressionAttributeValues: {
+      //       ":email": { S: email },
+      //     },
+      //   })
+      // );
+      //  console.log(email,"email----->")
+      // if(find && find?.Count >0){
+      //   let username = find?.Items[0]?.email?.S;
+      //   console.log(find,username,otp)
+        let data=await confirmUser(email,otp);
+        console.log(Object.keys(data).length,data.success,"data length--->")
+        if(data.success==true){
           return res.status(200).json({
             message: "Email verified successfully",
+            data:{password:password,docId:docId},
             statusCode: 200,
             success: true,
           });
+        }else{
+          return res.status(400).json({
+            message: data.code,
+            statusCode: data.statusCode,
+            success: false,
+          });
         }
-        // console.log("otpDb", "as",
-        //   creationTime,
-        //   nowTime, "timeDifferencetimeDifference", timeDifference)
-        // const findData = await dynamoDBClient.send(new QueryCommand({
-        //   TableName: "users",
-        //   IndexName: "email", // replace with your GSI name
-        //   KeyConditionExpression: "email = :email",
-        //   ExpressionAttributeValues: {
-        //     ":email": { S: email },
-        //   },
-        // }));
-        // console.log(findData, "findDatafindData")
+       
+      //}
+      // console.log(find, "Asdad", find?.Items[0]);
+      // if (find && find?.Count > 0) {
+      //   let otpDb = find?.Items[0]?.otp?.S;
+      //   let creationTime = parseInt(find?.Items[0]?.creationTime?.S, 10);
+      //   let nowTime = Date.now();
+      //   const timeDifference = nowTime - creationTime; // Difference in milliseconds
+      //   const tenMinutes = 600000; //10 minutes in milliseconds
+      //   if (timeDifference > tenMinutes) {
+      //     return res.status(400).json({
+      //       message: "Otp is expired",
+      //       statusCode: 400,
+      //       success: false,
+      //     });
+      //   } else if (otpDb != otp) {
+      //     return res
+      //       .status(400)
+      //       .json({ message: "In-valid otp", statusCode: 400, success: false });
+      //   } else {
+      //     return res.status(200).json({
+      //       message: "Email verified successfully",
+      //       statusCode: 200,
+      //       success: true,
+      //     });
+      //   }
+      //   // console.log("otpDb", "as",
+      //   //   creationTime,
+      //   //   nowTime, "timeDifferencetimeDifference", timeDifference)
+      //   // const findData = await dynamoDBClient.send(new QueryCommand({
+      //   //   TableName: "users",
+      //   //   IndexName: "email", // replace with your GSI name
+      //   //   KeyConditionExpression: "email = :email",
+      //   //   ExpressionAttributeValues: {
+      //   //     ":email": { S: email },
+      //   //   },
+      //   // }));
+      //   // console.log(findData, "findDatafindData")
 
-        // if (findData && findData?.Count == 0) {
-        //   return res.status(400).json({ message: "No data found", statusCode: 400, success: false })
-        // // } else if (findData&&findData?.Items[0]?.is_email_verified?.) {
-        // } else  {
-        //   const params = {
-        //     TableName: "users",
-        //     Key: { id: { S: findData?.Items[0]?.id?.S } },
-        //     UpdateExpression:
-        //       "SET #is_email_verified = :is_email_verified",
-        //     ExpressionAttributeNames: {
-        //       "#is_email_verified": "is_email_verified",
-        //       "#is_email_verified": "is_email_verified",
-        //     },
-        //     ExpressionAttributeValues: {
-        //       ":is_email_verified": {
-        //         Bool: true
-        //       },
-        //     },
-        //   };
-        //   await dynamoDBClient.send(new UpdateItemCommand(params));
-        // }
-      } else {
-        return res
-          .status(400)
-          .json({ message: "No data found", statusCode: 400, success: false });
-      }
+      //   // if (findData && findData?.Count == 0) {
+      //   //   return res.status(400).json({ message: "No data found", statusCode: 400, success: false })
+      //   // // } else if (findData&&findData?.Items[0]?.is_email_verified?.) {
+      //   // } else  {
+      //   //   const params = {
+      //   //     TableName: "users",
+      //   //     Key: { id: { S: findData?.Items[0]?.id?.S } },
+      //   //     UpdateExpression:
+      //   //       "SET #is_email_verified = :is_email_verified",
+      //   //     ExpressionAttributeNames: {
+      //   //       "#is_email_verified": "is_email_verified",
+      //   //       "#is_email_verified": "is_email_verified",
+      //   //     },
+      //   //     ExpressionAttributeValues: {
+      //   //       ":is_email_verified": {
+      //   //         Bool: true
+      //   //       },
+      //   //     },
+      //   //   };
+      //   //   await dynamoDBClient.send(new UpdateItemCommand(params));
+      //   // }
+      // } else {
+      //   return res
+      //     .status(400)
+      //     .json({ message: "No data found", statusCode: 400, success: false });
+      // }
     } catch (err) {
       console.error(err, "Eeee");
 
@@ -1473,20 +873,36 @@ class UserServices {
   async loginUser(req, res) {
     try {
       let { email, password } = req.body;
-      const findData = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "users",
-          IndexName: "email", // replace with your GSI name
-          KeyConditionExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-        })
-      );
+
+    // Step 1: Authenticate User with Cognito
+    // try {
+    //   const tokens = await signin(req.body,(err, user) => {
+    //     if (err) {
+    //       return err;
+    //     } else {
+    //       console.log(user,"user-->data")
+    //       return res.status(200).send({message:"Logged in ",data:user});
+    //     }
+    //   });
+    //   console.log('Cognito tokens:', tokens);
+    // } catch (err) {
+    //   console.error('Cognito Authentication error:', err);
+    //   return res.status(400).json({
+    //     message: "Authentication failed",
+    //     statusCode: 400,
+    //     success: false,
+    //   });
+    // }
+    const findData = await User.findOne({
+      where: {
+        email: email,
+      },
+    });
+
       // console.log(findData?.Items[0], "dinffdddaa", "findData");
       if (
-        findData?.Items[0]?.user_type?.S != "super_admin" &&
-        findData?.Items[0]?.account_status?.S != "activated"
+        findData.user_type != "super_admin" &&
+        findData.account_status != "activated"
       ) {
         return res.status(400).json({
           message: "This account de-activated",
@@ -1494,10 +910,10 @@ class UserServices {
           success: false,
         });
       }
-      if (findData?.Count > 0 && findData?.Items?.length) {
+      if (findData.Count > 0 && findData.length) {
         let checkpassword = await bcrypt.compare(
           password,
-          findData?.Items[0]?.password?.S
+          findData.password
         );
 
         if (!checkpassword) {
@@ -1535,50 +951,52 @@ class UserServices {
         //     },
         //   })
         // );
-        const find = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "userOtp",
-            IndexName: "email", // replace with your GSI name
-            KeyConditionExpression: "email = :email",
-            ExpressionAttributeValues: {
-              ":email": { S: email },
-            },
-          })
-        );
+        const userOtp = await UserOtp.findOne({
+          where: {
+            email: email,
+          },
+        });
         // console.log(find, "Asdad", find);
-        if (find && find?.Count > 0) {
-          const params = {
-            TableName: "userOtp",
-            Key: { id: { S: find?.Items[0]?.id?.S } },
-            UpdateExpression:
-              "SET #otp = :otp, #creationTime = :creationTime, #updatedAt =:updatedAt ",
-            ExpressionAttributeNames: {
-              "#otp": "otp",
-              "#creationTime": "creationTime",
-              "#updatedAt": "updatedAt",
+        if (find && find.Count > 0) {
+          const updatedUserOtp = await UserOtp.update(
+            {
+              otp: otp,
+              creationTime: currentTime,
+              updatedAt: currentTime,
             },
-            ExpressionAttributeValues: {
-              ":otp": { S: otp },
-              ":creationTime": { S: currentTime },
-              ":updatedAt": { S: currentTime },
-            },
-          };
-          await dynamoDBClient.send(new UpdateItemCommand(params));
+            {
+              where: {
+                id: find.id,
+              },
+              returning: true, // This option returns the updated object
+              plain: true, // This option returns only the updated object, not an array
+            }
+          );
         } else {
+          
+            const tokens = await signin(req.body,(err, user) => {
+              if (err) {
+                return res.status(400).json({
+                  message: `Authentication failed ${err}`,
+                  statusCode: 400,
+                  success: false,
+                });
+              } else {
+                console.log(user,"user-->data")
+                //return res.status(200).send({message:"Logged in ",data:user});
+              }
+            });
+            //console.log('Cognito tokens:', tokens);
           let id = uuidv4()?.replace(/-/g, "");
-          const params = {
-            TableName: "userOtp",
-            Item: {
-              email: { S: req.body.email },
-              otp: { S: otp },
-              creationTime: { N: currentTime },
-              createdAt: { N: currentTime },
-              updatedAt: { N: currentTime },
-              id: { S: id },
-            },
-          };
-          // console.log(params, "parasnsns");
-          let Data = await dynamoDBClient.send(new PutItemCommand(params));
+          const newUserOtp = await UserOtp.create({
+            id: id,
+            email: req.body.email,
+            otp: otp,
+            creationTime: currentTime,
+            createdAt: currentTime,
+            updatedAt: currentTime,
+          });
+      
           // console.log(Data, "dayayayaya");
         }
         return res.status(200).json({
@@ -1753,8 +1171,8 @@ class UserServices {
           }
         }
         let token = generateAccessToken(obj);
-        // let expiryDate = new Date();
-        // expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 days
+        let expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 days
         // expiryDate.setTime(expiryDate.getTime() + (60 * 1000)); // Current time + 1 minute
 
         const updateParams = {
@@ -1769,12 +1187,13 @@ class UserServices {
           ReturnValues: "UPDATED_NEW",
         };
         await dynamoDBClient.send(new UpdateItemCommand(updateParams));
+        const result = await confirmUser(findData?.name);
         res
           .cookie("_token", token, {
             httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
             secure: true, // Requires HTTPS connection
             sameSite: "strict", // Restricts the cookie to be sent only in same-site requests
-            // expires: expiryDate, // Set the expiry date
+            expires: expiryDate, // Set the expiry date
           })
           .status(200)
           .json({
@@ -2834,7 +2253,22 @@ class UserServices {
     }
   }
 
-
+  async getAllUSerData(req, res) {
+    try {
+      let fetchArray = await UserModel.findAll();
+      res.status(200).json({
+        message: "fetch user data",
+        data: fetchArray,
+        success: true,
+        statusCode: 200,
+      });
+      return;
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: err?.message, success: false, statusCode: 500 });
+    }
+  }
 
   async updateUserDetails(id, data, res) {
     try {

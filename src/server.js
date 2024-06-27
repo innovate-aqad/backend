@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-// import { environmentVars } from "./src/config/environmentVar.js";
 import UserRoutes from "./routes/user/UserRoutes.js";
 import cookieParser from "cookie-parser";
 import { v4 as uuidv4 } from "uuid";
@@ -16,9 +15,6 @@ import SiUnitRoutes from "./routes/admin/SiUnitRoutesRoutes.js";
 import RoleRoutes from "./routes/admin/RoleRoutes.js";
 import OrderRoutes from "./routes/admin/OrderRoutes.js";
 import CartRoutes from "./routes/admin/CartRoutes.js";
-// require('dotenv').config();
-// import dotenv from 'dotenv';
-// dotenv.config();
 import mysql from 'mysql2';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -34,7 +30,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/uploads", express.static("uploads"));
 // app.use('/uploads', express.static(path.join(__dirname, 'src', 'uploads')));
-
 // Increase the JSON payload limit
 
 app.use(express.json({ limit: "1mb" })); // Adjust the limit as needed
@@ -60,13 +55,13 @@ const allowedOrigins = [
 //     credentials: true,
 //   })
 // );
-
+// console.log(environmentVars,"environmentVars");
 const connection = mysql.createConnection({
-  host: process.env.HOST,
-  user: process.env.USER, 
-  password: process.env.PASSWORD,
-  database: process.env.DBNAME, 
-  port: process.env.DBPORT
+  host:environmentVars.host, //process.env.HOST,
+  user:environmentVars. dbUser, //    process.env.USER, 
+  password: environmentVars.dbPass , // process.env.PASSWORD,
+  database:  environmentVars. dbName, // process.env.DBNAME, 
+  port:  environmentVars.dbPort , // process.env.DBPORT
 });
 
 // Open the MySQL connection
@@ -95,12 +90,7 @@ app.use("/api/brand", BrandRoutes);
 app.use("/api/si_unit", SiUnitRoutes);
 app.use("/api/cart", CartRoutes);
 app.use("/api/order", OrderRoutes);
-//   for (let i=0;i<10;i++){
-//     const timestamp =  Date.now();
-//     let id = uuidv4()?.replace(/-/g, "")?.slice(0, 19)?.toString() + timestamp
-// console.log(id,"DASDADS",i)
-// }
-// Start the server
+
 const PORT = environmentVars.port;
 
 app.listen(PORT, () => {
