@@ -21,7 +21,6 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
-// import AWS from "aws-sdk";
 import {
   forgotPasswordSendOtp,
   pinePointServices,
@@ -44,8 +43,6 @@ import { parsePhoneNumberFromString } from "libphonenumber-js";
 import generatePassword from 'generate-password';
 import { signup, signin, confirmUser,resendOTP,getUserStatus} from "../../services/cognito/cognito.js";
 import User from "../../models/UserModel.js";
-import AWS from "aws-sdk";
-const cognito = new AWS.CognitoIdentityServiceProvider();
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -55,7 +52,7 @@ const dynamoDBClient = new DynamoDBClient({
   },
 });
 
-console.log(dynamoDBClient, "dydb", process.env.Aws_region)
+// console.log(dynamoDBClient, "dydb", process.env.Aws_region)
 
 
 

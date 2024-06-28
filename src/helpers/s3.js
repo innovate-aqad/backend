@@ -1,4 +1,3 @@
-// // import AWS from "aws-sdk";
 import fs from "fs/promises";
 import multer from "multer";
 // // //

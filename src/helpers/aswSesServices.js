@@ -1,4 +1,3 @@
-// import AWS from "aws-sdk";
 
 // //phone => me-central-1
 

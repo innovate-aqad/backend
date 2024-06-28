@@ -1,4 +1,3 @@
-// import AWS from "aws-sdk"
 import { v4 as uuidv4 } from "uuid";
 
 import {
@@ -13,6 +12,7 @@ import {
   BatchWriteItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
+import OrderModel from "../../models/OrderModel.js";
 
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -21,7 +21,6 @@ const dynamoDBClient = new DynamoDBClient({
     secretAccessKey: process.env.Aws_secretAccessKey,
   },
 });
-
 class orderServices {
   async add(req, res) {
     try {
@@ -39,47 +38,21 @@ class orderServices {
       for (let le of order_detail) {
         tempProductId.add(le?.product_id);
       }
-      const keys = Array.from(tempProductId).map((product_id) => ({
-        id: { S: product_id },
-      }));
-      const getProductDetails = await dynamoDBClient.send(
-        new BatchGetItemCommand({
-          RequestItems: {
-            products: {
-              Keys: keys,
-              ProjectionExpression:
-                "variation_arr,id ,category_id,sub_category_id,title,created_by",
-            },
-          },
-        })
-      );
+      const keys = Array.from(tempProductId).map((product_id) => product_id);
+
+      let get 
+      await OrderModel.create(req.body);
+      return res
+        .status(400)
+        .json({
+          message: "Temp-Order generate",
+          statusCode: 200,
+          success: true,
+        });
       // console.log(getProductDetails?.Responses?.products, "!!@@  ffffffffffff");
       let simplrProductArr = [];
       let vendor_id_arr = new Set();
-      for (let el of getProductDetails?.Responses?.products) {
-        let getSimpleData = simplifyDynamoDBResponse(el);
-        simplrProductArr.push(getSimpleData);
-        vendor_id_arr.add(getSimpleData?.created_by);
-      }
-
-      const vendorkeys = Array.from(vendor_id_arr).map((el) => ({
-        id: { S: el }, // Assuming the primary key attribute name is 'id' and type is string
-      }));
-      const vendorDbDetails = await dynamoDBClient.send(
-        new BatchGetItemCommand({
-          RequestItems: {
-            users: {
-              Keys: vendorkeys,
-              ProjectionExpression: "id,title,user_type,email,phone",
-            },
-          },
-        })
-      );
-      let simpleVendorData = [];
-      for (let el of vendorDbDetails?.Responses?.users) {
-        let get = simplifyDynamoDBResponse(el);
-        simpleVendorData.push(get);
-      }
+    
       // console.log(simplrProductArr, "simpl    rrrrrrrr");
       let vendorArr = [];
       for (let el of order_detail) {
@@ -119,7 +92,8 @@ class orderServices {
           );
           vendorArr.push({
             /////////////add new key
-            address:address,po_box:po_box,
+            address: address,
+            po_box: po_box,
             details_obj: getVednorObj,
             order_id: id,
             vendor_id: findProductOBj?.created_by,
@@ -159,7 +133,7 @@ class orderServices {
       // };
 
       // await dynamoDBClient.send(new BatchWriteItemCommand(batchWriteParams));
-      
+
       // Convert vendorMap to vendorArr for batchWriteItem
       const vendorArrTemp = Object.values(vendorArr).map((item) => ({
         PutRequest: {
