@@ -7,19 +7,21 @@ const ApiEndpointRoutes = express.Router();
 
 ApiEndpointRoutes.post(
   "/add",
-  authorize,
+  //authorize,
   ApiEndpointControllerObj.add_endpoint
 );
-ApiEndpointRoutes.get("/get", authorize, ApiEndpointControllerObj.get_All);
+ApiEndpointRoutes.get("/get", 
+  //authorize, 
+  ApiEndpointControllerObj.get_All);
 
 ApiEndpointRoutes.put(
   "/status_edit",
-  authorize,
+  //authorize,
   ApiEndpointControllerObj.edit_status
 );
 ApiEndpointRoutes.delete(
   "/delete",
-  authorize,
+  //authorize,
   ApiEndpointControllerObj.deleteData
 );
 

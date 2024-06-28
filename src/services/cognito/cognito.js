@@ -17,7 +17,7 @@ import { v4 as uuidv4 } from "uuid";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 dotenv.config(); // Load environment variables
-
+console.log(process.env.Aws_region,process.env.Aws_accessKeyId, process.env.Aws_secretAccessKey,process.env.COGNITO_CLIENT_ID,process.env.COGNITO_USER_POOL_ID,"aws data----->")
 const cognitoClient = new CognitoIdentityProviderClient({
   region: process.env.Aws_region,
   credentials: {
@@ -200,6 +200,7 @@ export const getUserStatus = async (username) => {
 
   try {
     console.log("flow---------->2",process.env.COGNITO_USER_POOL_ID)
+    console.log(process.env.Aws_region,process.env.Aws_accessKeyId, process.env.Aws_secretAccessKey,process.env.COGNITO_CLIENT_ID,process.env.COGNITO_USER_POOL_ID,"aws data----->")
     const response = await cognito.adminGetUser(params).promise();
     console.log('User status:', response);
     return response;

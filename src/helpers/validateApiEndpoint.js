@@ -3,11 +3,9 @@ import Joi from "joi";
 export const ApiEndpointSchema = Joi.object({
   title: Joi.string()
     .trim().max(100)
-    .required()
     .label("title"),
   type: Joi.string()
     .valid("backend", "frontend")
-    .required()
     .label("type"),
   status: Joi.string()
     .valid("active", "inactive")
