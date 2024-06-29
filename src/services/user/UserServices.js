@@ -122,7 +122,7 @@ class UserServices {
     if (slide == 2 || slide == 3 || doc_id) {
       console.log(req.files, "req.files is here");
 
-      findData = await User.findOne({ where: { id: doc_id } });
+      findData = await User.findOne({ where: { uuid: doc_id } });
 
       if (!findData) {
         return res.status(400).json({
@@ -526,6 +526,7 @@ class UserServices {
 
     let salt = bcrypt.genSaltSync(10);
     let breakPassword=password.slice(0,13)
+    console.log(breakPassword,"breakpassword---->")
     let hashPassword = password ? bcrypt.hashSync(breakPassword, salt) : null;
     const phoneNumber = parsePhoneNumberFromString(phone, "IN");
 
@@ -705,6 +706,20 @@ async getUserByEmail(req, res) {
     console.log('User exists but is not verified, resending OTP...');
     await resendOTP(req.query.email,sendData);
   }else if(userStatus==0){
+   const findData = await User.findOne({
+      where: {
+        email: req.query.email,
+        account_status:"activated",
+        is_verified:1
+      },
+    });
+    if(findData!=null){
+    return res.status(400).json({
+        message: "Email already exist",
+        statusCode: 400,
+        success: false,
+      });
+    }
     let salt = environmentVars.salt;
       let randomPassword = generatePassword.generate({
         length: 12,
@@ -792,6 +807,19 @@ async getUserByEmail(req, res) {
         let data=await confirmUser(email,otp);
         console.log(Object.keys(data).length,data.success,"data length--->")
         if(data.success==true){
+          const updatedUser = await User.update(
+            { 
+              is_verified:1,
+              account_status:"activated"
+            },
+            {
+              where: {
+                email:email,
+              },
+              returning: true, // This option returns the updated object
+              plain: true, // This option returns only the updated object, not an array
+            }
+          );
           return res.status(200).json({
             message: "Email verified successfully",
             data:{name:name,docId:docId},
