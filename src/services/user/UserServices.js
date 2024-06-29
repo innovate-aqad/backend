@@ -43,6 +43,7 @@ import { parsePhoneNumberFromString } from "libphonenumber-js";
 import generatePassword from 'generate-password';
 import { signup, signin, confirmUser,resendOTP,getUserStatus} from "../../services/cognito/cognito.js";
 import User from "../../models/UserModel.js";
+import UserOtp from "../../models/UserOtpModel.js";
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -691,6 +692,7 @@ async getUserByEmail(req, res) {
     try {
       console.log("floww---->1")
       const userStatus = await getUserStatus(req.query.email);
+      console.log(userStatus,"userStatus--->")
   if (userStatus && !userStatus.UserStatus.includes('CONFIRMED')) {
     const findData = await User.findOne({
       where: {
@@ -701,7 +703,7 @@ async getUserByEmail(req, res) {
     let sendData={password:findData.password,doc_id:findData.id}
     console.log('User exists but is not verified, resending OTP...');
     await resendOTP(req.query.email,sendData);
-  }else{
+  }else if(userStatus==0){
     let salt = environmentVars.salt;
       let randomPassword = generatePassword.generate({
         length: 12,
@@ -715,8 +717,9 @@ async getUserByEmail(req, res) {
       let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
       let id = uuidv4();
       id = id?.replace(/-/g, "");
+
       const newUser = await User.create({
-        id: id,
+        uuid: id,
         email: req.query.email,
         password: hashPassword, // Ensure hashPassword is defined and contains the hashed password
         createdAt: new Date(),
@@ -734,8 +737,16 @@ async getUserByEmail(req, res) {
         }
       });
     });
-    
-      let data= {password:randomPassword,
+    let tempPassword = generatePassword.generate({
+      length: 24,
+      numbers: true,
+      symbols: true,
+      uppercase: true,
+      lowercase: true,
+      excludeSimilarCharacters: true,
+      strict: true
+    });
+      let data= {password:randomPassword+tempPassword,
               doc_id:id
       }
       return res.status(200).json({
@@ -895,7 +906,7 @@ async getUserByEmail(req, res) {
         email: email,
       },
     });
-
+     console.log(findData.Count,"findData----->")
       // console.log(findData?.Items[0], "dinffdddaa", "findData");
       if (
         findData.user_type != "super_admin" &&
@@ -907,7 +918,7 @@ async getUserByEmail(req, res) {
           success: false,
         });
       }
-      if (findData.Count > 0 && findData.length) {
+      if (findData!=null) {
         let checkpassword = await bcrypt.compare(
           password,
           findData.password
@@ -948,15 +959,15 @@ async getUserByEmail(req, res) {
         //     },
         //   })
         // );
-        const userOtp = await UserOtp.findOne({
+        const find = await UserOtp.findOne({
           where: {
             email: email,
           },
         });
         // console.log(find, "Asdad", find);
-        if (find && find.Count > 0) {
+        if (find && find!=null) {
           const updatedUserOtp = await UserOtp.update(
-            {
+            { 
               otp: otp,
               creationTime: currentTime,
               updatedAt: currentTime,
@@ -1018,35 +1029,25 @@ async getUserByEmail(req, res) {
   async loginWithOtp(req, res) {
     try {
       let { email, otp } = req.body;
-      const findData = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "users",
-          IndexName: "email", // replace with your GSI name
-          KeyConditionExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-        })
-      );
-      // console.log(findData?.Items[0], "dinffdddaa", findData);
-      if (findData?.Count > 0 && findData?.Items?.length) {
-        const find = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "userOtp",
-            IndexName: "email", // replace with your GSI name
-            KeyConditionExpression: "email = :email",
-            ExpressionAttributeValues: {
-              ":email": { S: email },
-            },
-          })
-        );
-        // console.log(find, "Asdad", find?.Items[0])
-        if (find && find?.Count > 0) {
-          let otpDb = find?.Items[0]?.otp?.S;
-          let creationTime = parseInt(find?.Items[0]?.creationTime?.S, 10);
+  
+      // Find the user by email
+      const findData = await User.findOne({
+        where: { email }
+      });
+  
+      if (findData) {
+        // Find the OTP entry by email
+        const find = await UserOtp.findOne({
+          where: { email }
+        });
+  
+        if (find) {
+          let otpDb = find.otp;
+          let creationTime = parseInt(find.creationTime, 10);
           let nowTime = Date.now();
           const timeDifference = nowTime - creationTime; // Difference in milliseconds
-          const tenMinutes = 600000; //10 minutes in milliseconds
+          const tenMinutes = 600000; // 10 minutes in milliseconds
+  
           if (timeDifference > tenMinutes) {
             return res.status(400).json({
               message: "Otp is expired",
@@ -1060,6 +1061,91 @@ async getUserByEmail(req, res) {
               success: false,
             });
           }
+  
+          let unique_token_id = uuidv4().replace(/-/g, "");
+          let obj = {
+            unique_token_id,
+            name: findData.name,
+            email: findData.email,
+            user_type: findData.user_type,
+            id: findData.id,
+            is_verified: findData.is_verified,
+            account_status: findData.account_status,
+          };
+  
+          if (
+            obj.user_type != "vendor" &&
+            obj.user_type != "seller" &&
+            obj.user_type != "logistic" &&
+            obj.user_type != "super_admin"
+          ) {
+            // Assuming there are associated permissions to load
+            //let permissions = await findData.getPermissions(); // This assumes a defined relationship
+  
+            let api_endpoint_arr = permissions.map(p => p.backend_routes).flat();
+            api_endpoint_arr.push(...permissions.map(p => p.frontend_routes).flat());
+  
+            // Remove duplicates
+            api_endpoint_arr = [...new Set(api_endpoint_arr)];
+  
+            let apiEndpoints = await ApiEndpoint.findAll({
+              where: {
+                id: {
+                  [Op.in]: api_endpoint_arr
+                }
+              }
+            });
+  
+            let temp = {};
+            apiEndpoints.forEach(el => {
+              if (temp[el.type]) {
+                temp[el.type].push({
+                  id: el.id,
+                  title: el.title,
+                  type: el.type,
+                });
+              } else {
+                temp[el.type] = [{
+                  id: el.id,
+                  title: el.title,
+                  type: el.type,
+                }];
+              }
+            });
+  
+            obj.permission = temp;
+            //obj.permission_raw_arr = simplifySequelizeResponse(permissions);
+          }
+  
+          let token = generateAccessToken(obj);
+          let expiryDate = new Date();
+          expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 day
+  
+          // Update the user with the unique token ID
+          await User.update(
+            { unique_token_id },
+            { where: { id: obj.id } }
+          );
+  
+          res.cookie("_token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "strict",
+            expires: expiryDate,
+          }).status(200).json({
+            success: true,
+            message: "Logged in successful",
+            statusCode: 200,
+            data: {
+              user_type: obj.user_type,
+              id: obj.id,
+              token: token,
+              is_verified: obj.is_verified,
+              account_status: obj.account_status,
+              permission: obj.permission || [],
+              permission_raw_arr: obj.permission_raw_arr || [],
+            },
+          });
         } else {
           return res.status(400).json({
             message: "No data found",
@@ -1067,156 +1153,20 @@ async getUserByEmail(req, res) {
             success: false,
           });
         }
-        let unique_token_id = uuidv4();
-        unique_token_id = unique_token_id?.replace(/-/g, "");
-        let obj = {
-          unique_token_id,
-          name: findData?.Items[0]?.name?.S,
-          email: findData?.Items[0]?.email?.S,
-          user_type: findData?.Items[0]?.user_type?.S,
-          id: findData?.Items[0]?.id?.S,
-          is_verified: findData?.Items[0]?.is_verified?.BOOL,
-          account_status: findData?.Items[0]?.account_status?.S,
-        };
-
-        if (
-          obj?.user_type != "vendor" &&
-          obj?.user_type != "seller" &&
-          obj?.user_type != "logistic" &&
-          obj?.user_type != "super_admin"
-        ) {
-          let get = [];
-          let permission_raw_arr = [];
-          if (
-            findData?.Items[0] &&
-            findData?.Items[0]?.permission &&
-            findData?.Items[0]?.permission?.L
-          ) {
-            // console.log(
-            //   findData?.Items[0]?.permission?.L,
-            //   "findData?.Items[0]?.permission?.L"
-            // );
-            let getOf = simplifyDynamoDBResponse(
-              findData?.Items[0]?.permission?.L
-            );
-            get = Object.values(getOf);
-            // console.log(get, "findDataL!@!", typeof get);
-          }
-          let api_endpoint_arr = [];
-          if (get) {
-            const paramsOf = {
-              RequestItems: {
-                permission: {
-                  Keys: get?.map((id) => ({
-                    id: { S: id },
-                  })),
-                  ProjectionExpression:
-                    "backend_routes,title,id,frontend_routes",
-                },
-              },
-            };
-            const commandOf = new BatchGetItemCommand(paramsOf);
-            const result = await dynamoDBClient.send(commandOf);
-            let dataOf = result?.Responses?.permission;
-            if (dataOf && dataOf) {
-              for (let el of dataOf) {
-                let get = simplifyDynamoDBResponse(el);
-                permission_raw_arr.push(get);
-                // console.log(get, "@@@@ @@ @  @@ @  !!!!!GETGegtetg");
-                get?.backend_routes?.forEach((el) => api_endpoint_arr.push(el));
-                get?.frontend_routes?.forEach((el) =>
-                  api_endpoint_arr.push(el)
-                );
-              }
-            }
-          }
-          if (api_endpoint_arr && api_endpoint_arr.length) {
-            api_endpoint_arr = new Set([...api_endpoint_arr]);
-            api_endpoint_arr = [...api_endpoint_arr];
-          }
-          if (api_endpoint_arr && api_endpoint_arr.length) {
-            const paramsOfAndPoint = {
-              RequestItems: {
-                api_endpoint: {
-                  Keys: api_endpoint_arr.map((id) => ({
-                    id: { S: id },
-                  })),
-                },
-              },
-            };
-            const commandOfApiEndpoint = new BatchGetItemCommand(
-              paramsOfAndPoint
-            );
-            const result = await dynamoDBClient.send(commandOfApiEndpoint);
-            let dataOf = result?.Responses?.api_endpoint;
-            let temp = {};
-            for (let el of dataOf) {
-              if (temp[el?.type?.S]) {
-                temp[el?.type?.S].push({
-                  id: el?.id?.S,
-                  title: el?.title?.S,
-                  type: el?.type?.S,
-                });
-              } else {
-                temp[el?.type?.S] = [
-                  { id: el?.id?.S, title: el?.title?.S, type: el?.type?.S },
-                ];
-              }
-            }
-            obj.permission = temp;
-            obj.permission_raw_arr = permission_raw_arr;
-          }
-        }
-        let token = generateAccessToken(obj);
-        let expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 days
-        // expiryDate.setTime(expiryDate.getTime() + (60 * 1000)); // Current time + 1 minute
-
-        const updateParams = {
-          TableName: "users",
-          Key: {
-            id: { S: obj?.id }, // Replace with actual product ID
-          },
-          UpdateExpression: "SET unique_token_id = :unique_token_id",
-          ExpressionAttributeValues: {
-            ":unique_token_id": { S: unique_token_id },
-          },
-          ReturnValues: "UPDATED_NEW",
-        };
-        await dynamoDBClient.send(new UpdateItemCommand(updateParams));
-        const result = await confirmUser(findData?.name);
-        res
-          .cookie("_token", token, {
-            httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
-            secure: true, // Requires HTTPS connection
-            sameSite: "strict", // Restricts the cookie to be sent only in same-site requests
-            expires: expiryDate, // Set the expiry date
-          })
-          .status(200)
-          .json({
-            success: true,
-            message: "Logged in successful",
-            statusCode: 200,
-            data: {
-              user_type: obj?.user_type,
-              id: obj?.id,
-              token: token,
-              is_verified: obj?.is_verified,
-              account_status: obj?.account_status,
-              permission: obj?.permission || [],
-              permission_raw_arr: obj?.permission_raw_arr || [],
-            },
-          });
       } else {
-        return res
-          .status(400)
-          .json({ message: "No data found", statusCode: 400, success: false });
+        return res.status(400).json({
+          message: "No data found",
+          statusCode: 400,
+          success: false,
+        });
       }
     } catch (err) {
       console.log(err, "Error in login api user");
-      return res
-        .status(500)
-        .json({ message: err?.message, success: false, statusCode: 500 });
+      return res.status(500).json({
+        message: err.message,
+        success: false,
+        statusCode: 500,
+      });
     }
   }
 

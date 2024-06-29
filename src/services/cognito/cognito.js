@@ -1,3 +1,4 @@
+import dotenv from "dotenv";
 import {
   CognitoIdentityProviderClient,
   SignUpCommand,
@@ -6,13 +7,13 @@ import {
   AdminGetUserCommand,
   AdminCreateUserCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
+//import { AdminGetUserCommand } from "@aws-sdk/client-cognito-identity-provider";
 import {
   CognitoUserPool,
   CognitoUser,
   AuthenticationDetails,
 } from "amazon-cognito-identity-js";
 import AWS from "aws-sdk";
-import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 
@@ -201,11 +202,19 @@ export const getUserStatus = async (username) => {
   try {
     console.log("flow---------->2",process.env.COGNITO_USER_POOL_ID)
     console.log(process.env.Aws_region,process.env.Aws_accessKeyId, process.env.Aws_secretAccessKey,process.env.COGNITO_CLIENT_ID,process.env.COGNITO_USER_POOL_ID,"aws data----->")
-    const response = await cognito.adminGetUser(params).promise();
+    //const response = await cognito.adminGetUser(params).promise();
+    const command = new AdminGetUserCommand(params);
+    console.log(command,"command--->")
+    const response = await cognitoClient.send(command);
     console.log('User status:', response);
     return response;
   } catch (error) {
-    console.error('Error getting user status:', error);
+    if (error.name === 'UserNotFoundException') {
+      console.error(`User ${username} not found in Cognito.`);
+        return 0;
+    } else {
+      console.error('Error getting user status:', error);
+    }
     return null;
   }
 };

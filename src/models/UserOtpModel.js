@@ -1,19 +1,30 @@
-import { Sequelize, DataTypes } from 'sequelize';
+// import { Sequelize, DataTypes } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
+import { DataTypes } from "sequelize";
+import sequelize from "../config/dbConfig.js";
 
 // Initialize Sequelize
-const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
-  host: process.env.DB_HOST,
-  dialect: 'mysql',
-  logging: false,
-});
+// const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+//   host: process.env.DB_HOST,
+//   dialect: 'mysql',
+//   logging: false,
+// });
 
 // Define the UserOtp model
 const UserOtp = sequelize.define('UserOtp', {
   id: {
     type: DataTypes.STRING,
-    defaultValue: uuidv4,
     primaryKey: true,
+  },
+  uuid: {
+    type: DataTypes.CHAR(36),
+    defaultValue: DataTypes.UUIDV4,
+    allowNull: false,
+    unique: true,
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
   },
   otp: {
     type: DataTypes.INTEGER,

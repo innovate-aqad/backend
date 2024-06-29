@@ -12,8 +12,13 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
 const User = sequelize.define('User', {
   id: {
     type: DataTypes.STRING,
-    defaultValue: uuidv4,
     primaryKey: true,
+  },
+  uuid: {
+    type: DataTypes.CHAR(36),
+    defaultValue: DataTypes.UUIDV4,
+    allowNull: false,
+    unique: true,
   },
   user_type: {
     type: DataTypes.ENUM,
@@ -93,8 +98,12 @@ const User = sequelize.define('User', {
     allowNull: true,
   },
   is_verified: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+  account_status:{
+    type: DataTypes.STRING,
+    allowNull: true,
   },
   is_social_login: {
     type: DataTypes.INTEGER,
