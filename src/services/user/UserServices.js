@@ -525,7 +525,8 @@ class UserServices {
     }
 
     let salt = bcrypt.genSaltSync(10);
-    let hashPassword = password ? bcrypt.hashSync(password, salt) : null;
+    let breakPassword=password.slice(0,13)
+    let hashPassword = password ? bcrypt.hashSync(breakPassword, salt) : null;
     const phoneNumber = parsePhoneNumberFromString(phone, "IN");
 
     if (!phoneNumber || !phoneNumber.isValid()) {
@@ -574,7 +575,7 @@ class UserServices {
 
     let obj = {
       email,
-      randomPassword: password,
+      randomPassword: password.slice(0,13),
       name,
     };
     console.log(obj, "password data is here---->");
@@ -746,7 +747,7 @@ async getUserByEmail(req, res) {
       excludeSimilarCharacters: true,
       strict: true
     });
-      let data= {password:randomPassword+tempPassword,
+      let data= {name:randomPassword+tempPassword,
               doc_id:id
       }
       return res.status(200).json({
@@ -773,7 +774,7 @@ async getUserByEmail(req, res) {
 
   async verifyEmailWithOtpCheck(req, res) {
     try {
-      let { otp, email,password,docId } = req.query;
+      let { otp, email,name,docId } = req.query;
       console.log(email,otp,"email----->")
       // const find = await dynamoDBClient.send(
       //   new ScanCommand({
@@ -793,7 +794,7 @@ async getUserByEmail(req, res) {
         if(data.success==true){
           return res.status(200).json({
             message: "Email verified successfully",
-            data:{password:password,docId:docId},
+            data:{name:name,docId:docId},
             statusCode: 200,
             success: true,
           });
