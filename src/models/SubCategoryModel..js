@@ -48,7 +48,7 @@ const SubCategoryModel = dbConnection.define(
       primaryKey: true
     },
     category_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.BIGINT,
       allowNull: false
     },
     title: {
