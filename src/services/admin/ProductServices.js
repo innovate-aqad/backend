@@ -23,6 +23,7 @@ import {
 } from "../../helpers/s3.js";
 import CategoryModel from "../../models/CategoryModel.js.js";
 import SubCategoryModel from "../../models/SubCategoryModel..js";
+import ProductsModels from "../../models/ProductsModels.js";
 // AWS.config.update({
 //   region: process.env.Aws_region,
 //   credentials: {
@@ -71,7 +72,7 @@ class ProductServices {
         // );
         let findData = await CategoryModel?.findOne({
           where: {
-            category_id: category_id
+            id: category_id
           },
           raw: true
         });
@@ -95,7 +96,7 @@ class ProductServices {
         // );
         let findData = await SubCategoryModel?.findOne({
           where: {
-            subcategory_id: sub_category_id
+            id: sub_category_id
           },
           raw: true
         });
@@ -119,7 +120,7 @@ class ProductServices {
         // );
         let findData = await SubCategoryModel?.findOne({
           where: {
-            brand_id: brand_id
+            id: brand_id
           },
           raw: true
         });
@@ -133,159 +134,247 @@ class ProductServices {
       }
       if (id) {
         console.time("first");
-        let findProductData = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "products",
-            KeyConditionExpression: "id = :id",
-            ExpressionAttributeValues: {
-              ":id": { S: id }
-            }
-          })
-        );
-        console.timeEnd("first");
-        // console.log("findDatafindData22", findData?.Items[0]);
-        if (findProductData?.Count == 0) {
-          return res.status(400).json({
-            message: "Product not found",
-            statusCode: 400,
-            success: false
-          });
-        }
-        //need to discuss  universal_standard_code will be editable or not.
-        // if(universal_standard_code){
-        //   const findSkuExist = await dynamoDBClient.send(
-        //     new QueryCommand({
-        //       TableName: "products",
-        //       IndexName: "universal_standard_code", // replace with your GSI title.a
-        //       KeyConditionExpression:
-        //       "universal_standard_code = :universal_standard_code",
-        //       FilterExpression: "id <> :id",
-        //       ExpressionAttributeValues: {
-        //         ":universal_standard_code": { S: universal_standard_code },
-        //         ":id": { S: id },
-        //       },
-        //     })
-        //   );
-        //   if (findSkuExist.Count > 0) {
-        //     return res.status(400).json({
-        //       success: false,
-        //       message: "Product's universal_standard_code must be unique",
-        //       statusCode: 400,
-        //     });
-        //   }
-        // }
-        // ":warehouse_arr": {
-        //   L: warehouse_arr ? warehouse_arr.map((el) => ({
-        //     M: {
-        //       address: { S: el.address || "" },
-        //       po_box: { S: el.po_box || "" }
+        // let findProductData = await dynamoDBClient.send(
+        //   new QueryCommand({
+        //     TableName: "products",
+        //     KeyConditionExpression: "id = :id",
+        //     ExpressionAttributeValues: {
+        //       ":id": { S: id }
         //     }
-        //   })) : findProductData.Items[0].warehouse_arr.L
-        // },
+        //   })
+        // );
+        // console.timeEnd("first");
+        // // console.log("findDatafindData22", findData?.Items[0]);
+        // if (findProductData?.Count == 0) {
+        //   return res.status(400).json({
+        //     message: "Product not found",
+        //     statusCode: 400,
+        //     success: false
+        //   });
+        // }
+        // //need to discuss  universal_standard_code will be editable or not.
+        // // if(universal_standard_code){
+        // //   const findSkuExist = await dynamoDBClient.send(
+        // //     new QueryCommand({
+        // //       TableName: "products",
+        // //       IndexName: "universal_standard_code", // replace with your GSI title.a
+        // //       KeyConditionExpression:
+        // //       "universal_standard_code = :universal_standard_code",
+        // //       FilterExpression: "id <> :id",
+        // //       ExpressionAttributeValues: {
+        // //         ":universal_standard_code": { S: universal_standard_code },
+        // //         ":id": { S: id },
+        // //       },
+        // //     })
+        // //   );
+        // //   if (findSkuExist.Count > 0) {
+        // //     return res.status(400).json({
+        // //       success: false,
+        // //       message: "Product's universal_standard_code must be unique",
+        // //       statusCode: 400,
+        // //     });
+        // //   }
+        // // }
+        // // ":warehouse_arr": {
+        // //   L: warehouse_arr ? warehouse_arr.map((el) => ({
+        // //     M: {
+        // //       address: { S: el.address || "" },
+        // //       po_box: { S: el.po_box || "" }
+        // //     }
+        // //   })) : findProductData.Items[0].warehouse_arr.L
+        // // },
 
-        const params = {
-          TableName: "products",
-          Key: { id: { S: id } },
-          UpdateExpression:
-            "SET #condition = :condition, #summary = :summary , #description = :description",
-          // UpdateExpression:
-          // "SET #title = :title, #status = :status, #permission =:permission, #updated_at= :updated_at",
+        // const params = {
+        //   TableName: "products",
+        //   Key: { id: { S: id } },
+        //   UpdateExpression:
+        //     "SET #condition = :condition, #summary = :summary , #description = :description",
+        //   // UpdateExpression:
+        //   // "SET #title = :title, #status = :status, #permission =:permission, #updated_at= :updated_at",
 
-          ExpressionAttributeNames: {
-            "#condition": "condition",
-            "#summary": "summary",
-            "#description": "description"
-          },
-          ExpressionAttributeValues: {
-            ":condition": {
-              S: condition || findProductData.Items[0].condition.S || ""
-            },
-            ":summary": {
-              S: summary || findProductData.Items[0].summary?.S || ""
-            },
-            ":description": {
-              S: description || findProductData.Items[0].description?.S || ""
-            }
+        //   ExpressionAttributeNames: {
+        //     "#condition": "condition",
+        //     "#summary": "summary",
+        //     "#description": "description"
+        //   },
+        //   ExpressionAttributeValues: {
+        //     ":condition": {
+        //       S: condition || findProductData.Items[0].condition.S || ""
+        //     },
+        //     ":summary": {
+        //       S: summary || findProductData.Items[0].summary?.S || ""
+        //     },
+        //     ":description": {
+        //       S: description || findProductData.Items[0].description?.S || ""
+        //     }
+        //   }
+        // };
+        // console.log(params, "paramnsnsnsn");
+        // await dynamoDBClient.send(new UpdateItemCommand(params));
+        // return res.status(200).json({
+        //   message: "Product details update successfully",
+        //   statusCode: 200,
+        //   sucess: true
+        // });
+
+        try {
+          const findProductData = await ProductsModels.findOne({
+            where: { id }
+          });
+
+          if (!findProductData) {
+            return res.status(400).json({
+              message: "Product not found",
+              statusCode: 400,
+              success: false
+            });
           }
-        };
-        console.log(params, "paramnsnsnsn");
-        await dynamoDBClient.send(new UpdateItemCommand(params));
-        return res.status(200).json({
-          message: "Product details update successfully",
-          statusCode: 200,
-          sucess: true
-        });
+
+          await ProductsModels.update(
+            {
+              condition: condition || findProductData.condition,
+              summary: summary || findProductData.summary,
+              description: description || findProductData.description,
+              universal_standard_code:
+                universal_standard_code ||
+                findProductData.universal_standard_code
+            },
+            {
+              where: { id }
+            }
+          );
+
+          return res.status(200).json({
+            message: "Product details updated successfully",
+            statusCode: 200,
+            success: true
+          });
+        } catch (error) {
+          return res.status(500).json({
+            success: false,
+            message: error.message,
+            statusCode: 500
+          });
+        }
       } else {
-        const findExist = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "products",
-            IndexName: "title", // replace with your GSI title
-            KeyConditionExpression: "title = :title",
-            ExpressionAttributeValues: {
-              ":title": { S: title }
-            }
-          })
-        );
-        // console.log(findExist, "findexistttt findexistttt ")
-        if (findExist.Count > 0) {
-          return res.status(400).json({
-            success: false,
-            message: "Product title must be unique",
-            statusCode: 400
-          });
-        }
-        const find_universal_standard_codeExist = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "products",
-            IndexName: "universal_standard_code", // replace with your GSI title.a
-            KeyConditionExpression:
-              "universal_standard_code = :universal_standard_code",
-            ExpressionAttributeValues: {
-              ":universal_standard_code": { S: universal_standard_code }
-            }
-          })
-        );
-        // console.log(find_universal_standard_codeExist)
-        if (find_universal_standard_codeExist.Count > 0) {
-          return res.status(400).json({
-            success: false,
-            message: "Product's universal_standard_code must be unique",
-            statusCode: 400
-          });
-        }
-        id = uuidv4();
-        id = id?.replace(/-/g, "");
-        const params = {
-          TableName: "products",
-          Item: {
-            id: { S: id },
-            title: { S: title },
-            category_id: { S: category_id },
-            sub_category_id: { S: sub_category_id },
-            description: { S: description || "" },
-            summary: { S: summary || "" },
-            universal_standard_code: { S: universal_standard_code || "" },
-            brand_id: { S: brand_id || "" },
-            // warehouse_arr: {
-            //   L: warehouse_arr?.map((el) => ({
-            //     M: {
-            //       address: { S: el?.address || "" },
-            //       po_box: { S: el?.po_box || "" }
-            //     }
-            //   })) || []
-            // },
-            // },
-            variantion_arr: { L: [] },
-            brand_id: { S: brand_id || "" },
-            condition: { S: condition || "" },
-            created_by: { S: req.userData?.id || "" },
-            status: { S: status || "active" },
-            created_at: { S: new Date().toISOString() },
-            updated_at: { S: new Date().toISOString() }
+        // const findExist = await dynamoDBClient.send(
+        //   new QueryCommand({
+        //     TableName: "products",
+        //     IndexName: "title", // replace with your GSI title
+        //     KeyConditionExpression: "title = :title",
+        //     ExpressionAttributeValues: {
+        //       ":title": { S: title }
+        //     }
+        //   })
+        // );
+        // // console.log(findExist, "findexistttt findexistttt ")
+        // if (findExist.Count > 0) {
+        //   return res.status(400).json({
+        //     success: false,
+        //     message: "Product title must be unique",
+        //     statusCode: 400
+        //   });
+        // }
+        // const find_universal_standard_codeExist = await dynamoDBClient.send(
+        //   new QueryCommand({
+        //     TableName: "products",
+        //     IndexName: "universal_standard_code", // replace with your GSI title.a
+        //     KeyConditionExpression:
+        //       "universal_standard_code = :universal_standard_code",
+        //     ExpressionAttributeValues: {
+        //       ":universal_standard_code": { S: universal_standard_code }
+        //     }
+        //   })
+        // );
+        // // console.log(find_universal_standard_codeExist)
+        // if (find_universal_standard_codeExist.Count > 0) {
+        //   return res.status(400).json({
+        //     success: false,
+        //     message: "Product's universal_standard_code must be unique",
+        //     statusCode: 400
+        //   });
+        // }
+        // id = uuidv4();
+        // id = id?.replace(/-/g, "");
+        // const params = {
+        //   TableName: "products",
+        //   Item: {
+        //     id: { S: id },
+        //     title: { S: title },
+        //     category_id: { S: category_id },
+        //     sub_category_id: { S: sub_category_id },
+        //     description: { S: description || "" },
+        //     summary: { S: summary || "" },
+        //     universal_standard_code: { S: universal_standard_code || "" },
+        //     brand_id: { S: brand_id || "" },
+        //     // warehouse_arr: {
+        //     //   L: warehouse_arr?.map((el) => ({
+        //     //     M: {
+        //     //       address: { S: el?.address || "" },
+        //     //       po_box: { S: el?.po_box || "" }
+        //     //     }
+        //     //   })) || []
+        //     // },
+        //     // },
+        //     variantion_arr: { L: [] },
+        //     brand_id: { S: brand_id || "" },
+        //     condition: { S: condition || "" },
+        //     created_by: { S: req.userData?.id || "" },
+        //     status: { S: status || "active" },
+        //     created_at: { S: new Date().toISOString() },
+        //     updated_at: { S: new Date().toISOString() }
+        //   }
+        // };
+        // // console.log(params, "paramsnsnsnn add product ");
+        // await dynamoDBClient.send(new PutItemCommand(params));
+
+        try {
+          const titleExist = await ProductsModels.findOne({ where: { title } });
+          if (titleExist) {
+            return res.status(400).json({
+              success: false,
+              message: "Product title must be unique",
+              statusCode: 400
+            });
           }
-        };
-        // console.log(params, "paramsnsnsnn add product ");
-        await dynamoDBClient.send(new PutItemCommand(params));
+
+          const codeExist = await ProductsModels.findOne({
+            where: { universal_standard_code: universal_standard_code }
+          });
+          if (codeExist) {
+            return res.status(400).json({
+              success: false,
+              message: "Product's universal_standard_code must be unique",
+              statusCode: 400
+            });
+          }
+
+          const newProduct = await ProductsModels.create({
+            title,
+            category_id,
+            subcategory_id: sub_category_id,
+            description: description,
+            summary: summary,
+            universal_standard_code: universal_standard_code,
+            brand_id: brand_id,
+            condition: condition,
+            created_by: 1,
+            status: status
+          });
+
+          return res.status(201).json({
+            success: true,
+            message: "Product created successfully",
+            statusCode: 201,
+            data: newProduct
+          });
+        } catch (error) {
+          return res.status(500).json({
+            success: false,
+            message: error.message,
+            statusCode: 500
+          });
+        }
       }
       let obj = { id };
       return res.status(201).json({
@@ -821,73 +910,126 @@ class ProductServices {
   }
 
   async get_product_by_category_id(req, res) {
-    try {
-      let category_id = req.query?.category_id;
-      let limit = parseInt(req.query?.limit, 10) || 10; // Number of items per page
-      let lastEvaluatedKey = req.query?.lastEvaluatedKey
-        ? {
-            id: { S: req.query.lastEvaluatedKey },
-            category_id: { S: category_id }
-          }
-        : null;
-      let products = [];
-      let totalItemsFetched = 0;
-      while (totalItemsFetched < limit) {
-        let params = {
-          TableName: "products",
-          IndexName: "category_id", // Make sure you have a GSI on category_id
-          KeyConditionExpression: "category_id = :category_id",
-          ExpressionAttributeValues: {
-            ":category_id": { S: category_id }
-          },
-          FilterExpression:
-            "attribute_exists(variation_arr) AND size(variation_arr) > :zero",
-          ExpressionAttributeValues: {
-            ":category_id": { S: category_id },
-            ":zero": { N: "0" }
-          },
-          Limit: limit,
-          ExclusiveStartKey: lastEvaluatedKey
-        };
-        // Stop fetching if no more items or reached the limit
-        // console.log(params, 'praramns')
-        let findProductData2 = await dynamoDBClient.send(
-          new QueryCommand(params)
-        );
-        //  console.log(findProductData2,"findProductData2findProductData2")
-        let simplifiedData2 = findProductData2.Items.map((el) =>
-          simplifyDynamoDBResponse(el)
-        );
-        // console.log(simplifiedData2, "simplifiedData2", limit, "limitit", totalItemsFetched)
-        products.push(...simplifiedData2);
-        totalItemsFetched += simplifiedData2.length;
-        lastEvaluatedKey = findProductData2.LastEvaluatedKey;
+    // try {
+    //   let category_id = req.query?.category_id;
+    //   let limit = parseInt(req.query?.limit, 10) || 10; // Number of items per page
+    //   let lastEvaluatedKey = req.query?.lastEvaluatedKey
+    //     ? {
+    //         id: { S: req.query.lastEvaluatedKey },
+    //         category_id: { S: category_id }
+    //       }
+    //     : null;
+    //   let products = [];
+    //   let totalItemsFetched = 0;
+    //   while (totalItemsFetched < limit) {
+    //     let params = {
+    //       TableName: "products",
+    //       IndexName: "category_id", // Make sure you have a GSI on category_id
+    //       KeyConditionExpression: "category_id = :category_id",
+    //       ExpressionAttributeValues: {
+    //         ":category_id": { S: category_id }
+    //       },
+    //       FilterExpression:
+    //         "attribute_exists(variation_arr) AND size(variation_arr) > :zero",
+    //       ExpressionAttributeValues: {
+    //         ":category_id": { S: category_id },
+    //         ":zero": { N: "0" }
+    //       },
+    //       Limit: limit,
+    //       ExclusiveStartKey: lastEvaluatedKey
+    //     };
+    //     // Stop fetching if no more items or reached the limit
+    //     // console.log(params, 'praramns')
+    //     let findProductData2 = await dynamoDBClient.send(
+    //       new QueryCommand(params)
+    //     );
+    //     //  console.log(findProductData2,"findProductData2findProductData2")
+    //     let simplifiedData2 = findProductData2.Items.map((el) =>
+    //       simplifyDynamoDBResponse(el)
+    //     );
+    //     // console.log(simplifiedData2, "simplifiedData2", limit, "limitit", totalItemsFetched)
+    //     products.push(...simplifiedData2);
+    //     totalItemsFetched += simplifiedData2.length;
+    //     lastEvaluatedKey = findProductData2.LastEvaluatedKey;
 
-        if (!lastEvaluatedKey || totalItemsFetched >= limit) {
-          break;
-        }
-      }
-      // Simplify the product data response
-      let response = {
+    //     if (!lastEvaluatedKey || totalItemsFetched >= limit) {
+    //       break;
+    //     }
+    //   }
+    //   // Simplify the product data response
+    //   let response = {
+    //     items: products,
+    //     lastEvaluatedKey: lastEvaluatedKey ? lastEvaluatedKey?.id?.S : null,
+    //     statusCode: 200,
+    //     success: true
+    //   };
+
+    //   // Send the response
+    //   res.status(200).json({
+    //     message: "Fetchd data",
+    //     statusCode: 400,
+    //     success: true,
+    //     data: response
+    //   });
+    //   return;
+    // } catch (err) {
+    //   console.error(err, "erroror");
+    //   return res
+    //     .status(500)
+    //     .json({ message: err?.message, statusCode: 500, success: false });
+    // }
+    const category_id = req.query?.category_id;
+    const limit = parseInt(req.query?.limit, 10) || 10; // Number of items per page
+    const lastEvaluatedKey = req.query?.lastEvaluatedKey || 0; // This will be used as the offset
+
+    try {
+      const offset = parseInt(lastEvaluatedKey, 10);
+
+      // Fetch products by category_id with pagination
+      const products = await ProductsModels.findAll({
+        where: {
+          category_id
+        },
+        limit,
+        // offset,
+        order: [["id", "ASC"]], // Order by id or any other field
+        raw: true
+      });
+
+      console.log("products", products);
+      // Check if there are more products to fetch
+      const totalProducts = await ProductsModels.count({
+        where: {
+          category_id
+        },
+        raw: true
+      });
+
+      // const hasMore = offset + limit < totalProducts;
+      // const newLastEvaluatedKey = hasMore ? offset + limit : null;
+
+      const response = {
         items: products,
-        lastEvaluatedKey: lastEvaluatedKey ? lastEvaluatedKey?.id?.S : null,
+        totalProducts: totalProducts,
+        // lastEvaluatedKey: newLastEvaluatedKey,
         statusCode: 200,
         success: true
       };
 
       // Send the response
       res.status(200).json({
-        message: "Fetchd data",
-        statusCode: 400,
+        message: "Fetched data",
+        statusCode: 200,
         success: true,
         data: response
       });
-      return;
     } catch (err) {
-      console.error(err, "erroror");
-      return res
-        .status(500)
-        .json({ message: err?.message, statusCode: 500, success: false });
+      console.error(err, "error");
+      return res.status(500).json({
+        message: err?.message,
+        statusCode: 500,
+        success: false
+      });
     }
   }
 
