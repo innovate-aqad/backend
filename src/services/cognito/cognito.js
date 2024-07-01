@@ -6,7 +6,8 @@ import {
   ResendConfirmationCodeCommand,
   AdminGetUserCommand,
   AdminCreateUserCommand,
-  AdminSetUserPasswordCommand
+  AdminSetUserPasswordCommand,
+  AdminConfirmSignUpCommand
 } from "@aws-sdk/client-cognito-identity-provider";
 //import { AdminGetUserCommand } from "@aws-sdk/client-cognito-identity-provider";
 import {
@@ -247,7 +248,8 @@ export const updatePassword= async(username,password)=>{
 const params = {
   UserPoolId: process.env.COGNITO_USER_POOL_ID,
   Username: username,
-  Password: password
+  Password: password,
+  Permanent: true
 };
 
 const command = new AdminSetUserPasswordCommand(params);
@@ -262,3 +264,21 @@ cognitoClient.send(command)
     return 0;
   });
 }
+
+export const confirmUserByEmail = async (email) => {
+  const params = {
+    UserPoolId: process.env.COGNITO_USER_POOL_ID, // replace with your user pool ID
+    Username: email,
+  };
+
+  const command = new AdminConfirmSignUpCommand(params);
+
+  try {
+    const response = await cognitoClient.send(command);
+    console.log('User confirmed successfully:', response);
+    return { success: true, response };
+  } catch (error) {
+    console.error('Error confirming user:', error);
+    return { success: false, error };
+  }
+};

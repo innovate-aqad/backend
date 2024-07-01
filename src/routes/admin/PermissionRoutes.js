@@ -6,17 +6,21 @@ import PermissionControllerObj from "../../controllers/admin/PermissionControlle
 
 const PermissionRoutes = express.Router();
 
-PermissionRoutes.post("/add", authorize, PermissionControllerObj.add_endpoint);
-PermissionRoutes.get("/get", authorize, PermissionControllerObj.get_All);
+PermissionRoutes.post("/add", 
+ // authorize,
+   PermissionControllerObj.add_endpoint);
+PermissionRoutes.get("/get", 
+  //authorize,
+   PermissionControllerObj.get_All);
 
 PermissionRoutes.put(
   "/status_edit",
-  authorize,
+  //authorize,
   PermissionControllerObj.edit_status
 );
 PermissionRoutes.delete(
   "/delete",
-  authorize,
+//authorize,
   PermissionControllerObj.deleteData
 );
 

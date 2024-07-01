@@ -41,7 +41,7 @@ import {
 } from "../../helpers/datafetch.js";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import generatePassword from 'generate-password';
-import { signup, signin, confirmUser,resendOTP,getUserStatus, updatePassword} from "../../services/cognito/cognito.js";
+import { signup, signin, confirmUser,resendOTP,getUserStatus, updatePassword,confirmUserByEmail} from "../../services/cognito/cognito.js";
 import User from "../../models/UserModel.js";
 import UserOtp from "../../models/UserOtpModel.js";
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
@@ -1051,6 +1051,8 @@ async getUserByEmail(req, res) {
       
           // console.log(Data, "dayayayaya");
         }
+        // let confirmUse=await confirmUserByEmail(email);
+        // console.log(confirmUse,"confirmedd---->")
         const tokens = await signin(req.body,(err, user) => {
           console.log(err,"error---->")
           if (err) {
