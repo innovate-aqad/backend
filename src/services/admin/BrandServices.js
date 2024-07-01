@@ -37,21 +37,7 @@ class BrandServices {
           return res.status(400).json({ message: "Document not found", statusCode: 400, success: false })
         }
         const params = {
-          TableName: "brand",
-          Key: { id: { S: id } },
-          UpdateExpression: "SET #title = :title, #status = :status, #category_id =:category_id, #updated_at= :updated_at ",
-          ExpressionAttributeNames: {
-            "#title": "title",
-            "#status": "status",
-            "#category_id": "category_id",
-            "#updated_at": "updated_at"
-          },
-          ExpressionAttributeValues: {
-            ":title": { S: title || findData?.Items[0]?.title?.S || "" },
-            ":status": { S: status || findData?.Items[0]?.status?.S || 'active' },
-            ":category_id": { S: category_id || findData?.Items[0]?.category_id?.S || '' },
-            ":updated_at": { S: timestamp },
-          },
+          
         };
         const findExist = await dynamoDBClient.send(
           new QueryCommand({
@@ -73,8 +59,7 @@ class BrandServices {
           return res.status(200).json({ message: "Data updated successfully", statusCode: 200, success: true });
         }
       } else {
-        const checkBrandName = await BrandModel.findOne({ where: { name: name }, raw: true, attributes: ['id'] })
-
+        const checkBrandName = await BrandModel.findOne({ where: { title: title }, raw: true, attributes: ['id'] })
         if (!checkBrandName) {
           return res.status(400).json({
             success: false,
