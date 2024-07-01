@@ -791,7 +791,7 @@ class UserServices {
   async verifyEmailWithOtpCheck(req, res) {
     try {
       let { otp, email, name, docId } = req.query;
-      console.log(email, otp, "email----->")
+      // console.log(email, otp, "email----->")
       // const find = await dynamoDBClient.send(
       //   new ScanCommand({
       //     TableName: "users",
@@ -936,7 +936,7 @@ class UserServices {
           email: email,
         },
       });
-      console.log(findData.Count, "findData----->")
+      // console.log(findData.Count, "findData----->")
       // console.log(findData?.Items[0], "dinffdddaa", "findData");
       if (
         findData.user_type != "super_admin" &&

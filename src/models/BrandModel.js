@@ -8,6 +8,7 @@ const BrandModel = dbConnection.define(
     id: {
       type: DataTypes.BIGINT,
       allowNull: false,
+      primaryKey:true
     },
     uuid: {
       type: DataTypes.STRING,

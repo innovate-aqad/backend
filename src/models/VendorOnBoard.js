@@ -1,15 +1,3 @@
-// import dynamoose from "dynamoose";
-// import AWS from "aws-sdk";
-
-// AWS.config.update({
-//   region: process.env.Aws_region,
-// });
-
-// dynamoose.aws.sdk = AWS;
-
-
-
-
 
 import dynamoose from "dynamoose";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
