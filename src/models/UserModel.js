@@ -1,24 +1,25 @@
 import { Sequelize, DataTypes } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
+import dbConnection from "../config/dbConfig.js";
 
 // Initialize Sequelize
-const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
-  host: process.env.HOST,
-  dialect: 'mysql',
-  logging: false,
-});
+// const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
+//   host: process.env.HOST,
+//   dialect: 'mysql',
+//   logging: false,
+// });
 
 // Define the User model
-const User = sequelize.define('User', {
+const User = dbConnection.define('User', {
+  //id: {
+   // type: DataTypes.BIGINT,
+    // primaryKey: true,
+ // },
   id: {
-    type: DataTypes.BIGINT,
-    primaryKey: true,
-  },
-  uuid: {
     type: DataTypes.CHAR(36),
     defaultValue: DataTypes.UUIDV4,
     allowNull: false,
-    unique: true,
+    unique: true,primaryKey:true
   },
   user_type: {
     type: DataTypes.ENUM,

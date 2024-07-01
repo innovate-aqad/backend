@@ -60,7 +60,7 @@ class ApiEndpointServices {
         const newId = uuidv4().replace(/-/g, "");
   
         await ApiEndpoint.create({
-          uuid: newId,
+          id: newId,
           title,
           type,
           status: status || "active",
@@ -140,7 +140,7 @@ class ApiEndpointServices {
       const { id, status } = req.body;
   
       // Find the item by id
-      const item = await ApiEndpoint.findOne({ where: { uuid:id } });
+      const item = await ApiEndpoint.findOne({ where: { id:id } });
   
       if (!item) {
         return res.status(400).json({
@@ -153,7 +153,7 @@ class ApiEndpointServices {
       // Update the item status
       await ApiEndpoint.update(
         { status },
-        { where: { uuid:id } }
+        { where: { id:id } }
       );
   
       return res.status(200).json({
@@ -172,7 +172,7 @@ class ApiEndpointServices {
       const { id } = req.query;
   
       // Check if the item exists
-      const item = await ApiEndpoint.findOne({ where: { uuid:id } });
+      const item = await ApiEndpoint.findOne({ where: { id:id } });
   
       if (!item) {
         return res.status(400).json({
@@ -183,7 +183,7 @@ class ApiEndpointServices {
       }
   
       // Delete the item
-      await ApiEndpoint.destroy({ where: { uuid:id } });
+      await ApiEndpoint.destroy({ where: { id:id } });
   
       return res.status(200).json({
         message: "Data deleted successfully",

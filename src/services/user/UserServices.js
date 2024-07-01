@@ -90,8 +90,20 @@ class UserServices {
       console.log(req.files, "req.filesssss");
       email = email?.trim();
 
-      let findData;
-      if ((slide == 1 || slide == 2 || slide == 3 || slide == 4) && !doc_id) {
+    let findData;
+    if ((slide == 1 || slide == 2 || slide == 3 || slide == 4) && !doc_id) {
+      return res.status(400).json({
+        message: "Doc_id is mandatory",
+        statusCode: 400,
+        success: false,
+      });
+    }
+    
+    if (slide ==1 || slide == 2 || slide == 3 || doc_id) {
+      console.log(req.files, "req.files is here");
+      findData = await User.findOne({ where: { id: doc_id } ,raw:true});
+
+      if (!findData) {
         return res.status(400).json({
           message: "Doc_id is mandatory",
           statusCode: 400,
@@ -99,25 +111,10 @@ class UserServices {
         });
       }
 
-      if (slide == 1 || slide == 2 || slide == 3 || doc_id) {
-
-        console.log(req.files, "req.files is here");
-
-        findData = await User.findOne({ where: { uuid: doc_id } });
-
-        if (!findData) {
-          return res.status(400).json({
-            message: "Doc_id is mandatory",
-            statusCode: 400,
-            success: false,
-          });
-        }
-      }
-
       if (slide == 2 || slide == 3 || doc_id) {
         console.log(req.files, "req.files is here");
 
-        findData = await User.findOne({ where: { uuid: doc_id } });
+        findData = await User.findOne({ where: { id: doc_id },raw:true });
 
         if (!findData) {
           return res.status(400).json({
@@ -578,7 +575,7 @@ class UserServices {
         success: true,
         data: { id },
       });
-    } catch (err) {
+    }} catch (err) {
       try {
         if (req.files) {
           for (let el in req.files) {
@@ -685,7 +682,7 @@ class UserServices {
         strict: true
       });
       const saniPassword = randomPassword.replace(/"/g, 'a');
-      let hashPassword = await bcrypt.hash(`${saniPassword}`, `${salt}`);
+      let hashPassword = await bcrypt.hash(`${saniPassword}, ${salt}`);
       let tempPassword = generatePassword.generate({
         length: 24,
         numbers: true,
@@ -696,89 +693,95 @@ class UserServices {
         strict: true
       });
 
-      const findData = await User.findOne({
-        where: {
-          email: req.query.email,
-          account_status: "activated",
-          is_verified: 1
-        },
-      });
-      if (findData != null) {
-        return res.status(400).json({
-          message: "Email already exist",
-          statusCode: 400,
-          success: false,
-        });
-      }
-      const userStatus = await getUserStatus(req.query.email);
-      console.log(userStatus, "userStatus--->")
-      if (userStatus && userStatus.UserStatus != 'CONFIRMED') {
         const findData = await User.findOne({
           where: {
             email: req.query.email,
+            account_status:"activated",
+            is_verified:1
           },
         });
-        //let rawData = simplifyDynamoDBResponse(findData?.Items[0]);
-        await findData.update({
-          password: hashPassword
-        })
-        let sendData = { name: saniPassword + tempPassword, doc_id: findData.uuid }
-        console.log('User exists but is not verified, resending OTP...');
-        let result = await resendOTP(req.query.email, sendData);
-        if (result == 1) {
-          return res.status(200).json({
-            message: "OTP resent successfully",
-            data: sendData,
-            statusCode: 200,
-            success: true,
-          });
-        } else {
-          return res.status(500).json({
-            message: "Internal error,Please try again",
-            statusCode: 500,
+        if(findData!=null){
+        return res.status(400).json({
+            message: "Email already exist",
+            statusCode: 400,
             success: false,
           });
         }
-        console.log(result, "result----->")
-      } else if (userStatus == 0) {
+      const userStatus = await getUserStatus(req.query.email);
+      console.log(userStatus,"userStatus--->")
+  if (userStatus && userStatus.UserStatus !='CONFIRMED') {
+    const findData = await User.findOne({
+      where: {
+        email: req.query.email,
+      },
+    });
+    //let rawData = simplifyDynamoDBResponse(findData?.Items[0]);
+    await findData.update({
+      password:hashPassword
+    })
+    let sendData={name:saniPassword+tempPassword,doc_id:findData.id}
+    console.log('User exists but is not verified, resending OTP...');
+    let result=await resendOTP(req.query.email,sendData);
+    if(result==1){
+       return res.status(200).json({
+      message: "OTP resent successfully",
+      data:sendData,
+      statusCode: 200,
+      success: true,
+    });
+    }else{
+      return res.status(500).json({
+      message: "Internal error,Please try again",
+      statusCode: 500,
+      success: false,
+    });
+    }
+    console.log(result,"result----->")
+  }else if(userStatus==0){
+    
+      let id = uuidv4();
+      id = id?.replace(/-/g, "");
 
-        let id = uuidv4();
-        id = id?.replace(/-/g, "");
-
-        const newUser = await User.create({
-          uuid: id,
-          email: req.query.email,
-          password: hashPassword, // Ensure hashPassword is defined and contains the hashed password
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          is_verified: false,
-        });
-
-        const cognitoUser = await new Promise((resolve, reject) => {
-          signup(req.query.email, saniPassword, (err, user) => {
-            if (err) {
-              reject(err);
-            } else {
-              console.log(user, "user-->data")
-              resolve(user);
-            }
-          });
-        });
-        let data = {
-          name: saniPassword + tempPassword,
-          doc_id: id
+      const newUser = await User.create({
+        id: id,
+        email: req.query.email,
+        password: hashPassword, // Ensure hashPassword is defined and contains the hashed password
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        is_verified: false,
+      });
+  
+    const cognitoUser = await new Promise((resolve, reject) => {
+      signup(req.query.email,saniPassword, (err, user) => {
+        if (err) {
+          reject(err);
+        } else {
+          console.log(user,"user-->data")
+          resolve(user);
         }
+      });
+    });
+      let data= {name:saniPassword+tempPassword,
+              doc_id:id
       }
+      return res.status(200).json({
+        message: "Otp send to email for verify",
+        data:data,
+        statusCode: 200,
+        success: true,
+      });
+    
+  }
     } catch (err) {
       if (err.code === 'UsernameExistsException') {
         console.log('Email already exists, resending OTP...');
         await resendOTP(req.query.email);
       } else {
         console.error('Error signing up:', err);
-        console.error(err, "Eeee");
-        return res
-          .status(500)
-          .json({ message: err?.message, statusCode: 500, success: false });
+      console.error(err, "Eeee");
+      return res
+        .status(500)
+        .json({ message: err?.message, statusCode: 500, success: false });
       }
     }
   }
