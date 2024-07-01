@@ -16,12 +16,6 @@ const UserOtp = sequelize.define('UserOtp', {
     type: DataTypes.STRING,
     primaryKey: true,
   },
-  uuid: {
-    type: DataTypes.CHAR(36),
-    defaultValue: DataTypes.UUIDV4,
-    allowNull: false,
-    unique: true,
-  },
   email: {
     type: DataTypes.STRING,
     allowNull: false,

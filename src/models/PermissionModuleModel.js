@@ -3,11 +3,18 @@ import sequelize from '../config/dbConfig.js'; // Assuming you have a sequelize 
 
 const PermissionModule = sequelize.define('PermissionModule', {
   id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.BIGINT,
     primaryKey: true,
     autoIncrement: true, // Assuming IDs are auto-incremented
+    allowNull: false
   },
-  name: {
+  uuid: {
+    type: DataTypes.CHAR(36),
+    defaultValue: DataTypes.UUIDV4,
+    allowNull: false,
+    unique: true,
+  },
+  title: {
     type: DataTypes.STRING,
     allowNull: false,
   },

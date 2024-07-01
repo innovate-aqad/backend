@@ -6,6 +6,8 @@ import {
   ResendConfirmationCodeCommand,
   AdminGetUserCommand,
   AdminCreateUserCommand,
+  AdminSetUserPasswordCommand,
+  AdminConfirmSignUpCommand
 } from "@aws-sdk/client-cognito-identity-provider";
 //import { AdminGetUserCommand } from "@aws-sdk/client-cognito-identity-provider";
 import {
@@ -128,23 +130,24 @@ export const signin = (body, callback) => {
     onFailure: (err) => {
       console.log("section2--->",err)
       callback(err);
+      return err
     },
-    // mfaRequired: (codeDeliveryDetails) => {
-    //   callback(null, {
-    //     success: true,
-    //     mfaRequired: true,
-    //     codeDeliveryDetails,
-    //     cognitoUser, // Include cognitoUser to use in the MFA verification
-    //   });
-    // },
-    // newPasswordRequired: (userAttributes, requiredAttributes) => {
-    //   callback(null, {
-    //     success: false,
-    //     newPasswordRequired: true,
-    //     userAttributes,
-    //     requiredAttributes,
-    //   });
-    // },
+    mfaRequired: (codeDeliveryDetails) => {
+      callback(null, {
+        success: true,
+        mfaRequired: true,
+        codeDeliveryDetails,
+        cognitoUser, // Include cognitoUser to use in the MFA verification
+      });
+    },
+    newPasswordRequired: (userAttributes, requiredAttributes) => {
+      callback(null, {
+        success: false,
+        newPasswordRequired: true,
+        userAttributes,
+        requiredAttributes,
+      });
+    },
   });
 };
 
@@ -167,23 +170,45 @@ export const confirmUser= async(username,code)=> {
   }
 }
 
-export const resendOTP = async (username,data,req,res) => {
+// export const resendOTP = async (username,data,req,res) => {
+//   const params = {
+//     UserPoolId: process.env.COGNITO_USER_POOL_ID,
+//     Username: username
+//   };
+
+//   try {
+//     const response = await cognito.adminResendInvitation(params).promise();
+//     return res.status(200).json({
+//       message: "Otp send to email for verify",
+//       data:data,
+//       statusCode: 200,
+//       success: true,
+//     });
+//     console.log('OTP resent successfully:', response);
+//   } catch (error) {
+//     console.error('Error resending OTP:', error);
+//   }
+// };
+
+
+export const resendOTP = async (username, data, req, res) => {
   const params = {
-    UserPoolId: process.env.COGNITO_USER_POOL_ID,
-    Username: username
+    ClientId: poolData.ClientId,
+    Username: username,
   };
 
   try {
-    const response = await cognito.adminResendInvitation(params).promise();
-    return res.status(200).json({
-      message: "Otp send to email for verify",
-      data:data,
-      statusCode: 200,
-      success: true,
-    });
-    console.log('OTP resent successfully:', response);
+    const response = await cognitoClient.send(new ResendConfirmationCodeCommand(params));
+    return 1
+    // return res.status(200).json({
+    //   message: "OTP resent successfully",
+    //   data: data,
+    //   statusCode: 200,
+    //   success: true,
+    // });
   } catch (error) {
     console.error('Error resending OTP:', error);
+    return 0
   }
 };
 
@@ -210,5 +235,44 @@ export const getUserStatus = async (username) => {
       console.error('Error getting user status:', error);
     }
     return null;
+  }
+};
+
+export const updatePassword= async(username,password)=>{
+const params = {
+  UserPoolId: process.env.COGNITO_USER_POOL_ID,
+  Username: username,
+  Password: password,
+  Permanent: true
+};
+
+const command = new AdminSetUserPasswordCommand(params);
+
+cognitoClient.send(command)
+  .then(response => {
+    console.log(response,"success--->");
+    return 1;
+  })
+  .catch(error => {
+    console.error(error);
+    return 0;
+  });
+}
+
+export const confirmUserByEmail = async (email) => {
+  const params = {
+    UserPoolId: process.env.COGNITO_USER_POOL_ID, // replace with your user pool ID
+    Username: email,
+  };
+
+  const command = new AdminConfirmSignUpCommand(params);
+
+  try {
+    const response = await cognitoClient.send(command);
+    console.log('User confirmed successfully:', response);
+    return { success: true, response };
+  } catch (error) {
+    console.error('Error confirming user:', error);
+    return { success: false, error };
   }
 };

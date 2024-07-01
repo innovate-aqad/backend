@@ -41,7 +41,7 @@ import {
 } from "../../helpers/datafetch.js";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import generatePassword from 'generate-password';
-import { signup, signin, confirmUser, resendOTP, getUserStatus } from "../../services/cognito/cognito.js";
+import { signup, signin, confirmUser, resendOTP, getUserStatus, updatePassword, confirmUserByEmail } from "../../services/cognito/cognito.js";
 import User from "../../models/UserModel.js";
 import UserOtp from "../../models/UserOtpModel.js";
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
@@ -52,27 +52,6 @@ const dynamoDBClient = new DynamoDBClient({
     secretAccessKey: process.env.Aws_secretAccessKey,
   },
 });
-
-// console.log(dynamoDBClient, "dydb", process.env.Aws_region)
-
-
-
-async function getNextSequenceValue(sequenceName) {
-  console.log(sequenceName, "sequence nameee");
-  let sequenceDoc = await Sequence.get({ sequenceName });
-  console.log(sequenceDoc, "sequenceDocsequenceDoc");
-  if (!sequenceDoc) {
-    // If sequence does not exist, create a new one
-    sequenceDoc = new Sequence({
-      sequenceName,
-      value: 0,
-    });
-  }
-  sequenceDoc.value++; // Increment the sequence value
-  console.log(sequenceDoc, "sequenceDocsequenceDoc");
-  await sequenceDoc.save(); // Save the updated sequence value
-  return sequenceDoc.value;
-}
 
 let salt = environmentVars.salt;
 class UserServices {
@@ -117,6 +96,21 @@ class UserServices {
           statusCode: 400,
           success: false,
         });
+      }
+
+      if (slide == 1 || slide == 2 || slide == 3 || doc_id) {
+
+        console.log(req.files, "req.files is here");
+
+        findData = await User.findOne({ where: { uuid: doc_id } });
+
+        if (!findData) {
+          return res.status(400).json({
+            message: "Doc_id is mandatory",
+            statusCode: 400,
+            success: false,
+          });
+        }
       }
 
       if (slide == 2 || slide == 3 || doc_id) {
@@ -506,24 +500,6 @@ class UserServices {
         });
       }
 
-      if (phone) {
-        const findPhoneExist = await User.findOne({ where: { phone } });
-        if (findPhoneExist) {
-          if (req.files?.profile_photo?.length) {
-            try {
-              deleteImageFromLocal(req.files.profile_photo[0].path);
-            } catch (err) {
-              console.error(err, "deleteImageFromLocal");
-            }
-          }
-          return res.status(400).json({
-            success: false,
-            message: "Phone number already exists!",
-            statusCode: 400,
-          });
-        }
-      }
-
       let salt = bcrypt.genSaltSync(10);
       let breakPassword = password.slice(0, 13)
       console.log(breakPassword, "breakpassword---->")
@@ -559,7 +535,7 @@ class UserServices {
         profile_photo = req.files.profile_photo[0].filename;
       }
 
-      const newUser = await User.create({
+      await findData.update({
         id,
         profile_photo: profile_photo || "",
         name,
@@ -571,16 +547,19 @@ class UserServices {
         country,
         password: hashPassword,
         account_status: "activated",
-        is_verified: false,
+        is_verified: true,
       });
-
+      let slicedPassword = password.slice(0, 13)
       let obj = {
         email,
-        randomPassword: password.slice(0, 13),
+        randomPassword: slicedPassword,
         name,
       };
       console.log(obj, "password data is here---->");
       sendPasswordViaEmailOf(obj);
+
+      let setPassword = await updatePassword(email, slicedPassword);
+      console.log(setPassword, "reset password--->")
       if (req.files?.profile_photo?.length) {
         try {
           uploadImageToS3(
@@ -622,6 +601,7 @@ class UserServices {
       console.log(err, "errorororro");
       return res.status(500).json({ message: err.message, success: false, statusCode: 500 });
     }
+
   }
   async getUserByEmail(req, res) {
     try {
@@ -693,44 +673,74 @@ class UserServices {
   async sendOtpEmail(req, res) {
     try {
       console.log("floww---->1")
+      let salt = environmentVars.salt;
+      let randomPassword = generatePassword.generate({
+        length: 12,
+        numbers: true,
+        symbols: true,
+        uppercase: true,
+        lowercase: true,
+        excludeSimilarCharacters: true,
+        strict: true
+      });
+      const saniPassword = randomPassword.replace(/"/g, 'a');
+      let hashPassword = await bcrypt.hash(`${saniPassword}`, `${salt}`);
+      let tempPassword = generatePassword.generate({
+        length: 24,
+        numbers: true,
+        symbols: true,
+        uppercase: true,
+        lowercase: true,
+        excludeSimilarCharacters: true,
+        strict: true
+      });
+
+      const findData = await User.findOne({
+        where: {
+          email: req.query.email,
+          account_status: "activated",
+          is_verified: 1
+        },
+      });
+      if (findData != null) {
+        return res.status(400).json({
+          message: "Email already exist",
+          statusCode: 400,
+          success: false,
+        });
+      }
       const userStatus = await getUserStatus(req.query.email);
       console.log(userStatus, "userStatus--->")
-      if (userStatus && !userStatus.UserStatus.includes('CONFIRMED')) {
-        const findData = await User.findOne({
-          where: {
-            email: email,
-          },
-        });
-        //let rawData = simplifyDynamoDBResponse(findData?.Items[0]);
-        let sendData = { password: findData.password, doc_id: findData.id }
-        console.log('User exists but is not verified, resending OTP...');
-        await resendOTP(req.query.email, sendData);
-      } else if (userStatus == 0) {
+      if (userStatus && userStatus.UserStatus != 'CONFIRMED') {
         const findData = await User.findOne({
           where: {
             email: req.query.email,
-            account_status: "activated",
-            is_verified: 1
           },
         });
-        if (findData != null) {
-          return res.status(400).json({
-            message: "Email already exist",
-            statusCode: 400,
+        //let rawData = simplifyDynamoDBResponse(findData?.Items[0]);
+        await findData.update({
+          password: hashPassword
+        })
+        let sendData = { name: saniPassword + tempPassword, doc_id: findData.uuid }
+        console.log('User exists but is not verified, resending OTP...');
+        let result = await resendOTP(req.query.email, sendData);
+        if (result == 1) {
+          return res.status(200).json({
+            message: "OTP resent successfully",
+            data: sendData,
+            statusCode: 200,
+            success: true,
+          });
+        } else {
+          return res.status(500).json({
+            message: "Internal error,Please try again",
+            statusCode: 500,
             success: false,
           });
         }
-        let salt = environmentVars.salt;
-        let randomPassword = generatePassword.generate({
-          length: 12,
-          numbers: true,
-          symbols: true,
-          uppercase: true,
-          lowercase: true,
-          excludeSimilarCharacters: true,
-          strict: true
-        });
-        let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+        console.log(result, "result----->")
+      } else if (userStatus == 0) {
+
         let id = uuidv4();
         id = id?.replace(/-/g, "");
 
@@ -744,7 +754,7 @@ class UserServices {
         });
 
         const cognitoUser = await new Promise((resolve, reject) => {
-          signup(req.query.email, randomPassword, (err, user) => {
+          signup(req.query.email, saniPassword, (err, user) => {
             if (err) {
               reject(err);
             } else {
@@ -753,26 +763,10 @@ class UserServices {
             }
           });
         });
-        let tempPassword = generatePassword.generate({
-          length: 24,
-          numbers: true,
-          symbols: true,
-          uppercase: true,
-          lowercase: true,
-          excludeSimilarCharacters: true,
-          strict: true
-        });
         let data = {
-          name: randomPassword + tempPassword,
+          name: saniPassword + tempPassword,
           doc_id: id
         }
-        return res.status(200).json({
-          message: "Otp send to email for verify",
-          data: data,
-          statusCode: 200,
-          success: true,
-        });
-
       }
     } catch (err) {
       if (err.code === 'UsernameExistsException') {
@@ -911,36 +905,19 @@ class UserServices {
   async loginUser(req, res) {
     try {
       let { email, password } = req.body;
-
-      // Step 1: Authenticate User with Cognito
-      // try {
-      //   const tokens = await signin(req.body,(err, user) => {
-      //     if (err) {
-      //       return err;
-      //     } else {
-      //       console.log(user,"user-->data")
-      //       return res.status(200).send({message:"Logged in ",data:user});
-      //     }
-      //   });
-      //   console.log('Cognito tokens:', tokens);
-      // } catch (err) {
-      //   console.error('Cognito Authentication error:', err);
-      //   return res.status(400).json({
-      //     message: "Authentication failed",
-      //     statusCode: 400,
-      //     success: false,
-      //   });
-      // }
+      console.log(req.body, "jai sriram--->")
       const findData = await User.findOne({
         where: {
           email: email,
-        },
+        }, raw: true
       });
-      // console.log(findData.Count, "findData----->")
-      // console.log(findData?.Items[0], "dinffdddaa", "findData");
+      // console.log(findData, "findData----->")
+      if (!findData) {
+        return res.staatus(400).json({ message: "Email not found", statusCode: 400, success: false })
+      }
       if (
-        findData.user_type != "super_admin" &&
-        findData.account_status != "activated"
+        findData?.user_type != "super_admin" &&
+        findData?.account_status != "activated"
       ) {
         return res.status(400).json({
           message: "This account de-activated",
@@ -948,12 +925,10 @@ class UserServices {
           success: false,
         });
       }
-      if (findData != null) {
         let checkpassword = await bcrypt.compare(
           password,
           findData.password
         );
-
         if (!checkpassword) {
           return res.status(400).json({
             message: "Password invalid",
@@ -962,41 +937,27 @@ class UserServices {
           });
         }
         let otp = await generateOTP();
-        // console.log(otp, "otptptptp");
-        if (otp.length == 3) {
+        otp=Number(otp)
+        // console.log(otp, "otptptptp",otp?.length,"{{{{");
+        if (otp?.toString().length == 3) {
           otp = otp + "0";
-        } else if (otp.length == 2) {
+        } else if (otp?.toString().length == 2) {
           otp = otp + "00";
-        } else if (otp.length == 1) {
+        } else if (otp?.toString().length == 1) {
           otp = otp + "000";
         }
+        // console.log(otp, "otp$$$$$$$333");
         let currentTime = Date.now();
         currentTime = currentTime?.toString();
-        let get = await sendOtpForLogin(email, otp);
-        if (get == false) {
-          return res.status(400).json({
-            message: "internal server error",
-            statusCode: 400,
-            success: false,
-          });
-        }
-        // const find = await dynamoDBClient.send(
-        //   new ScanCommand({
-        //     TableName: "userOtp",
-        //     FilterExpression: "email = :email",
-        //     ExpressionAttributeValues: {
-        //       ":email": { S: email },
-        //     },
-        //   })
-        // );
+         sendOtpForLogin(email, otp);
         const find = await UserOtp.findOne({
           where: {
             email: email,
           },
         });
         // console.log(find, "Asdad", find);
-        if (find && find != null) {
-          const updatedUserOtp = await UserOtp.update(
+        if (find && find?.id) {
+           await UserOtp.update(
             {
               otp: otp,
               creationTime: currentTime,
@@ -1004,27 +965,12 @@ class UserServices {
             },
             {
               where: {
-                id: find.id,
+                email: email,
               },
-              returning: true, // This option returns the updated object
-              plain: true, // This option returns only the updated object, not an array
             }
           );
         } else {
-
-          const tokens = await signin(req.body, (err, user) => {
-            if (err) {
-              return res.status(400).json({
-                message: `Authentication failed ${err}`,
-                statusCode: 400,
-                success: false,
-              });
-            } else {
-              console.log(user, "user-->data")
-              //return res.status(200).send({message:"Logged in ",data:user});
-            }
-          });
-          //console.log('Cognito tokens:', tokens);
+          console.log("flow2----->")
           let id = uuidv4()?.replace(/-/g, "");
           const newUserOtp = await UserOtp.create({
             id: id,
@@ -1034,20 +980,25 @@ class UserServices {
             createdAt: currentTime,
             updatedAt: currentTime,
           });
-
-          // console.log(Data, "dayayayaya");
         }
-        return res.status(200).json({
-          message: "Otp sent to registered email",
-          statusCode: 200,
-          success: true,
+        const tokens = await signin(req.body, (err, user) => {
+          // console.log(err, "error---->")
+          if (err) {
+            console.log("hiiiiii---->")
+            return res.status(400).json({
+              message: `Authentication failed`,
+              statusCode: 400,
+              success: false,
+            });
+          } else {
+            // console.log(user, "user-->data")
+            return res.status(200).json({
+              message: "Otp sent to registered email",
+              statusCode: 200,
+              success: true,
+            });
+          }
         });
-      } else {
-        // console.log("enddddd");
-        return res
-          .status(400)
-          .json({ message: "No data found", statusCode: 400, success: false });
-      }
     } catch (err) {
       console.log(err, "Error in login api user");
       return res
@@ -1071,107 +1022,103 @@ class UserServices {
       if (!find) {
         return res.status(400).json({ message: "User otp not found", statusCode: 400, success: False })
       }
-        let otpDb = find?.otp;
-        let creationTime = parseInt(find?.creationTime, 10);
-        let nowTime = Date.now();
-        const timeDifference = nowTime - creationTime; // Difference in milliseconds
-        const tenMinutes = 600000; // 10 minutes in milliseconds
+      let otpDb = find?.otp;
+      let creationTime = parseInt(find?.creationTime, 10);
+      let nowTime = Date.now();
+      const timeDifference = nowTime - creationTime; // Difference in milliseconds
+      const tenMinutes = 600000; // 10 minutes in milliseconds
 
-        if (timeDifference > tenMinutes) {
-          return res.status(400).json({
-            message: "Otp is expired",
-            statusCode: 400,
-            success: false,
-          });
-        } else if (otpDb != otp) {
-          return res.status(400).json({
-            message: "In-valid otp",
-            statusCode: 400,
-            success: false,
-          });
-        }
-
-        let unique_token_id = uuidv4().replace(/-/g, "");
-        let obj = {
-          unique_token_id,
-          name: findData.name,
-          email: findData.email,
-          user_type: findData.user_type,
-          id: findData.id,
-          is_verified: findData.is_verified,
-          account_status: findData.account_status,
-        };
-
-        if (
-          obj.user_type != "vendor" &&
-          obj.user_type != "seller" &&
-          obj.user_type != "logistic" &&
-          obj.user_type != "super_admin"
-        ) {
-          // Assuming there are associated permissions to load
-          //let permissions = await findData.getPermissions(); // This assumes a defined relationship
-
-          let api_endpoint_arr = permissions.map(p => p.backend_routes).flat();
-          api_endpoint_arr.push(...permissions.map(p => p.frontend_routes).flat());
-
-          // Remove duplicates
-          api_endpoint_arr = [...new Set(api_endpoint_arr)];
-          let apiEndpoints = await ApiEndpoint.findAll({
-            where: {
-              id: {
-                [Op.in]: api_endpoint_arr
-              }
-            }
-          });
-
-          let temp = {};
-          apiEndpoints.forEach(el => {
-            if (temp[el?.type]) {
-              temp[el?.type].push({
-                id: el?.id,
-                title: el?.title,
-                type: el?.type,
-              });
-            } else {
-              temp[el?.type] = [{
-                id: el?.id,
-                title: el?.title,
-                type: el?.type,
-              }];
-            }
-          });
-          obj.permission = temp;
-          //obj.permission_raw_arr = simplifySequelizeResponse(permissions);
-        }
-
-        let token = generateAccessToken(obj);
-        let expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 day
-
-        await User.update(
-          { unique_token_id },
-          { where: { id: obj.id } }
-        );
-        res.cookie("_token", token, {
-          httpOnly: true,
-          secure: true,
-          sameSite: "strict",
-          expires: expiryDate,
-        }).status(200).json({
-          success: true,
-          message: "Logged in successful",
-          statusCode: 200,
-          data: {
-            user_type: obj.user_type,
-            id: obj.id,
-            token: token,
-            is_verified: obj.is_verified,
-            account_status: obj.account_status,
-            permission: obj.permission || [],
-            permission_raw_arr: obj.permission_raw_arr || [],
-          },
+      if (timeDifference > tenMinutes) {
+        return res.status(400).json({
+          message: "Otp is expired",
+          statusCode: 400,
+          success: false,
         });
-    
+      } else if (otpDb != otp) {
+        return res.status(400).json({
+          message: "In-valid otp",
+          statusCode: 400,
+          success: false,
+        });
+      }
+
+      let unique_token_id = uuidv4().replace(/-/g, "");
+      let obj = {
+        unique_token_id,
+        name: findData.name,
+        email: findData.email,
+        user_type: findData.user_type,
+        id: findData.id,
+        is_verified: findData.is_verified,
+        account_status: findData.account_status,
+      };
+
+      if (
+        obj.user_type != "vendor" &&
+        obj.user_type != "seller" &&
+        obj.user_type != "logistic" &&
+        obj.user_type != "super_admin"
+      ) {
+        let api_endpoint_arr = permissions.map(p => p.backend_routes).flat();
+        api_endpoint_arr.push(...permissions.map(p => p.frontend_routes).flat());
+        // Remove duplicates
+        api_endpoint_arr = [...new Set(api_endpoint_arr)];
+        let apiEndpoints = await ApiEndpoint.findAll({
+          where: {
+            id: {
+              [Op.in]: api_endpoint_arr
+            }
+          }
+        });
+
+        let temp = {};
+        apiEndpoints.forEach(el => {
+          if (temp[el?.type]) {
+            temp[el?.type].push({
+              id: el?.id,
+              title: el?.title,
+              type: el?.type,
+            });
+          } else {
+            temp[el?.type] = [{
+              id: el?.id,
+              title: el?.title,
+              type: el?.type,
+            }];
+          }
+        });
+        obj.permission = temp;
+        //obj.permission_raw_arr = simplifySequelizeResponse(permissions);
+      }
+
+      let token = generateAccessToken(obj);
+      // let expiryDate = new Date();
+      // expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 day
+
+      await User.update(
+        { unique_token_id },
+        { where: { id: obj.id } }
+      );
+      res.cookie("_token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict",
+        // expires: expiryDate,
+      }).status(200).json({
+        success: true,
+        message: "Logged in successful",
+        statusCode: 200,
+        data: {
+          user_type: obj.user_type,
+          id: obj.id,
+          token: token,
+          is_verified: obj.is_verified,
+          account_status: obj.account_status,
+          permission: obj.permission || [],
+          permission_raw_arr: obj.permission_raw_arr || [],
+        },
+      });
+
 
     } catch (err) {
       console.log(err, "Error in login api user");

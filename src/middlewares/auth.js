@@ -12,6 +12,7 @@ import {
   UpdateItemCommand,
   QueryCommand,
 } from "@aws-sdk/client-dynamodb";
+import User from "../models/UserModel.js";
 
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -52,64 +53,48 @@ export const simplifyDynamoDBResponse = (data) => {
 let arr = ["/api/category/add"];
 
 export const authorize = async (req, res, next) => {
-  // console.log(req.originalUrl,"aas ");
   let _secrate = req.headers["_token"];
-  let authToekn = req?.header?.authorization;
-  // console.log(_secrate, "_secrate_secrate_secrate_secrate")
   try {
     const proof = jwt.verify(_secrate, environmentVars.jwtSecret, {
       algorithm: "HS512",
     });
     // console.log("proof", "proof qwerty", proof);
-    const findDataExist = await dynamoDBClient.send(
-      new QueryCommand({
-        TableName: "users",
-        KeyConditionExpression: "id= :id",
-        ExpressionAttributeValues: {
-          ":id": { S: proof?.id },
-        },
-      })
-    );
-    if (findDataExist && findDataExist?.Count == 0) {
+    const findDataExist = await User.findOne({where:{email:proof?.email},raw:true })
+// console.log(findDataExist,"finddata")
+    if (!findDataExist ) {
       return res
         .status(400)
         .json({ message: "User not found", success: false, statusCode: 400 });
     }
-    let rawData = simplifyDynamoDBResponse(findDataExist?.Items[0]);
-    // console.log(
-    //   findDataExist?.Items[0]?.permission?.L,
-    //   "findDataExistfindDataExist",
-    //   rawData
-    // );
-      if(rawData&&rawData?.unique_token_id!=proof?.unique_token_id){
-      return res.status(400).json({message:"Token expired",statusCode:400,success:false})
-    }
+    //   if(rawData&&rawData?.unique_token_id!=proof?.unique_token_id){
+    //   return res.status(400).json({message:"Token expired",statusCode:400,success:false})
+    // }
     if (
-      rawData?.user_type != "vendor" &&
-      rawData?.user_type!= "logistic" &&
-      rawData?.user_type!= "seller" &&
-      rawData?.user_type!= "super_admin"
+      findDataExist?.user_type != "vendor" &&
+      findDataExist?.user_type!= "logistic" &&
+      findDataExist?.user_type!= "seller" &&
+      findDataExist?.user_type!= "super_admin"
     ) {
       let checkAuthority = proof?.permission?.backend?.find(
         (el) => el?.title == req.originalUrl
       );
-      console.log(
-        checkAuthority,
-        "checkAuthoritycheckAuthority",
-        req.originalUrl
-      );
-      if (!checkAuthority&&req.originalUrl!='/api/user/logout') {
-        return res
-          .status(400)
-          .json({
-            message: "Not authorise to this endpoint",
-            statusCode: 400,
-            success: false,
-          });
-      }
+      // console.log(
+      //   checkAuthority,
+      //   "checkAuthoritycheckAuthority",
+      //   req.originalUrl
+      // );
+      // if (!checkAuthority&&req.originalUrl!='/api/user/logout') {
+      //   return res
+      //     .status(400)
+      //     .json({
+      //       message: "Not authorise to this endpoint",
+      //       statusCode: 400,
+      //       success: false,
+      //     });
+      // }
     }
-    req.userData = rawData;
-    req.id = rawData.id;
+    req.userData = findDataExist;
+    req.id = findDataExist.id;
     return next();
   } catch (err) {
     // console.log(err, "EEEEErrroror");

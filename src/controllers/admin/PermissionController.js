@@ -46,14 +46,15 @@ class PermissionController {
       console.log(req.body, "req.bod yy!@#!@# !# ")
       let { error } = ChangeStatusSchema.validate(req.body, options);
       if (error) {
+        console.log(error,"message")
         return res.status(400).json({
           message: error.details[0]?.message,
           success: false,
           statusCode: 400,
         });
       }
-
-      await PermissionServicesObj.changeStatus(req, res);
+    
+      await PermissionServicesObj.changestatus(req, res);
     } catch (err) {
       return res
         .status(500)

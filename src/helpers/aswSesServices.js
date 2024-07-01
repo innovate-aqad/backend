@@ -183,7 +183,7 @@ export const sendOtpForLogin = async (email, otp) => {
     
     const command = new SendEmailCommand(params);
     const data = await AWS_SES.send(command);
-// console.log(data,"dataa")
+ console.log(data,"dataa")
     return true
   } catch (error) {
     console.log(error,"errorrorr in login ")

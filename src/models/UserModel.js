@@ -11,7 +11,7 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
 // Define the User model
 const User = sequelize.define('User', {
   id: {
-    type: DataTypes.STRING,
+    type: DataTypes.BIGINT,
     primaryKey: true,
   },
   uuid: {
