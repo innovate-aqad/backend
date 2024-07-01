@@ -537,15 +537,9 @@ class UserController {
     }
   }
 
-
-
-
-
-
   async login(req, res) {
     try {
       let { error } = loginSchema.validate(req?.body, options);
-
       if (error) {
         return res
           .status(400)
