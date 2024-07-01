@@ -44,6 +44,7 @@ import generatePassword from 'generate-password';
 import { signup, signin, confirmUser, resendOTP, getUserStatus, updatePassword, confirmUserByEmail } from "../../services/cognito/cognito.js";
 import User from "../../models/UserModel.js";
 import UserOtp from "../../models/UserOtpModel.js";
+import { Op } from "sequelize";
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -925,80 +926,88 @@ class UserServices {
           success: false,
         });
       }
-        let checkpassword = await bcrypt.compare(
-          password,
-          findData.password
-        );
-        if (!checkpassword) {
-          return res.status(400).json({
-            message: "Password invalid",
-            success: false,
-            statusCode: 400,
-          });
-        }
-        let otp = await generateOTP();
-        otp=Number(otp)
-        // console.log(otp, "otptptptp",otp?.length,"{{{{");
-        if (otp?.toString().length == 3) {
-          otp = otp + "0";
-        } else if (otp?.toString().length == 2) {
-          otp = otp + "00";
-        } else if (otp?.toString().length == 1) {
-          otp = otp + "000";
-        }
-        // console.log(otp, "otp$$$$$$$333");
-        let currentTime = Date.now();
-        currentTime = currentTime?.toString();
-         sendOtpForLogin(email, otp);
-        const find = await UserOtp.findOne({
-          where: {
-            email: email,
-          },
+      let checkpassword = await bcrypt.compare(
+        password,
+        findData.password
+      );
+      if (!checkpassword) {
+        return res.status(400).json({
+          message: "Password invalid",
+          success: false,
+          statusCode: 400,
         });
-        // console.log(find, "Asdad", find);
-        if (find && find?.id) {
-           await UserOtp.update(
-            {
-              otp: otp,
-              creationTime: currentTime,
-              updatedAt: currentTime,
-            },
-            {
-              where: {
-                email: email,
-              },
-            }
-          );
-        } else {
-          console.log("flow2----->")
-          let id = uuidv4()?.replace(/-/g, "");
-          const newUserOtp = await UserOtp.create({
-            id: id,
-            email: req.body.email,
+      }
+      let otp = await generateOTP();
+      otp = Number(otp)
+      // console.log(otp, "otptptptp",otp?.length,"{{{{");
+      if (otp?.toString().length == 3) {
+        otp = otp + "0";
+      } else if (otp?.toString().length == 2) {
+        otp = otp + "00";
+      } else if (otp?.toString().length == 1) {
+        otp = otp + "000";
+      }
+      // console.log(otp, "otp$$$$$$$333");
+      let currentTime = Date.now();
+      currentTime = currentTime?.toString();
+      sendOtpForLogin(email, otp);
+      const find = await UserOtp.findOne({
+        where: {
+          email: email,
+        },
+      });
+      // console.log(find, "Asdad", find);
+      if (find && find?.id) {
+        await UserOtp.update(
+          {
             otp: otp,
             creationTime: currentTime,
-            createdAt: currentTime,
             updatedAt: currentTime,
-          });
-        }
+          },
+          {
+            where: {
+              email: email,
+            },
+          }
+        );
+      } else {
+        console.log("flow2----->")
+        let id = uuidv4()?.replace(/-/g, "");
+        const newUserOtp = await UserOtp.create({
+          id: id,
+          email: req.body.email,
+          otp: otp,
+          creationTime: currentTime,
+          createdAt: currentTime,
+          updatedAt: currentTime,
+        });
+      }
+      if(findData?.user_type!='super_admin'){
+
         const tokens = await signin(req.body, (err, user) => {
           // console.log(err, "error---->")
-          if (err) {
-            console.log("hiiiiii---->")
-            return res.status(400).json({
-              message: `Authentication failed`,
-              statusCode: 400,
-              success: false,
-            });
-          } else {
-            // console.log(user, "user-->data")
-            return res.status(200).json({
-              message: "Otp sent to registered email",
-              statusCode: 200,
-              success: true,
-            });
-          }
-        });
+        if (err) {
+          console.log("hiiiiii---->")
+          return res.status(400).json({
+            message: `Authentication failed`,
+            statusCode: 400,
+            success: false,
+          });
+        } else {
+          // console.log(user, "user-->data")
+          return res.status(200).json({
+            message: "Otp sent to registered email",
+            statusCode: 200,
+            success: true,
+          });
+        }
+      });
+        }else{
+          return res.status(200).json({
+            message: "Otp sent to registered email",
+            statusCode: 200,
+            success: true,
+          });}
     } catch (err) {
       console.log(err, "Error in login api user");
       return res
@@ -1764,76 +1773,40 @@ class UserServices {
   async super_admin(req, res) {
     try {
       let { email, phone, name, user_type } = req.body;
-      const findEmailExist = await dynamoDBClient.send(
-        new QueryCommand({
-          TableName: "users",
-          IndexName: "email", // Replace with your actual email index name
-          KeyConditionExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": { S: email },
-          },
-          Limit: 1,
-        })
-      );
-      if (findEmailExist.Count > 0) {
+
+      const findEmailExist = await User.findOne({
+        where: {
+          [Op.or]: [
+            { email: email },
+            { phone: phone }
+          ]
+        }, raw: true
+      })
+      if (findEmailExist && findEmailExist?.id) {
         return res.status(400).json({
           success: false,
-          message: "Email already exist!",
+          message: "Email or phone number already exists",
           statusCode: 400,
         });
-      }
-      if (phone) {
-        const findPhoneExist = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "users",
-            IndexName: "phone", // Replace with your actual phone index name
-            KeyConditionExpression: "phone = :phone",
-            ExpressionAttributeValues: {
-              ":phone": { S: phone },
-            },
-            Limit: 1,
-          })
-        );
-        if (findPhoneExist.Count > 0) {
-          return res.status(400).json({
-            success: false,
-            message: "Phone number already exists!",
-            statusCode: 400,
-          });
-        }
       }
       let salt = environmentVars.salt;
       let randomPassword = encryptStringWithKey(
         req.body.email.toLowerCase()?.slice(0, 6)
       );
       let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+req.body.password=hashPassword
+req.body.account_status='activated'
 
       let id = uuidv4();
       id = id?.replace(/-/g, "");
-
+      req.body.id = id
       let profile_photo;
       if (req.files && req.files?.profile_photo?.length) {
         profile_photo = req.files?.profile_photo[0]?.filename;
       }
-      const params = {
-        TableName: "users",
-        Item: {
-          profile_photo: { S: profile_photo || "" },
-          id: { S: id },
-          name: { S: name },
-          email: { S: email },
-          phone: { S: phone || "" },
-          // dob: { S: dob || "" },
-          user_type: { S: user_type },
-          // role: { S: role || "" },
-          // country: { S: country || "" },
-          password: { S: hashPassword },
-          created_at: { S: new Date().toISOString() },
-          updated_at: { S: new Date().toISOString() },
-        },
-      };
-      console.log("docClient", "docccleint", params);
-      await dynamoDBClient.send(new PutItemCommand(params));
+      console.log(req.body,"qweqweqwe")
+      // return
+      await User.create(req.body);
       let obj = {
         email,
         randomPassword,
