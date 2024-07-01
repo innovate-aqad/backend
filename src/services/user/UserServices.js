@@ -939,7 +939,7 @@ class UserServices {
       }
       let otp = await generateOTP();
       otp = Number(otp)
-      // console.log(otp, "otptptptp",otp?.length,"{{{{");
+      console.log(otp, "otptptptp",otp?.length,"{{{{");
       if (otp?.toString().length == 3) {
         otp = otp + "0";
       } else if (otp?.toString().length == 2) {
@@ -947,10 +947,9 @@ class UserServices {
       } else if (otp?.toString().length == 1) {
         otp = otp + "000";
       }
-      // console.log(otp, "otp$$$$$$$333");
+      console.log(otp, "otp$$$$$$$333");
       let currentTime = Date.now();
       currentTime = currentTime?.toString();
-      sendOtpForLogin(email, otp);
       const find = await UserOtp.findOne({
         where: {
           email: email,
@@ -982,6 +981,8 @@ class UserServices {
           updatedAt: currentTime,
         });
       }
+      sendOtpForLogin(email, otp);
+
       if(findData?.user_type!='super_admin'){
 
         const tokens = await signin(req.body, (err, user) => {
