@@ -123,7 +123,7 @@ class UserServices {
 
       console.log(req.files, "req.files is here");
 
-      findData = await User.findOne({ where: { uuid: doc_id } });
+      findData = await User.findOne({ where: { id: doc_id } });
 
       if (!findData) {
         return res.status(400).json({
@@ -745,7 +745,7 @@ async getUserByEmail(req, res) {
     await findData.update({
       password:hashPassword
     })
-    let sendData={name:saniPassword+tempPassword,doc_id:findData.uuid}
+    let sendData={name:saniPassword+tempPassword,doc_id:findData.id}
     console.log('User exists but is not verified, resending OTP...');
     let result=await resendOTP(req.query.email,sendData);
     if(result==1){
@@ -769,7 +769,7 @@ async getUserByEmail(req, res) {
       id = id?.replace(/-/g, "");
 
       const newUser = await User.create({
-        uuid: id,
+        id: id,
         email: req.query.email,
         password: hashPassword, // Ensure hashPassword is defined and contains the hashed password
         createdAt: new Date(),
@@ -1030,7 +1030,7 @@ async getUserByEmail(req, res) {
             },
             {
               where: {
-                uuid: find.id,
+                id: find.id,
               },
               returning: true, // This option returns the updated object
               plain: true, // This option returns only the updated object, not an array
@@ -1041,7 +1041,7 @@ async getUserByEmail(req, res) {
             //console.log('Cognito tokens:', tokens);
           let id = uuidv4()?.replace(/-/g, "");
           const newUserOtp = await UserOtp.create({
-            uuid: id,
+            id: id,
             email: req.body.email,
             otp: otp,
             creationTime: currentTime,

@@ -15,12 +15,12 @@ class PermissionServices {
       // Check if all route IDs exist in ApiEndpoint (similar to your DynamoDB BatchGetItemCommand logic)
       const fetchedItems = await ApiEndpoint.findAll({
         where: {
-          uuid: allRouteIds // Assuming id is the primary key in ApiEndpoint
+          id: allRouteIds // Assuming id is the primary key in ApiEndpoint
         }
       });
       console.log("flow2------>")
 
-      const fetchedIds = new Set(fetchedItems.map(item => item.uuid));
+      const fetchedIds = new Set(fetchedItems.map(item => item.id));
   
       const missingIds = allRouteIds.filter(routeId => !fetchedIds.has(routeId));
       if (missingIds.length > 0) {
@@ -36,7 +36,7 @@ class PermissionServices {
         // Update existing permission record
         const findData = await Permission.findOne({
           where: {
-            uuid:id
+            id:id
           }
         });
         if (!findData) {
@@ -50,7 +50,7 @@ class PermissionServices {
           updatedAt: timestamp
         }, {
           where: {
-            uuid:id
+            id:id
           }
         });
         return res.status(200).json({ message: "Data updated successfully", statusCode: 200, success: true });
@@ -71,7 +71,7 @@ class PermissionServices {
         }
        console.log("yupp data still here--->")
         const newPermission = await Permission.create({
-          uuid: uuidv4().replace(/-/g, ""),
+          id: uuidv4().replace(/-/g, ""),
           title,
           backend_routes: backend_routes.map(route => ({ route })),
           frontend_routes: frontend_routes.map(route => ({ route })),
@@ -170,7 +170,7 @@ class PermissionServices {
       // Check if the permission exists
       const existingPermission = await Permission.findOne({
         where: {
-          uuid:id
+          id:id
         }
       });
       console.log(existingPermission)
@@ -187,7 +187,7 @@ class PermissionServices {
         status
       }, {
         where: {
-          uuid:id
+          id:id
         }
       });
   
@@ -210,7 +210,7 @@ class PermissionServices {
     // Check if the permission exists
     const existingPermission = await Permission.findOne({
       where: {
-        uuid:id
+        id:id
       }
     });
 
@@ -225,7 +225,7 @@ class PermissionServices {
     // Delete the permission
     await Permission.destroy({
       where: {
-        uuid:id
+        id:id
       }
     });
 

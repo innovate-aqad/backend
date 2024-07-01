@@ -2,11 +2,11 @@ import { DataTypes } from "sequelize";
 import sequelize from "../config/dbConfig.js";
 // models/ApiEndpoint.js
 const ApiEndpoint = sequelize.define('ApiEndpoint', {
+  // id: {
+  //   type: DataTypes.STRING,
+  //   primaryKey: true,
+  // },
   id: {
-    type: DataTypes.STRING,
-    primaryKey: true,
-  },
-  uuid: {
     type: DataTypes.CHAR(36),
     defaultValue: DataTypes.UUIDV4,
     allowNull: false,
