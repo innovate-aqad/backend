@@ -20,8 +20,6 @@ import {
   deleteImageFromS3,
   uploadImageToS3
 } from "../../helpers/s3.js";
-<<<<<<< HEAD
-=======
 import CategoryModel from "../../models/CategoryModel.js.js";
 import SubCategoryModel from "../../models/SubCategoryModel..js";
 import ProductsModels from "../../models/ProductsModels.js";
@@ -32,7 +30,6 @@ import ProductsModels from "../../models/ProductsModels.js";
 //     secretAccessKey: process.env.Aws_secretAccessKey,
 //   },
 // });
->>>>>>> e880188c7ba0fb2fc9afbcf1f9c479e0ea04a48c
 
 // const dynamoDB = new AWS.DynamoDB.DocumentClient();
 const dynamoDBClient = new DynamoDBClient({
