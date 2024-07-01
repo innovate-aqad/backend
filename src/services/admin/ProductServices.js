@@ -23,6 +23,7 @@ import {
 import CategoryModel from "../../models/CategoryModel.js.js";
 import SubCategoryModel from "../../models/SubCategoryModel..js";
 import ProductsModels from "../../models/ProductsModels.js";
+import BrandModel from "../../models/BrandModel.js";
 // AWS.config.update({
 //   region: process.env.Aws_region,
 //   credentials: {
@@ -117,7 +118,7 @@ class ProductServices {
         //     }
         //   })
         // );
-        let findData = await SubCategoryModel?.findOne({
+        let findData = await BrandModel?.findOne({
           where: {
             id: brand_id
           },
@@ -347,8 +348,10 @@ class ProductServices {
               statusCode: 400
             });
           }
-
+          id = uuidv4().replace(/-/g, "");
+          // console.log(data, id, req.userData);
           const newProduct = await ProductsModels.create({
+            id,
             title,
             category_id,
             subcategory_id: sub_category_id,
@@ -357,7 +360,7 @@ class ProductServices {
             universal_standard_code: universal_standard_code,
             brand_id: brand_id,
             condition: condition,
-            created_by: 1,
+            created_by: req?.userData?.id,
             status: status
           });
 
@@ -782,6 +785,30 @@ class ProductServices {
     try {
       const product_id = req.query?.product_id;
       const searchName = req.query.search;
+
+      const data = await ProductsModels.findOne({
+        where: {
+          id: product_id,
+          status: "active"
+        },
+        raw: true
+      });
+      console.log(data);
+      if (data) {
+        return res.status(200).json({
+          message: "Fetch Data",
+          data: data,
+          statusCode: 200,
+          success: true
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "Document not Found",
+          statusCode: 400
+        });
+      }
+
       let findProductData = await dynamoDBClient.send(
         new QueryCommand({
           TableName: "products",
