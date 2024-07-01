@@ -12,7 +12,7 @@ const options = {
 class BrandController {
   async add_(req, res) {
     try {
-      console.log(req.body, "req.bod!@#!@#","req.userData","er00")
+      // console.log(req.body, "req.bod!@#!@#","req.userData","er00")
       // return 
       let { error } = BrandSchema.validate(req.body, options);
       if (error) {

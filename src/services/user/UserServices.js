@@ -41,7 +41,7 @@ import {
 } from "../../helpers/datafetch.js";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import generatePassword from 'generate-password';
-import { signup, signin, confirmUser,resendOTP,getUserStatus} from "../../services/cognito/cognito.js";
+import { signup, signin, confirmUser, resendOTP, getUserStatus } from "../../services/cognito/cognito.js";
 import User from "../../models/UserModel.js";
 import UserOtp from "../../models/UserOtpModel.js";
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
@@ -77,130 +77,93 @@ async function getNextSequenceValue(sequenceName) {
 let salt = environmentVars.salt;
 class UserServices {
   async createUser(req, res) {
-  try {
-    console.log("phonenumber--->", req.body.phone);
-    let {
-      name,
-      email,
-      phone,
-      country,
-      user_type,
-      slide,
-      password,
-      role,
-      dob,
-      company_name,
-      company_address,
-      company_address_line_2,
-      designation,
-      doc_id,
-      emirates_id,
-      trade_license_number,
-      po_box,
-      warehouse_addresses,
-      outlet_addresses,
-      iban,
-      vehicle_details_array,
-      driver_name_array,
-      driver_license_number_array,
-      db_driver_details_array,
-      term_and_condition,
-    } = req.body;
-    console.log(req.body, " @@@  a  aaaaaa!@#!@#aa req.body");
-    console.log(req.files, "req.filesssss");
-    email = email?.trim();
+    try {
+      console.log("phonenumber--->", req.body.phone);
+      let {
+        name,
+        email,
+        phone,
+        country,
+        user_type,
+        slide,
+        password,
+        role,
+        dob,
+        company_name,
+        company_address,
+        company_address_line_2,
+        designation,
+        doc_id,
+        emirates_id,
+        trade_license_number,
+        po_box,
+        warehouse_addresses,
+        outlet_addresses,
+        iban,
+        vehicle_details_array,
+        driver_name_array,
+        driver_license_number_array,
+        db_driver_details_array,
+        term_and_condition,
+      } = req.body;
+      console.log(req.body, " @@@  a  aaaaaa!@#!@#aa req.body");
+      console.log(req.files, "req.filesssss");
+      email = email?.trim();
 
-    let findData;
-    if ((slide == 1 || slide == 2 || slide == 3 || slide == 4) && !doc_id) {
-      return res.status(400).json({
-        message: "Doc_id is mandatory",
-        statusCode: 400,
-        success: false,
-      });
-    }
-    
-    if (slide == 2 || slide == 3 || doc_id) {
-      console.log(req.files, "req.files is here");
-
-      findData = await User.findOne({ where: { uuid: doc_id } });
-
-      if (!findData) {
+      let findData;
+      if ((slide == 1 || slide == 2 || slide == 3 || slide == 4) && !doc_id) {
         return res.status(400).json({
-          message: "User not found",
+          message: "Doc_id is mandatory",
           statusCode: 400,
           success: false,
         });
       }
-    }
 
-    console.log(findData, "findDatafindData22", "findData");
+      if (slide == 2 || slide == 3 || doc_id) {
+        console.log(req.files, "req.files is here");
 
-    if (findData && slide == 1 && !password) {
-      let profile_photo = findData.profile_photo;
-      if (req.files && req.files.profile_photo.length) {
-        profile_photo = req.files.profile_photo[0].filename;
-        let filePath = `./uploads/${user_type}/${findData.profile_photo}`;
-        try {
-          deleteImageFromLocal(filePath);
-        } catch (err) {
-          console.error(err, "deleteImageFromLocal");
-        }
-        try {
-          deleteImageFromS3(findData.profile_photo, user_type);
-        } catch (err) {
-          console.error(err, "deleteImageFromS3");
-        }
-        try {
-          uploadImageToS3(
-            req.files.profile_photo[0].filename,
-            req.files.profile_photo[0].path,
-            user_type
-          );
-        } catch (er) {
-          console.error(er, "uploadImageToS3 ");
+        findData = await User.findOne({ where: { uuid: doc_id } });
+
+        if (!findData) {
+          return res.status(400).json({
+            message: "User not found",
+            statusCode: 400,
+            success: false,
+          });
         }
       }
-      await findData.update({
-        profile_photo,
-        name: name || findData.name,
-        dob: dob || findData.dob,
-        updatedAt: new Date(),
-      });
 
-      return res.status(200).json({
-        message: "User data updated successfully",
-        statusCode: 200,
-        success: true,
-        data: { id: doc_id },
-      });
-    }
+      console.log(findData, "findDatafindData22", "findData");
 
-    if (findData && slide == 2) {
-      if (["vendor", "seller", "logistic"].includes(user_type.toLowerCase()) && slide == 2) {
-        if (slide == 2 && user_type == "vendor" && (!warehouse_addresses || warehouse_addresses.length == 0)) {
-          return res.status(400).json({
-            message: "At least one warehouse is mandatory",
-            statusCode: 400,
-            success: false,
-          });
-        } else if (slide == 2 && user_type == "seller" && (!outlet_addresses || outlet_addresses.length == 0)) {
-          return res.status(400).json({
-            message: "At least one outlet address is mandatory",
-            statusCode: 400,
-            success: false,
-          });
+      if (findData && slide == 1 && !password) {
+        let profile_photo = findData.profile_photo;
+        if (req.files && req.files.profile_photo.length) {
+          profile_photo = req.files.profile_photo[0].filename;
+          let filePath = `./uploads/${user_type}/${findData.profile_photo}`;
+          try {
+            deleteImageFromLocal(filePath);
+          } catch (err) {
+            console.error(err, "deleteImageFromLocal");
+          }
+          try {
+            deleteImageFromS3(findData.profile_photo, user_type);
+          } catch (err) {
+            console.error(err, "deleteImageFromS3");
+          }
+          try {
+            uploadImageToS3(
+              req.files.profile_photo[0].filename,
+              req.files.profile_photo[0].path,
+              user_type
+            );
+          } catch (er) {
+            console.error(er, "uploadImageToS3 ");
+          }
         }
-
         await findData.update({
-          company_name: company_name || findData.company_name,
-          company_address: company_address || findData.company_address,
-          company_address_line_2: company_address_line_2 || findData.company_address_line_2,
-          designation: designation || findData.designation,
-          trade_license_number: trade_license_number || findData.trade_license_number,
-          country: country || findData.country,
-          po_box: po_box || findData.po_box,
-          warehouse_addresses: warehouse_addresses || findData.warehouse_addresses,
-          outlet_addresses: outlet_addresses || findData.outlet_addresses,
+          profile_photo,
+          name: name || findData.name,
+          dob: dob || findData.dob,
           updatedAt: new Date(),
         });
 
@@ -210,8 +173,169 @@ class UserServices {
           success: true,
           data: { id: doc_id },
         });
-      } else if (user_type == "employee" && slide == 2) {
-        if (req.files?.residence_visa && req.files?.residence_visa[0]?.filename) {
+      }
+
+      if (findData && slide == 2) {
+        if (["vendor", "seller", "logistic"].includes(user_type.toLowerCase()) && slide == 2) {
+          if (slide == 2 && user_type == "vendor" && (!warehouse_addresses || warehouse_addresses.length == 0)) {
+            return res.status(400).json({
+              message: "At least one warehouse is mandatory",
+              statusCode: 400,
+              success: false,
+            });
+          } else if (slide == 2 && user_type == "seller" && (!outlet_addresses || outlet_addresses.length == 0)) {
+            return res.status(400).json({
+              message: "At least one outlet address is mandatory",
+              statusCode: 400,
+              success: false,
+            });
+          }
+
+          await findData.update({
+            company_name: company_name || findData.company_name,
+            company_address: company_address || findData.company_address,
+            company_address_line_2: company_address_line_2 || findData.company_address_line_2,
+            designation: designation || findData.designation,
+            trade_license_number: trade_license_number || findData.trade_license_number,
+            country: country || findData.country,
+            po_box: po_box || findData.po_box,
+            warehouse_addresses: warehouse_addresses || findData.warehouse_addresses,
+            outlet_addresses: outlet_addresses || findData.outlet_addresses,
+            updatedAt: new Date(),
+          });
+
+          return res.status(200).json({
+            message: "User data updated successfully",
+            statusCode: 200,
+            success: true,
+            data: { id: doc_id },
+          });
+        } else if (user_type == "employee" && slide == 2) {
+          if (req.files?.residence_visa && req.files?.residence_visa[0]?.filename) {
+            let filePath = `./uploads/${user_type}/${findData.residence_visa}`;
+            try {
+              deleteImageFromLocal(filePath);
+            } catch (err) {
+              console.error(err, "deleteImageFromLocal");
+            }
+            try {
+              deleteImageFromS3(findData.residence_visa, user_type);
+            } catch (err) {
+              console.error(err, "deleteImageFromS3");
+            }
+            try {
+              uploadImageToS3(
+                req.files.residence_visa[0].filename,
+                req.files.residence_visa[0].path,
+                user_type
+              );
+            } catch (er) {
+              console.error(er, "uploadImageToS3 ");
+            }
+          }
+
+          const passport = req.files?.passport?.[0]?.filename;
+          const residence_visa = req.files?.residence_visa?.[0]?.filename;
+          const emirate_id_pic = req.files?.emirate_id_pic?.[0]?.filename;
+
+          await findData.update({
+            emirates_id: emirates_id || findData.emirates_id,
+            passport: passport || findData.passport,
+            residence_visa: residence_visa || findData.residence_visa,
+            emirate_id_pic: emirate_id_pic || findData.emirate_id_pic,
+            updatedAt: new Date(),
+          });
+
+          return res.status(200).json({
+            message: "User data updated successfully",
+            statusCode: 200,
+            success: true,
+            data: { id: doc_id },
+          });
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: "Email already exists!..",
+            statusCode: 400,
+          });
+        }
+      }
+
+      if (findData && slide == 3) {
+        let trade_license = req?.files?.trade_license?.[0]?.filename || findData.trade_license || "";
+        if (req.files?.trade_license?.[0]?.filename) {
+          let filePath = `./uploads/${user_type}/${findData.trade_license}`;
+          try {
+            deleteImageFromLocal(filePath);
+          } catch (err) {
+            console.error(err, "deleteImageFromLocal");
+          }
+          try {
+            deleteImageFromS3(findData.trade_license, user_type);
+          } catch (err) {
+            console.error(err, "deleteImageFromS3");
+          }
+          try {
+            uploadImageToS3(
+              req.files.trade_license[0].filename,
+              req.files.trade_license[0].path,
+              user_type
+            );
+          } catch (er) {
+            console.error(er, "uploadImageToS3 ");
+          }
+        }
+
+        let cheque_scan = req.files?.cheque_scan?.[0]?.filename || findData.cheque_scan || "";
+        if (req.files?.cheque_scan?.[0]?.filename) {
+          let filePath = `./uploads/${user_type}/${findData.cheque_scan}`;
+          try {
+            deleteImageFromLocal(filePath);
+          } catch (err) {
+            console.error(err, "deleteImageFromLocal");
+          }
+          try {
+            deleteImageFromS3(findData.cheque_scan, user_type);
+          } catch (err) {
+            console.error(err, "deleteImageFromS3");
+          }
+          try {
+            uploadImageToS3(
+              req.files.cheque_scan[0].filename,
+              req.files.cheque_scan[0].path,
+              user_type
+            );
+          } catch (er) {
+            console.error(er, "uploadImageToS3 ");
+          }
+        }
+
+        let vat_certificate = req.files?.vat_certificate?.[0]?.filename || findData.vat_certificate || "";
+        if (req.files?.vat_certificate?.[0]?.filename) {
+          let filePath = `./uploads/${user_type}/${findData.vat_certificate}`;
+          try {
+            deleteImageFromLocal(filePath);
+          } catch (err) {
+            console.error(err, "deleteImageFromLocal");
+          }
+          try {
+            deleteImageFromS3(findData.vat_certificate, user_type);
+          } catch (err) {
+            console.error(err, "deleteImageFromS3");
+          }
+          try {
+            uploadImageToS3(
+              req.files.vat_certificate[0].filename,
+              req.files.vat_certificate[0].path,
+              user_type
+            );
+          } catch (er) {
+            console.error(er, "uploadImageToS3 ");
+          }
+        }
+
+        let residence_visa = req.files?.residence_visa?.[0]?.filename || findData.residence_visa || "";
+        if (req.files?.residence_visa?.[0]?.filename) {
           let filePath = `./uploads/${user_type}/${findData.residence_visa}`;
           try {
             deleteImageFromLocal(filePath);
@@ -234,15 +358,119 @@ class UserServices {
           }
         }
 
-        const passport = req.files?.passport?.[0]?.filename;
-        const residence_visa = req.files?.residence_visa?.[0]?.filename;
-        const emirate_id_pic = req.files?.emirate_id_pic?.[0]?.filename;
+        let emirate_id_pic = req.files?.emirate_id_pic?.[0]?.filename || findData.emirate_id_pic || "";
+        if (req.files?.emirate_id_pic?.[0]?.filename) {
+          let filePath = `./uploads/${user_type}/${findData.emirate_id_pic}`;
+          try {
+            deleteImageFromLocal(filePath);
+          } catch (err) {
+            console.error(err, "deleteImageFromLocal");
+          }
+          try {
+            deleteImageFromS3(findData.emirate_id_pic, user_type);
+          } catch (err) {
+            console.error(err, "deleteImageFromS3");
+          }
+          try {
+            uploadImageToS3(
+              req.files.emirate_id_pic[0].filename,
+              req.files.emirate_id_pic[0].path,
+              user_type
+            );
+          } catch (er) {
+            console.error(er, "uploadImageToS3 ");
+          }
+        }
+
+        if (["vendor", "seller", "logistic"].includes(user_type.toLowerCase()) && slide == 3) {
+          await findData.update({
+            trade_license,
+            cheque_scan,
+            vat_certificate,
+            residence_visa,
+            emirates_id: emirates_id || "",
+            iban: iban || "",
+            emirate_id_pic,
+            updatedAt: new Date(),
+            term_and_condition: term_and_condition || "inactive",
+          });
+
+          return res.status(200).json({
+            message: "User data updated successfully",
+            statusCode: 200,
+            success: true,
+            data: { id: doc_id },
+          });
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: "Email already exists!..",
+            statusCode: 400,
+          });
+        }
+      }
+
+      if (findData && slide == 4 && user_type == "logistic") {
+        if (
+          !db_driver_details_array &&
+          (driver_name_array.length == 0 ||
+            req.files.driver_image.length == 0 ||
+            req.files.driving_license.length == 0)
+        ) {
+          return res.status(400).json({
+            message: "At least one driver detail is required",
+            statusCode: 400,
+            success: false,
+          });
+        }
+
+        if (vehicle_details_array.length == 0) {
+          return res.status(400).json({
+            message: "At least one vehicle detail is required",
+            statusCode: 400,
+            success: false,
+          });
+        }
+
+        let driver_details_array = db_driver_details_array?.length ? [...db_driver_details_array] : [];
+        let driver_images_arr = req.files.driver_images;
+        let driving_license_arr = req.files.driving_license;
+        for (let i = 0; i < driver_name_array.length; i++) {
+          let obj = {
+            id: Date.now(),
+            name: driver_name_array[i],
+            drive_image: driver_images_arr[i]?.filename || "",
+            driving_license: driving_license_arr[i]?.filename || "",
+            driving_license_number: driver_license_number_array ? driver_license_number_array[i] : "",
+          };
+          driver_details_array.push(obj);
+          if (driving_license_arr?.[i]?.filename) {
+            try {
+              uploadImageToS3(
+                driving_license_arr[i].filename,
+                driving_license_arr[i].path,
+                user_type
+              );
+            } catch (er) {
+              console.error(er, "uploadImageToS3 ");
+            }
+          }
+          if (driver_images_arr?.[i]?.filename) {
+            try {
+              uploadImageToS3(
+                driver_images_arr[i].filename,
+                driver_images_arr[i].path,
+                user_type
+              );
+            } catch (er) {
+              console.error(er, "uploadImageToS3 ");
+            }
+          }
+        }
 
         await findData.update({
-          emirates_id: emirates_id || findData.emirates_id,
-          passport: passport || findData.passport,
-          residence_visa: residence_visa || findData.residence_visa,
-          emirate_id_pic: emirate_id_pic || findData.emirate_id_pic,
+          vehicle_details_array,
+          driver_details_array,
           updatedAt: new Date(),
         });
 
@@ -252,263 +480,18 @@ class UserServices {
           success: true,
           data: { id: doc_id },
         });
-      } else {
+      }
+
+      if (doc_id && !findData) {
         return res.status(400).json({
-          success: false,
-          message: "Email already exists!..",
-          statusCode: 400,
-        });
-      }
-    }
-
-    if (findData && slide == 3) {
-      let trade_license = req?.files?.trade_license?.[0]?.filename || findData.trade_license || "";
-      if (req.files?.trade_license?.[0]?.filename) {
-        let filePath = `./uploads/${user_type}/${findData.trade_license}`;
-        try {
-          deleteImageFromLocal(filePath);
-        } catch (err) {
-          console.error(err, "deleteImageFromLocal");
-        }
-        try {
-          deleteImageFromS3(findData.trade_license, user_type);
-        } catch (err) {
-          console.error(err, "deleteImageFromS3");
-        }
-        try {
-          uploadImageToS3(
-            req.files.trade_license[0].filename,
-            req.files.trade_license[0].path,
-            user_type
-          );
-        } catch (er) {
-          console.error(er, "uploadImageToS3 ");
-        }
-      }
-
-      let cheque_scan = req.files?.cheque_scan?.[0]?.filename || findData.cheque_scan || "";
-      if (req.files?.cheque_scan?.[0]?.filename) {
-        let filePath = `./uploads/${user_type}/${findData.cheque_scan}`;
-        try {
-          deleteImageFromLocal(filePath);
-        } catch (err) {
-          console.error(err, "deleteImageFromLocal");
-        }
-        try {
-          deleteImageFromS3(findData.cheque_scan, user_type);
-        } catch (err) {
-          console.error(err, "deleteImageFromS3");
-        }
-        try {
-          uploadImageToS3(
-            req.files.cheque_scan[0].filename,
-            req.files.cheque_scan[0].path,
-            user_type
-          );
-        } catch (er) {
-          console.error(er, "uploadImageToS3 ");
-        }
-      }
-
-      let vat_certificate = req.files?.vat_certificate?.[0]?.filename || findData.vat_certificate || "";
-      if (req.files?.vat_certificate?.[0]?.filename) {
-        let filePath = `./uploads/${user_type}/${findData.vat_certificate}`;
-        try {
-          deleteImageFromLocal(filePath);
-        } catch (err) {
-          console.error(err, "deleteImageFromLocal");
-        }
-        try {
-          deleteImageFromS3(findData.vat_certificate, user_type);
-        } catch (err) {
-          console.error(err, "deleteImageFromS3");
-        }
-        try {
-          uploadImageToS3(
-            req.files.vat_certificate[0].filename,
-            req.files.vat_certificate[0].path,
-            user_type
-          );
-        } catch (er) {
-          console.error(er, "uploadImageToS3 ");
-        }
-      }
-
-      let residence_visa = req.files?.residence_visa?.[0]?.filename || findData.residence_visa || "";
-      if (req.files?.residence_visa?.[0]?.filename) {
-        let filePath = `./uploads/${user_type}/${findData.residence_visa}`;
-        try {
-          deleteImageFromLocal(filePath);
-        } catch (err) {
-          console.error(err, "deleteImageFromLocal");
-        }
-        try {
-          deleteImageFromS3(findData.residence_visa, user_type);
-        } catch (err) {
-          console.error(err, "deleteImageFromS3");
-        }
-        try {
-          uploadImageToS3(
-            req.files.residence_visa[0].filename,
-            req.files.residence_visa[0].path,
-            user_type
-          );
-        } catch (er) {
-          console.error(er, "uploadImageToS3 ");
-        }
-      }
-
-      let emirate_id_pic = req.files?.emirate_id_pic?.[0]?.filename || findData.emirate_id_pic || "";
-      if (req.files?.emirate_id_pic?.[0]?.filename) {
-        let filePath = `./uploads/${user_type}/${findData.emirate_id_pic}`;
-        try {
-          deleteImageFromLocal(filePath);
-        } catch (err) {
-          console.error(err, "deleteImageFromLocal");
-        }
-        try {
-          deleteImageFromS3(findData.emirate_id_pic, user_type);
-        } catch (err) {
-          console.error(err, "deleteImageFromS3");
-        }
-        try {
-          uploadImageToS3(
-            req.files.emirate_id_pic[0].filename,
-            req.files.emirate_id_pic[0].path,
-            user_type
-          );
-        } catch (er) {
-          console.error(er, "uploadImageToS3 ");
-        }
-      }
-
-      if (["vendor", "seller", "logistic"].includes(user_type.toLowerCase()) && slide == 3) {
-        await findData.update({
-          trade_license,
-          cheque_scan,
-          vat_certificate,
-          residence_visa,
-          emirates_id: emirates_id || "",
-          iban: iban || "",
-          emirate_id_pic,
-          updatedAt: new Date(),
-          term_and_condition: term_and_condition || "inactive",
-        });
-
-        return res.status(200).json({
-          message: "User data updated successfully",
-          statusCode: 200,
-          success: true,
-          data: { id: doc_id },
-        });
-      } else {
-        return res.status(400).json({
-          success: false,
-          message: "Email already exists!..",
-          statusCode: 400,
-        });
-      }
-    }
-
-    if (findData && slide == 4 && user_type == "logistic") {
-      if (
-        !db_driver_details_array &&
-        (driver_name_array.length == 0 ||
-          req.files.driver_image.length == 0 ||
-          req.files.driving_license.length == 0)
-      ) {
-        return res.status(400).json({
-          message: "At least one driver detail is required",
+          message: "Data not found",
           statusCode: 400,
           success: false,
         });
       }
 
-      if (vehicle_details_array.length == 0) {
-        return res.status(400).json({
-          message: "At least one vehicle detail is required",
-          statusCode: 400,
-          success: false,
-        });
-      }
-
-      let driver_details_array = db_driver_details_array?.length ? [...db_driver_details_array] : [];
-      let driver_images_arr = req.files.driver_images;
-      let driving_license_arr = req.files.driving_license;
-      for (let i = 0; i < driver_name_array.length; i++) {
-        let obj = {
-          id: Date.now(),
-          name: driver_name_array[i],
-          drive_image: driver_images_arr[i]?.filename || "",
-          driving_license: driving_license_arr[i]?.filename || "",
-          driving_license_number: driver_license_number_array ? driver_license_number_array[i] : "",
-        };
-        driver_details_array.push(obj);
-        if (driving_license_arr?.[i]?.filename) {
-          try {
-            uploadImageToS3(
-              driving_license_arr[i].filename,
-              driving_license_arr[i].path,
-              user_type
-            );
-          } catch (er) {
-            console.error(er, "uploadImageToS3 ");
-          }
-        }
-        if (driver_images_arr?.[i]?.filename) {
-          try {
-            uploadImageToS3(
-              driver_images_arr[i].filename,
-              driver_images_arr[i].path,
-              user_type
-            );
-          } catch (er) {
-            console.error(er, "uploadImageToS3 ");
-          }
-        }
-      }
-
-      await findData.update({
-        vehicle_details_array,
-        driver_details_array,
-        updatedAt: new Date(),
-      });
-
-      return res.status(200).json({
-        message: "User data updated successfully",
-        statusCode: 200,
-        success: true,
-        data: { id: doc_id },
-      });
-    }
-
-    if (doc_id && !findData) {
-      return res.status(400).json({
-        message: "Data not found",
-        statusCode: 400,
-        success: false,
-      });
-    }
-
-    const findEmailExist = await User.findOne({ where: { email } });
-    if (findEmailExist && !password) {
-      if (req.files?.profile_photo?.length) {
-        try {
-          deleteImageFromLocal(req.files.profile_photo[0].path);
-        } catch (err) {
-          console.error(err, "deleteImageFromLocal");
-        }
-      }
-      return res.status(400).json({
-        success: false,
-        message: "Email already exists!",
-        statusCode: 400,
-      });
-    }
-
-    if (phone) {
-      const findPhoneExist = await User.findOne({ where: { phone } });
-      if (findPhoneExist) {
+      const findEmailExist = await User.findOne({ where: { email } });
+      if (findEmailExist && !password) {
         if (req.files?.profile_photo?.length) {
           try {
             deleteImageFromLocal(req.files.profile_photo[0].path);
@@ -518,112 +501,129 @@ class UserServices {
         }
         return res.status(400).json({
           success: false,
-          message: "Phone number already exists!",
+          message: "Email already exists!",
           statusCode: 400,
         });
       }
-    }
 
-    let salt = bcrypt.genSaltSync(10);
-    let breakPassword=password.slice(0,13)
-    console.log(breakPassword,"breakpassword---->")
-    let hashPassword = password ? bcrypt.hashSync(breakPassword, salt) : null;
-    const phoneNumber = parsePhoneNumberFromString(phone, "IN");
-
-    if (!phoneNumber || !phoneNumber.isValid()) {
-      return res.status(400).send({
-        success: false,
-        message: "Invalid phone number format.",
-        error: {
-          name: "InvalidParameterException",
-          code: "InvalidParameterException",
-        },
-      });
-    }
-
-    const formattedPhoneNumber = phoneNumber.number;
-
-    const cognitoParams = {
-      email,
-      name,
-      dob,
-      phone: formattedPhoneNumber,
-      password: "Fathima@123",
-    };
-
-    let id = uuidv4();
-    id = id.replace(/-/g, "");
-
-    let profile_photo;
-    if (req.files?.profile_photo?.length) {
-      profile_photo = req.files.profile_photo[0].filename;
-    }
-
-    const newUser = await User.create({
-      id,
-      profile_photo: profile_photo || "",
-      name,
-      email,
-      phone,
-      dob,
-      user_type,
-      role: role || "",
-      country,
-      password: hashPassword,
-      account_status: "activated",
-      is_verified: false,
-    });
-
-    let obj = {
-      email,
-      randomPassword: password.slice(0,13),
-      name,
-    };
-    console.log(obj, "password data is here---->");
-    sendPasswordViaEmailOf(obj);
-    if (req.files?.profile_photo?.length) {
-      try {
-        uploadImageToS3(
-          req.files.profile_photo[0].filename,
-          req.files.profile_photo[0].path,
-          user_type
-        );
-      } catch (er) {
-        console.error(er, "uploadImageToS3 ");
-      }
-    }
-    return res.status(201).json({
-      message: "User registered successfully",
-      statusCode: 201,
-      success: true,
-      data: { id },
-    });
-  } catch (err) {
-    try {
-      if (req.files) {
-        for (let el in req.files) {
-          for (let ele of req.files[el]) {
+      if (phone) {
+        const findPhoneExist = await User.findOne({ where: { phone } });
+        if (findPhoneExist) {
+          if (req.files?.profile_photo?.length) {
             try {
-              await deleteImageFromS3(ele.filename, req.body.user_type);
+              deleteImageFromLocal(req.files.profile_photo[0].path);
             } catch (err) {
-              console.log("error delete image from s3");
+              console.error(err, "deleteImageFromLocal");
             }
-            try {
-              await removeFile(ele.filename, req.body.user_type);
-            } catch (error) {
-              console.log("remove file");
+          }
+          return res.status(400).json({
+            success: false,
+            message: "Phone number already exists!",
+            statusCode: 400,
+          });
+        }
+      }
+
+      let salt = bcrypt.genSaltSync(10);
+      let breakPassword = password.slice(0, 13)
+      console.log(breakPassword, "breakpassword---->")
+      let hashPassword = password ? bcrypt.hashSync(breakPassword, salt) : null;
+      const phoneNumber = parsePhoneNumberFromString(phone, "IN");
+
+      if (!phoneNumber || !phoneNumber.isValid()) {
+        return res.status(400).send({
+          success: false,
+          message: "Invalid phone number format.",
+          error: {
+            name: "InvalidParameterException",
+            code: "InvalidParameterException",
+          },
+        });
+      }
+
+      const formattedPhoneNumber = phoneNumber.number;
+
+      const cognitoParams = {
+        email,
+        name,
+        dob,
+        phone: formattedPhoneNumber,
+        password: "Fathima@123",
+      };
+
+      let id = uuidv4();
+      id = id.replace(/-/g, "");
+
+      let profile_photo;
+      if (req.files?.profile_photo?.length) {
+        profile_photo = req.files.profile_photo[0].filename;
+      }
+
+      const newUser = await User.create({
+        id,
+        profile_photo: profile_photo || "",
+        name,
+        email,
+        phone,
+        dob,
+        user_type,
+        role: role || "",
+        country,
+        password: hashPassword,
+        account_status: "activated",
+        is_verified: false,
+      });
+
+      let obj = {
+        email,
+        randomPassword: password.slice(0, 13),
+        name,
+      };
+      console.log(obj, "password data is here---->");
+      sendPasswordViaEmailOf(obj);
+      if (req.files?.profile_photo?.length) {
+        try {
+          uploadImageToS3(
+            req.files.profile_photo[0].filename,
+            req.files.profile_photo[0].path,
+            user_type
+          );
+        } catch (er) {
+          console.error(er, "uploadImageToS3 ");
+        }
+      }
+      return res.status(201).json({
+        message: "User registered successfully",
+        statusCode: 201,
+        success: true,
+        data: { id },
+      });
+    } catch (err) {
+      try {
+        if (req.files) {
+          for (let el in req.files) {
+            for (let ele of req.files[el]) {
+              try {
+                await deleteImageFromS3(ele.filename, req.body.user_type);
+              } catch (err) {
+                console.log("error delete image from s3");
+              }
+              try {
+                await removeFile(ele.filename, req.body.user_type);
+              } catch (error) {
+                console.log("remove file");
+              }
             }
           }
         }
+      } catch (err) {
+        console.error(err, "eee");
       }
-    } catch (err) {
-      console.error(err, "eee");
+      console.log(err, "errorororro");
+      return res.status(500).json({ message: err.message, success: false, statusCode: 500 });
     }
-    console.log(err, "errorororro");
-    return res.status(500).json({ message: err.message, success: false, statusCode: 500 });
   }
-}
-async getUserByEmail(req, res) {
+  async getUserByEmail(req, res) {
     try {
       // const find = await dynamoDBClient.send(
       //   new ScanCommand({
@@ -694,103 +694,104 @@ async getUserByEmail(req, res) {
     try {
       console.log("floww---->1")
       const userStatus = await getUserStatus(req.query.email);
-      console.log(userStatus,"userStatus--->")
-  if (userStatus && !userStatus.UserStatus.includes('CONFIRMED')) {
-    const findData = await User.findOne({
-      where: {
-        email: email,
-      },
-    });
-    //let rawData = simplifyDynamoDBResponse(findData?.Items[0]);
-    let sendData={password:findData.password,doc_id:findData.id}
-    console.log('User exists but is not verified, resending OTP...');
-    await resendOTP(req.query.email,sendData);
-  }else if(userStatus==0){
-   const findData = await User.findOne({
-      where: {
-        email: req.query.email,
-        account_status:"activated",
-        is_verified:1
-      },
-    });
-    if(findData!=null){
-    return res.status(400).json({
-        message: "Email already exist",
-        statusCode: 400,
-        success: false,
-      });
-    }
-    let salt = environmentVars.salt;
-      let randomPassword = generatePassword.generate({
-        length: 12,
-        numbers: true,
-        symbols: true,
-        uppercase: true,
-        lowercase: true,
-        excludeSimilarCharacters: true,
-        strict: true
-      });
-      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
-      let id = uuidv4();
-      id = id?.replace(/-/g, "");
-
-      const newUser = await User.create({
-        uuid: id,
-        email: req.query.email,
-        password: hashPassword, // Ensure hashPassword is defined and contains the hashed password
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        is_verified: false,
-      });
-  
-    const cognitoUser = await new Promise((resolve, reject) => {
-      signup(req.query.email,randomPassword, (err, user) => {
-        if (err) {
-          reject(err);
-        } else {
-          console.log(user,"user-->data")
-          resolve(user);
+      console.log(userStatus, "userStatus--->")
+      if (userStatus && !userStatus.UserStatus.includes('CONFIRMED')) {
+        const findData = await User.findOne({
+          where: {
+            email: email,
+          },
+        });
+        //let rawData = simplifyDynamoDBResponse(findData?.Items[0]);
+        let sendData = { password: findData.password, doc_id: findData.id }
+        console.log('User exists but is not verified, resending OTP...');
+        await resendOTP(req.query.email, sendData);
+      } else if (userStatus == 0) {
+        const findData = await User.findOne({
+          where: {
+            email: req.query.email,
+            account_status: "activated",
+            is_verified: 1
+          },
+        });
+        if (findData != null) {
+          return res.status(400).json({
+            message: "Email already exist",
+            statusCode: 400,
+            success: false,
+          });
         }
-      });
-    });
-    let tempPassword = generatePassword.generate({
-      length: 24,
-      numbers: true,
-      symbols: true,
-      uppercase: true,
-      lowercase: true,
-      excludeSimilarCharacters: true,
-      strict: true
-    });
-      let data= {name:randomPassword+tempPassword,
-              doc_id:id
+        let salt = environmentVars.salt;
+        let randomPassword = generatePassword.generate({
+          length: 12,
+          numbers: true,
+          symbols: true,
+          uppercase: true,
+          lowercase: true,
+          excludeSimilarCharacters: true,
+          strict: true
+        });
+        let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+        let id = uuidv4();
+        id = id?.replace(/-/g, "");
+
+        const newUser = await User.create({
+          uuid: id,
+          email: req.query.email,
+          password: hashPassword, // Ensure hashPassword is defined and contains the hashed password
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          is_verified: false,
+        });
+
+        const cognitoUser = await new Promise((resolve, reject) => {
+          signup(req.query.email, randomPassword, (err, user) => {
+            if (err) {
+              reject(err);
+            } else {
+              console.log(user, "user-->data")
+              resolve(user);
+            }
+          });
+        });
+        let tempPassword = generatePassword.generate({
+          length: 24,
+          numbers: true,
+          symbols: true,
+          uppercase: true,
+          lowercase: true,
+          excludeSimilarCharacters: true,
+          strict: true
+        });
+        let data = {
+          name: randomPassword + tempPassword,
+          doc_id: id
+        }
+        return res.status(200).json({
+          message: "Otp send to email for verify",
+          data: data,
+          statusCode: 200,
+          success: true,
+        });
+
       }
-      return res.status(200).json({
-        message: "Otp send to email for verify",
-        data:data,
-        statusCode: 200,
-        success: true,
-      });
-    
-  }
     } catch (err) {
       if (err.code === 'UsernameExistsException') {
         console.log('Email already exists, resending OTP...');
         await resendOTP(req.query.email);
       } else {
         console.error('Error signing up:', err);
-      console.error(err, "Eeee");
-      return res
-        .status(500)
-        .json({ message: err?.message, statusCode: 500, success: false });
+        console.error(err, "Eeee");
+        return res
+          .status(500)
+          .json({ message: err?.message, statusCode: 500, success: false });
       }
     }
   }
 
   async verifyEmailWithOtpCheck(req, res) {
     try {
-      let { otp, email,name,docId } = req.query;
-      console.log(email,otp,"email----->")
+      let { otp, email, name, docId } = req.query;
+      console.log(email, otp, "email----->")
       // const find = await dynamoDBClient.send(
       //   new ScanCommand({
       //     TableName: "users",
@@ -804,36 +805,36 @@ async getUserByEmail(req, res) {
       // if(find && find?.Count >0){
       //   let username = find?.Items[0]?.email?.S;
       //   console.log(find,username,otp)
-        let data=await confirmUser(email,otp);
-        console.log(Object.keys(data).length,data.success,"data length--->")
-        if(data.success==true){
-          const updatedUser = await User.update(
-            { 
-              is_verified:1,
-              account_status:"activated"
+      let data = await confirmUser(email, otp);
+      console.log(Object.keys(data).length, data.success, "data length--->")
+      if (data.success == true) {
+        const updatedUser = await User.update(
+          {
+            is_verified: 1,
+            account_status: "activated"
+          },
+          {
+            where: {
+              email: email,
             },
-            {
-              where: {
-                email:email,
-              },
-              returning: true, // This option returns the updated object
-              plain: true, // This option returns only the updated object, not an array
-            }
-          );
-          return res.status(200).json({
-            message: "Email verified successfully",
-            data:{name:name,docId:docId},
-            statusCode: 200,
-            success: true,
-          });
-        }else{
-          return res.status(400).json({
-            message: data.code,
-            statusCode: data.statusCode,
-            success: false,
-          });
-        }
-       
+            returning: true, // This option returns the updated object
+            plain: true, // This option returns only the updated object, not an array
+          }
+        );
+        return res.status(200).json({
+          message: "Email verified successfully",
+          data: { name: name, docId: docId },
+          statusCode: 200,
+          success: true,
+        });
+      } else {
+        return res.status(400).json({
+          message: data.code,
+          statusCode: data.statusCode,
+          success: false,
+        });
+      }
+
       //}
       // console.log(find, "Asdad", find?.Items[0]);
       // if (find && find?.Count > 0) {
@@ -911,31 +912,31 @@ async getUserByEmail(req, res) {
     try {
       let { email, password } = req.body;
 
-    // Step 1: Authenticate User with Cognito
-    // try {
-    //   const tokens = await signin(req.body,(err, user) => {
-    //     if (err) {
-    //       return err;
-    //     } else {
-    //       console.log(user,"user-->data")
-    //       return res.status(200).send({message:"Logged in ",data:user});
-    //     }
-    //   });
-    //   console.log('Cognito tokens:', tokens);
-    // } catch (err) {
-    //   console.error('Cognito Authentication error:', err);
-    //   return res.status(400).json({
-    //     message: "Authentication failed",
-    //     statusCode: 400,
-    //     success: false,
-    //   });
-    // }
-    const findData = await User.findOne({
-      where: {
-        email: email,
-      },
-    });
-     console.log(findData.Count,"findData----->")
+      // Step 1: Authenticate User with Cognito
+      // try {
+      //   const tokens = await signin(req.body,(err, user) => {
+      //     if (err) {
+      //       return err;
+      //     } else {
+      //       console.log(user,"user-->data")
+      //       return res.status(200).send({message:"Logged in ",data:user});
+      //     }
+      //   });
+      //   console.log('Cognito tokens:', tokens);
+      // } catch (err) {
+      //   console.error('Cognito Authentication error:', err);
+      //   return res.status(400).json({
+      //     message: "Authentication failed",
+      //     statusCode: 400,
+      //     success: false,
+      //   });
+      // }
+      const findData = await User.findOne({
+        where: {
+          email: email,
+        },
+      });
+      console.log(findData.Count, "findData----->")
       // console.log(findData?.Items[0], "dinffdddaa", "findData");
       if (
         findData.user_type != "super_admin" &&
@@ -947,7 +948,7 @@ async getUserByEmail(req, res) {
           success: false,
         });
       }
-      if (findData!=null) {
+      if (findData != null) {
         let checkpassword = await bcrypt.compare(
           password,
           findData.password
@@ -994,9 +995,9 @@ async getUserByEmail(req, res) {
           },
         });
         // console.log(find, "Asdad", find);
-        if (find && find!=null) {
+        if (find && find != null) {
           const updatedUserOtp = await UserOtp.update(
-            { 
+            {
               otp: otp,
               creationTime: currentTime,
               updatedAt: currentTime,
@@ -1010,20 +1011,20 @@ async getUserByEmail(req, res) {
             }
           );
         } else {
-          
-            const tokens = await signin(req.body,(err, user) => {
-              if (err) {
-                return res.status(400).json({
-                  message: `Authentication failed ${err}`,
-                  statusCode: 400,
-                  success: false,
-                });
-              } else {
-                console.log(user,"user-->data")
-                //return res.status(200).send({message:"Logged in ",data:user});
-              }
-            });
-            //console.log('Cognito tokens:', tokens);
+
+          const tokens = await signin(req.body, (err, user) => {
+            if (err) {
+              return res.status(400).json({
+                message: `Authentication failed ${err}`,
+                statusCode: 400,
+                success: false,
+              });
+            } else {
+              console.log(user, "user-->data")
+              //return res.status(200).send({message:"Logged in ",data:user});
+            }
+          });
+          //console.log('Cognito tokens:', tokens);
           let id = uuidv4()?.replace(/-/g, "");
           const newUserOtp = await UserOtp.create({
             id: id,
@@ -1033,7 +1034,7 @@ async getUserByEmail(req, res) {
             createdAt: currentTime,
             updatedAt: currentTime,
           });
-      
+
           // console.log(Data, "dayayayaya");
         }
         return res.status(200).json({
@@ -1058,137 +1059,120 @@ async getUserByEmail(req, res) {
   async loginWithOtp(req, res) {
     try {
       let { email, otp } = req.body;
-  
-      // Find the user by email
       const findData = await User.findOne({
-        where: { email }
+        where: { email }, raw: true
       });
-  
-      if (findData) {
-        // Find the OTP entry by email
-        const find = await UserOtp.findOne({
-          where: { email }
-        });
-  
-        if (find) {
-          let otpDb = find.otp;
-          let creationTime = parseInt(find.creationTime, 10);
-          let nowTime = Date.now();
-          const timeDifference = nowTime - creationTime; // Difference in milliseconds
-          const tenMinutes = 600000; // 10 minutes in milliseconds
-  
-          if (timeDifference > tenMinutes) {
-            return res.status(400).json({
-              message: "Otp is expired",
-              statusCode: 400,
-              success: false,
-            });
-          } else if (otpDb != otp) {
-            return res.status(400).json({
-              message: "In-valid otp",
-              statusCode: 400,
-              success: false,
-            });
-          }
-  
-          let unique_token_id = uuidv4().replace(/-/g, "");
-          let obj = {
-            unique_token_id,
-            name: findData.name,
-            email: findData.email,
-            user_type: findData.user_type,
-            id: findData.id,
-            is_verified: findData.is_verified,
-            account_status: findData.account_status,
-          };
-  
-          if (
-            obj.user_type != "vendor" &&
-            obj.user_type != "seller" &&
-            obj.user_type != "logistic" &&
-            obj.user_type != "super_admin"
-          ) {
-            // Assuming there are associated permissions to load
-            //let permissions = await findData.getPermissions(); // This assumes a defined relationship
-  
-            let api_endpoint_arr = permissions.map(p => p.backend_routes).flat();
-            api_endpoint_arr.push(...permissions.map(p => p.frontend_routes).flat());
-  
-            // Remove duplicates
-            api_endpoint_arr = [...new Set(api_endpoint_arr)];
-  
-            let apiEndpoints = await ApiEndpoint.findAll({
-              where: {
-                id: {
-                  [Op.in]: api_endpoint_arr
-                }
-              }
-            });
-  
-            let temp = {};
-            apiEndpoints.forEach(el => {
-              if (temp[el.type]) {
-                temp[el.type].push({
-                  id: el.id,
-                  title: el.title,
-                  type: el.type,
-                });
-              } else {
-                temp[el.type] = [{
-                  id: el.id,
-                  title: el.title,
-                  type: el.type,
-                }];
-              }
-            });
-  
-            obj.permission = temp;
-            //obj.permission_raw_arr = simplifySequelizeResponse(permissions);
-          }
-  
-          let token = generateAccessToken(obj);
-          let expiryDate = new Date();
-          expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 day
-  
-          // Update the user with the unique token ID
-          await User.update(
-            { unique_token_id },
-            { where: { id: obj.id } }
-          );
-  
-          res.cookie("_token", token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-            expires: expiryDate,
-          }).status(200).json({
-            success: true,
-            message: "Logged in successful",
-            statusCode: 200,
-            data: {
-              user_type: obj.user_type,
-              id: obj.id,
-              token: token,
-              is_verified: obj.is_verified,
-              account_status: obj.account_status,
-              permission: obj.permission || [],
-              permission_raw_arr: obj.permission_raw_arr || [],
-            },
-          });
-        } else {
+      if (!findData) {
+        return res.status(400).json({ message: "User not found", statusCode: 400, success: false })
+      }
+      const find = await UserOtp.findOne({
+        where: { email }, raw: true
+      });
+      if (!find) {
+        return res.status(400).json({ message: "User otp not found", statusCode: 400, success: False })
+      }
+        let otpDb = find?.otp;
+        let creationTime = parseInt(find?.creationTime, 10);
+        let nowTime = Date.now();
+        const timeDifference = nowTime - creationTime; // Difference in milliseconds
+        const tenMinutes = 600000; // 10 minutes in milliseconds
+
+        if (timeDifference > tenMinutes) {
           return res.status(400).json({
-            message: "No data found",
+            message: "Otp is expired",
+            statusCode: 400,
+            success: false,
+          });
+        } else if (otpDb != otp) {
+          return res.status(400).json({
+            message: "In-valid otp",
             statusCode: 400,
             success: false,
           });
         }
-      } else {
-        return res.status(400).json({
-          message: "No data found",
-          statusCode: 400,
-          success: false,
+
+        let unique_token_id = uuidv4().replace(/-/g, "");
+        let obj = {
+          unique_token_id,
+          name: findData.name,
+          email: findData.email,
+          user_type: findData.user_type,
+          id: findData.id,
+          is_verified: findData.is_verified,
+          account_status: findData.account_status,
+        };
+
+        if (
+          obj.user_type != "vendor" &&
+          obj.user_type != "seller" &&
+          obj.user_type != "logistic" &&
+          obj.user_type != "super_admin"
+        ) {
+          // Assuming there are associated permissions to load
+          //let permissions = await findData.getPermissions(); // This assumes a defined relationship
+
+          let api_endpoint_arr = permissions.map(p => p.backend_routes).flat();
+          api_endpoint_arr.push(...permissions.map(p => p.frontend_routes).flat());
+
+          // Remove duplicates
+          api_endpoint_arr = [...new Set(api_endpoint_arr)];
+          let apiEndpoints = await ApiEndpoint.findAll({
+            where: {
+              id: {
+                [Op.in]: api_endpoint_arr
+              }
+            }
+          });
+
+          let temp = {};
+          apiEndpoints.forEach(el => {
+            if (temp[el?.type]) {
+              temp[el?.type].push({
+                id: el?.id,
+                title: el?.title,
+                type: el?.type,
+              });
+            } else {
+              temp[el?.type] = [{
+                id: el?.id,
+                title: el?.title,
+                type: el?.type,
+              }];
+            }
+          });
+          obj.permission = temp;
+          //obj.permission_raw_arr = simplifySequelizeResponse(permissions);
+        }
+
+        let token = generateAccessToken(obj);
+        let expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 1); // Expires in 1 day
+
+        await User.update(
+          { unique_token_id },
+          { where: { id: obj.id } }
+        );
+        res.cookie("_token", token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "strict",
+          expires: expiryDate,
+        }).status(200).json({
+          success: true,
+          message: "Logged in successful",
+          statusCode: 200,
+          data: {
+            user_type: obj.user_type,
+            id: obj.id,
+            token: token,
+            is_verified: obj.is_verified,
+            account_status: obj.account_status,
+            permission: obj.permission || [],
+            permission_raw_arr: obj.permission_raw_arr || [],
+          },
         });
-      }
+    
+
     } catch (err) {
       console.log(err, "Error in login api user");
       return res.status(500).json({

@@ -10,6 +10,8 @@ import {
   DeleteItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { simplifyDynamoDBResponse } from "../../helpers/datafetch.js";
+import CategoryModel from "../../models/CategoryModel.js";
+import BrandModel from "../../models/BrandModel.js";
 
 const dynamoDBClient = new DynamoDBClient({
   region: process.env.Aws_region,
@@ -22,32 +24,16 @@ const dynamoDBClient = new DynamoDBClient({
 class BrandServices {
   async add(req, res) {
     try {
-      let { title, status, category_id, id } = req.body;
-      let categoryExist = await dynamoDBClient.send(new QueryCommand({
-        TableName: "category",
-        KeyConditionExpression: "id = :id",
-        ExpressionAttributeValues: {
-          ":id": { S: category_id }
-        }
-      }))
-      if (categoryExist?.Count == 0) {
+      let { title, status, category_id, uuid } = req.body;
+      let categoryExist = await CategoryModel.findOne({ where: { category_id, status: 'active' }, raw: true, attribute: ['id', 'uuid', 'title'] })
+
+      if (!categoryExist) {
         return res.status(400).json({ message: "Category not found", statusCode: 400, success: false })
-      } else if (categoryExist?.Items[0]?.status?.S != 'active') {
-        return res.status(400).json({ message: "Category is not active", statusCode: 400, success: false })
       }
       const timestamp = new Date().toISOString(); // Format timestamp as ISO string
-
-      if (id) {
-        let findData = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "brand",
-            KeyConditionExpression: "id = :id",
-            ExpressionAttributeValues: {
-              ":id": { S: id },
-            },
-          })
-        );
-        if (findData && findData?.Count == 0) {
+      if (uuid) {
+        const findData=await BrandModel.findOne({where:{uuid:uuid},raw:true})
+         if (findData && findData?.Count == 0) {
           return res.status(400).json({ message: "Document not found", statusCode: 400, success: false })
         }
         const params = {
@@ -79,7 +65,7 @@ class BrandServices {
             },
           })
         );
-// console.log(findExist,"findexistttttttt")
+        // console.log(findExist,"findexistttttttt")
         if (findExist?.Count > 0) {
           return res.status(400).json({ message: "Title already exist", statusCode: 400, success: false });
         } else {
@@ -87,17 +73,9 @@ class BrandServices {
           return res.status(200).json({ message: "Data updated successfully", statusCode: 200, success: true });
         }
       } else {
-        const findEmailExist = await dynamoDBClient.send(
-          new QueryCommand({
-            TableName: "brand",
-            IndexName: "title", // replace with your GSI name
-            KeyConditionExpression: "title = :title",
-            ExpressionAttributeValues: {
-              ":title": { S: title },
-            },
-          })
-        );
-        if (findEmailExist.Count > 0) {
+        const checkBrandName = await BrandModel.findOne({ where: { name: name }, raw: true, attributes: ['id'] })
+
+        if (!checkBrandName) {
           return res.status(400).json({
             success: false,
             message: "Brand name already exist!",
@@ -107,27 +85,15 @@ class BrandServices {
 
         let id = uuidv4();
         id = id?.replace(/-/g, "");
-        const params = {
-          TableName: "brand",
-          Item: {
-            id: { S: id },
-            title: { S: title },
-            status: { S: status ? "active" : "inactive" },
-            category_id: { S: category_id },
-            created_by: { S: req.userData.id },
-            created_at: { S: timestamp },
-            updated_at: { S: timestamp },
-          },
-        };
-        // console.log("docClient", "docccleint", params);
-        let Data = await dynamoDBClient.send(new PutItemCommand(params));
+        req.body.uuid = id
+        await BrandModel.create(req.body)
         return res
           .status(201)
           .json({ message: "Brand add successfully", statusCode: 201, success: true });
       }
     }
     catch (err) {
-      console.log(err, "errorororro");
+      console.log(err, " brand errorororro");
       return res
         .status(500)
         .json({ message: err?.message, success: false, statusCode: 500 });
@@ -275,7 +241,7 @@ class BrandServices {
       const params = {
         TableName: 'brand',
         Key: {
-          'id': { S: id } 
+          'id': { S: id }
         }
       };
       let result = await dynamoDBClient.send(new DeleteItemCommand(params));
@@ -285,34 +251,34 @@ class BrandServices {
       return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
     }
   }
-async del_tp(req,res){
-  try {
-    let id = req.query.id
-    const data = await dynamoDBClient.send(
-      new QueryCommand({
-        TableName: "brand",
-        KeyConditionExpression: "id = :id",
-        ExpressionAttributeValues: {
-          ":id": { S: id },
-        },
-      })
-    );
-    if (data?.Count == 0) {
-      return res.status(400).json({ message: "Data not found or deleted already", statusCode: 400, success: false })
-    }
-    const params = {
-      TableName: 'brand',
-      Key: {
-        'id': { S: id } 
+  async del_tp(req, res) {
+    try {
+      let id = req.query.id
+      const data = await dynamoDBClient.send(
+        new QueryCommand({
+          TableName: "brand",
+          KeyConditionExpression: "id = :id",
+          ExpressionAttributeValues: {
+            ":id": { S: id },
+          },
+        })
+      );
+      if (data?.Count == 0) {
+        return res.status(400).json({ message: "Data not found or deleted already", statusCode: 400, success: false })
       }
-    };
-    let result = await dynamoDBClient.send(new DeleteItemCommand(params));
-    return res.status(200).json({ message: "Delete successfully", statusCode: 200, success: true })
-  } catch (err) {
-    console.error(err)
-    return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
-  } 
-}
+      const params = {
+        TableName: 'brand',
+        Key: {
+          'id': { S: id }
+        }
+      };
+      let result = await dynamoDBClient.send(new DeleteItemCommand(params));
+      return res.status(200).json({ message: "Delete successfully", statusCode: 200, success: true })
+    } catch (err) {
+      console.error(err)
+      return res.status(500).json({ message: err?.message, statusCode: 500, success: false })
+    }
+  }
 }
 
 const BrandServicesObj = new BrandServices();
