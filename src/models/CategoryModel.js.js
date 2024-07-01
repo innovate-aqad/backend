@@ -46,9 +46,9 @@ const CategoryModel = dbConnection.define(
   "category",
   {
     id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.STRING,
       allowNull: false,
-      autoIncrement: true,
+      // autoIncrement: false,
       primaryKey: true
     },
     image: {
@@ -61,6 +61,10 @@ const CategoryModel = dbConnection.define(
     status: {
       type: DataTypes.ENUM("active", "inactive"),
       defaultValue: "active"
+    },
+    created_by: {
+      type: DataTypes.STRING,
+      allowNull: false
     },
     created_at: {
       type: DataTypes.DATE,

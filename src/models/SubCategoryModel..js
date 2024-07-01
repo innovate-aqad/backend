@@ -41,13 +41,17 @@ const SubCategoryModel = dbConnection.define(
   "subcategory",
   {
     id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.STRING,
       allowNull: false,
-      autoIncrement: true,
+      // autoIncrement: true,
       primaryKey: true
     },
     category_id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    created_by: {
+      type: DataTypes.STRING,
       allowNull: false
     },
     title: {

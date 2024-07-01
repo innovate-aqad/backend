@@ -175,6 +175,9 @@ class SubCategoryServices {
           },
           raw: true
         });
+        id = uuidv4().replace(/-/g, "");
+        console.log(data, id);
+
         if (data) {
           return res.status(400).json({
             success: false,
@@ -184,9 +187,11 @@ class SubCategoryServices {
         } else {
           console.log(data, "p");
           SubCategoryModel.create({
+            id,
             title: title,
             status: status ? "active" : "inactive",
-            category_id: category_id
+            category_id: category_id,
+            created_by: req?.userData?.id
           })
             .then(async (response) => {
               return res.status(201).json({

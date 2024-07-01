@@ -194,7 +194,8 @@ class BrandServices {
           },
           raw: true
         });
-        console.log(data);
+        id = uuidv4().replace(/-/g, "");
+        console.log(data, id, req.userData);
 
         if (data) {
           return res.status(400).json({
@@ -204,10 +205,11 @@ class BrandServices {
           });
         } else {
           const createData = BrandModel.create({
+            id,
             title: title,
             status: status,
             category_id: category_id,
-            created_by: 1
+            created_by: req?.userData?.id
           });
 
           if (createData) {

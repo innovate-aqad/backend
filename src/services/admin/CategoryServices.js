@@ -214,7 +214,8 @@ class CategoryServices {
           },
           raw: true
         });
-        console.log(data);
+        id = uuidv4().replace(/-/g, "");
+        console.log(data, id, req.userData);
 
         if (data) {
           return res.status(400).json({
@@ -224,9 +225,11 @@ class CategoryServices {
           });
         } else {
           CategoryModel.create({
+            id,
             title: title,
             status: status,
-            image: image
+            image: image,
+            created_by: req?.userData?.id
           })
             .then(async (response) => {
               return res.status(201).json({
@@ -256,69 +259,27 @@ class CategoryServices {
   async changeStatus(req, res) {
     try {
       let { status, id } = req.body;
-      // if (req.userData?.user_type != "super_admin") {
-      //   return res
-      //     .status(400)
-      //     .json({ message: "Not Authorise", statusCode: 400, success: false });
-      // }
-      // DynamoDb
 
-      // let findData = await dynamoDBClient.send(
-      //   new QueryCommand({
-      //     TableName: "category",
-      //     KeyConditionExpression: "id = :id",
-      //     ExpressionAttributeValues: {
-      //       ":id": { S: id }
-      //     }
-      //   })
-      // );
-      // if (findData && findData?.Count > 0) {
-      //   const params = {
-      //     TableName: "category",
-      //     Key: { id: { S: id } },
-      //     UpdateExpression: "SET #status = :status, #updated_at = :updated_at",
-      //     ExpressionAttributeNames: {
-      //       "#status": "status",
-      //       "#updated_at": "updated_at"
-      //     },
-      //     ExpressionAttributeValues: {
-      //       ":status": {
-      //         S: status || findData?.Items[0]?.status?.S || "active"
-      //       },
-      //       ":updated_at": { S: new Date().toISOString() }
-      //     }
-      //   };
-      //   await dynamoDBClient.send(new UpdateItemCommand(params));
-      //   return res.status(200).json({
-      //     message: "Category Data Status updated successfully",
-      //     statusCode: 200,
-      //     success: true
-      //   });
-      // } else {
-      //   return res.status(400).json({
-      //     message: "Document Not Found",
-      //     statusCode: 400,
-      //     success: false
-      //   });
-      // }
+      let findExist = await CategoryModel.findOne({
+        where: { id },
+        raw: true,
+        attributes: ["id", "title", "status"]
+      });
+      console.log("9999090", findExist);
+      if (findExist) {
+        // await ProductDescriptionModel.destroy({ where: { product_id: id } });
+        await CategoryModel.update({ status }, { where: { id } });
 
-      //Mysql
-
-      const [updated] = await CategoryModel.update(
-        { status: status },
-        { where: { id: id } }
-      );
-      if (updated) {
         return res.status(200).json({
-          success: true,
-          message: "Status updated successfully",
-          statusCode: 200
+          message: "Status update successfully",
+          statusCode: 200,
+          success: true
         });
       } else {
         return res.status(404).json({
-          success: false,
           message: "Category not found",
-          statusCode: 404
+          statusCode: 404,
+          success: false
         });
       }
     } catch (err) {

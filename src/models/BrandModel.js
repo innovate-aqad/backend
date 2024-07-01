@@ -5,13 +5,13 @@ const BrandModel = dbConnection.define(
   "brands",
   {
     id: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.STRING,
       allowNull: false,
-      autoIncrement: true,
+      // autoIncrement: true,
       primaryKey: true
     },
     category_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: false
     },
     title: {
@@ -23,7 +23,8 @@ const BrandModel = dbConnection.define(
       defaultValue: "active"
     },
     created_by: {
-      type: DataTypes.BIGINT
+      type: DataTypes.STRING,
+      allowNull: false
     },
     created_at: {
       type: DataTypes.DATE,
