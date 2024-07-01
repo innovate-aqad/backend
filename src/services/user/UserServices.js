@@ -41,7 +41,7 @@ import {
 } from "../../helpers/datafetch.js";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import generatePassword from 'generate-password';
-import { signup, signin, confirmUser, resendOTP, getUserStatus } from "../../services/cognito/cognito.js";
+import { signup, signin, confirmUser,resendOTP,getUserStatus, updatePassword,confirmUserByEmail} from "../../services/cognito/cognito.js";
 import User from "../../models/UserModel.js";
 import UserOtp from "../../models/UserOtpModel.js";
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
@@ -110,13 +110,28 @@ class UserServices {
       console.log(req.files, "req.filesssss");
       email = email?.trim();
 
-      let findData;
-      if ((slide == 1 || slide == 2 || slide == 3 || slide == 4) && !doc_id) {
+    let findData;
+    if ((slide == 1 || slide == 2 || slide == 3 || slide == 4) && !doc_id) {
+      return res.status(400).json({
+        message: "Doc_id is mandatory",
+        statusCode: 400,
+        success: false,
+      });
+    }
+    
+    if (slide ==1 || slide == 2 || slide == 3 || doc_id) {
+
+      console.log(req.files, "req.files is here");
+
+      findData = await User.findOne({ where: { uuid: doc_id } });
+
+      if (!findData) {
         return res.status(400).json({
           message: "Doc_id is mandatory",
           statusCode: 400,
           success: false,
         });
+      }
       }
 
       if (slide == 2 || slide == 3 || doc_id) {
@@ -506,99 +521,84 @@ class UserServices {
         });
       }
 
-      if (phone) {
-        const findPhoneExist = await User.findOne({ where: { phone } });
-        if (findPhoneExist) {
-          if (req.files?.profile_photo?.length) {
-            try {
-              deleteImageFromLocal(req.files.profile_photo[0].path);
-            } catch (err) {
-              console.error(err, "deleteImageFromLocal");
-            }
-          }
-          return res.status(400).json({
-            success: false,
-            message: "Phone number already exists!",
-            statusCode: 400,
-          });
-        }
-      }
+    let salt = bcrypt.genSaltSync(10);
+    let breakPassword=password.slice(0,13)
+    console.log(breakPassword,"breakpassword---->")
+    let hashPassword = password ? bcrypt.hashSync(breakPassword, salt) : null;
+    const phoneNumber = parsePhoneNumberFromString(phone, "IN");
 
-      let salt = bcrypt.genSaltSync(10);
-      let breakPassword = password.slice(0, 13)
-      console.log(breakPassword, "breakpassword---->")
-      let hashPassword = password ? bcrypt.hashSync(breakPassword, salt) : null;
-      const phoneNumber = parsePhoneNumberFromString(phone, "IN");
-
-      if (!phoneNumber || !phoneNumber.isValid()) {
-        return res.status(400).send({
-          success: false,
-          message: "Invalid phone number format.",
-          error: {
-            name: "InvalidParameterException",
-            code: "InvalidParameterException",
-          },
-        });
-      }
-
-      const formattedPhoneNumber = phoneNumber.number;
-
-      const cognitoParams = {
-        email,
-        name,
-        dob,
-        phone: formattedPhoneNumber,
-        password: "Fathima@123",
-      };
-
-      let id = uuidv4();
-      id = id.replace(/-/g, "");
-
-      let profile_photo;
-      if (req.files?.profile_photo?.length) {
-        profile_photo = req.files.profile_photo[0].filename;
-      }
-
-      const newUser = await User.create({
-        id,
-        profile_photo: profile_photo || "",
-        name,
-        email,
-        phone,
-        dob,
-        user_type,
-        role: role || "",
-        country,
-        password: hashPassword,
-        account_status: "activated",
-        is_verified: false,
+    if (!phoneNumber || !phoneNumber.isValid()) {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid phone number format.",
+        error: {
+          name: "InvalidParameterException",
+          code: "InvalidParameterException",
+        },
       });
+    }
 
-      let obj = {
-        email,
-        randomPassword: password.slice(0, 13),
-        name,
-      };
-      console.log(obj, "password data is here---->");
-      sendPasswordViaEmailOf(obj);
-      if (req.files?.profile_photo?.length) {
-        try {
-          uploadImageToS3(
-            req.files.profile_photo[0].filename,
-            req.files.profile_photo[0].path,
-            user_type
-          );
-        } catch (er) {
-          console.error(er, "uploadImageToS3 ");
-        }
+    const formattedPhoneNumber = phoneNumber.number;
+
+    const cognitoParams = {
+      email,
+      name,
+      dob,
+      phone: formattedPhoneNumber,
+      password: "Fathima@123",
+    };
+
+    let id = uuidv4();
+    id = id.replace(/-/g, "");
+
+    let profile_photo;
+    if (req.files?.profile_photo?.length) {
+      profile_photo = req.files.profile_photo[0].filename;
+    }
+
+    await findData.update({
+      id,
+      profile_photo: profile_photo || "",
+      name,
+      email,
+      phone,
+      dob,
+      user_type,
+      role: role || "",
+      country,
+      password: hashPassword,
+      account_status: "activated",
+      is_verified: true,
+    });
+    let slicedPassword= password.slice(0,13)
+    let obj = {
+      email,
+      randomPassword: slicedPassword,
+      name,
+    };
+    console.log(obj, "password data is here---->");
+    sendPasswordViaEmailOf(obj);
+    
+    let setPassword= await updatePassword(email,slicedPassword);
+    console.log(setPassword,"reset password--->")
+    if (req.files?.profile_photo?.length) {
+      try {
+        uploadImageToS3(
+          req.files.profile_photo[0].filename,
+          req.files.profile_photo[0].path,
+          user_type
+        );
+      } catch (er) {
+        console.error(er, "uploadImageToS3 ");
       }
-      return res.status(201).json({
-        message: "User registered successfully",
-        statusCode: 201,
-        success: true,
-        data: { id },
-      });
-    } catch (err) {
+    }
+    return res.status(201).json({
+      message: "User registered successfully",
+      statusCode: 201,
+      success: true,
+      data: { id },
+    });
+} catch (err) {
       try {
         if (req.files) {
           for (let el in req.files) {
@@ -622,7 +622,8 @@ class UserServices {
       console.log(err, "errorororro");
       return res.status(500).json({ message: err.message, success: false, statusCode: 500 });
     }
-  }
+  
+}
   async getUserByEmail(req, res) {
     try {
       // const find = await dynamoDBClient.send(
@@ -693,88 +694,100 @@ class UserServices {
   async sendOtpEmail(req, res) {
     try {
       console.log("floww---->1")
-      const userStatus = await getUserStatus(req.query.email);
-      console.log(userStatus, "userStatus--->")
-      if (userStatus && !userStatus.UserStatus.includes('CONFIRMED')) {
-        const findData = await User.findOne({
-          where: {
-            email: email,
-          },
-        });
-        //let rawData = simplifyDynamoDBResponse(findData?.Items[0]);
-        let sendData = { password: findData.password, doc_id: findData.id }
-        console.log('User exists but is not verified, resending OTP...');
-        await resendOTP(req.query.email, sendData);
-      } else if (userStatus == 0) {
+      let salt = environmentVars.salt;
+      let randomPassword = generatePassword.generate({
+        length: 12,
+        numbers: true,
+        symbols: true,
+        uppercase: true,
+        lowercase: true,
+        excludeSimilarCharacters: true,
+        strict: true
+      });
+      const saniPassword = randomPassword.replace(/"/g, 'a');
+      let hashPassword = await bcrypt.hash(`${saniPassword}`, `${salt}`);
+      let tempPassword = generatePassword.generate({
+        length: 24,
+        numbers: true,
+        symbols: true,
+        uppercase: true,
+        lowercase: true,
+        excludeSimilarCharacters: true,
+        strict: true
+      });
+
         const findData = await User.findOne({
           where: {
             email: req.query.email,
-            account_status: "activated",
-            is_verified: 1
+            account_status:"activated",
+            is_verified:1
           },
         });
-        if (findData != null) {
-          return res.status(400).json({
+        if(findData!=null){
+        return res.status(400).json({
             message: "Email already exist",
             statusCode: 400,
             success: false,
           });
         }
-        let salt = environmentVars.salt;
-        let randomPassword = generatePassword.generate({
-          length: 12,
-          numbers: true,
-          symbols: true,
-          uppercase: true,
-          lowercase: true,
-          excludeSimilarCharacters: true,
-          strict: true
-        });
-        let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
-        let id = uuidv4();
-        id = id?.replace(/-/g, "");
+      const userStatus = await getUserStatus(req.query.email);
+      console.log(userStatus,"userStatus--->")
+  if (userStatus && userStatus.UserStatus !='CONFIRMED') {
+    const findData = await User.findOne({
+      where: {
+        email: req.query.email,
+      },
+    });
+    //let rawData = simplifyDynamoDBResponse(findData?.Items[0]);
+    await findData.update({
+      password:hashPassword
+    })
+    let sendData={name:saniPassword+tempPassword,doc_id:findData.uuid}
+    console.log('User exists but is not verified, resending OTP...');
+    let result=await resendOTP(req.query.email,sendData);
+    if(result==1){
+       return res.status(200).json({
+      message: "OTP resent successfully",
+      data:sendData,
+      statusCode: 200,
+      success: true,
+    });
+    }else{
+      return res.status(500).json({
+      message: "Internal error,Please try again",
+      statusCode: 500,
+      success: false,
+    });
+    }
+    console.log(result,"result----->")
+  }else if(userStatus==0){
+    
+      let id = uuidv4();
+      id = id?.replace(/-/g, "");
 
-        const newUser = await User.create({
-          uuid: id,
-          email: req.query.email,
-          password: hashPassword, // Ensure hashPassword is defined and contains the hashed password
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          is_verified: false,
-        });
-
-        const cognitoUser = await new Promise((resolve, reject) => {
-          signup(req.query.email, randomPassword, (err, user) => {
-            if (err) {
-              reject(err);
-            } else {
-              console.log(user, "user-->data")
-              resolve(user);
-            }
-          });
-        });
-        let tempPassword = generatePassword.generate({
-          length: 24,
-          numbers: true,
-          symbols: true,
-          uppercase: true,
-          lowercase: true,
-          excludeSimilarCharacters: true,
-          strict: true
-        });
-        let data = {
-          name: randomPassword + tempPassword,
-          doc_id: id
+      const newUser = await User.create({
+        uuid: id,
+        email: req.query.email,
+        password: hashPassword, // Ensure hashPassword is defined and contains the hashed password
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        is_verified: false,
+      });
+  
+    const cognitoUser = await new Promise((resolve, reject) => {
+      signup(req.query.email,saniPassword, (err, user) => {
+        if (err) {
+          reject(err);
+        } else {
+          console.log(user,"user-->data")
+          resolve(user);
         }
-        return res.status(200).json({
-          message: "Otp send to email for verify",
-          data: data,
-          statusCode: 200,
-          success: true,
-        });
-
+      });
+    });
+      let data= {name:saniPassword+tempPassword,
+              doc_id:id
       }
-    } catch (err) {
+   } } catch (err) {
       if (err.code === 'UsernameExistsException') {
         console.log('Email already exists, resending OTP...');
         await resendOTP(req.query.email);
@@ -911,32 +924,32 @@ class UserServices {
   async loginUser(req, res) {
     try {
       let { email, password } = req.body;
-
-      // Step 1: Authenticate User with Cognito
-      // try {
-      //   const tokens = await signin(req.body,(err, user) => {
-      //     if (err) {
-      //       return err;
-      //     } else {
-      //       console.log(user,"user-->data")
-      //       return res.status(200).send({message:"Logged in ",data:user});
-      //     }
-      //   });
-      //   console.log('Cognito tokens:', tokens);
-      // } catch (err) {
-      //   console.error('Cognito Authentication error:', err);
-      //   return res.status(400).json({
-      //     message: "Authentication failed",
-      //     statusCode: 400,
-      //     success: false,
-      //   });
-      // }
-      const findData = await User.findOne({
-        where: {
-          email: email,
-        },
-      });
-      // console.log(findData.Count, "findData----->")
+   console.log(req.body,"jai sriram--->")
+    // Step 1: Authenticate User with Cognito
+    // try {
+    //   const tokens = await signin(req.body,(err, user) => {
+    //     if (err) {
+    //       return err;
+    //     } else {
+    //       console.log(user,"user-->data")
+    //       return res.status(200).send({message:"Logged in ",data:user});
+    //     }
+    //   });
+    //   console.log('Cognito tokens:', tokens);
+    // } catch (err) {
+    //   console.error('Cognito Authentication error:', err);
+    //   return res.status(400).json({
+    //     message: "Authentication failed",
+    //     statusCode: 400,
+    //     success: false,
+    //   });
+    // }
+    const findData = await User.findOne({
+      where: {
+        email: email,
+      },
+    });
+     console.log(findData,"findData----->")
       // console.log(findData?.Items[0], "dinffdddaa", "findData");
       if (
         findData.user_type != "super_admin" &&
@@ -995,7 +1008,9 @@ class UserServices {
           },
         });
         // console.log(find, "Asdad", find);
-        if (find && find != null) {
+        if (find && find!=null) {
+          console.log("flow1----->")
+
           const updatedUserOtp = await UserOtp.update(
             {
               otp: otp,
@@ -1004,30 +1019,18 @@ class UserServices {
             },
             {
               where: {
-                id: find.id,
+                uuid: find.id,
               },
               returning: true, // This option returns the updated object
               plain: true, // This option returns only the updated object, not an array
             }
           );
         } else {
-
-          const tokens = await signin(req.body, (err, user) => {
-            if (err) {
-              return res.status(400).json({
-                message: `Authentication failed ${err}`,
-                statusCode: 400,
-                success: false,
-              });
-            } else {
-              console.log(user, "user-->data")
-              //return res.status(200).send({message:"Logged in ",data:user});
-            }
-          });
-          //console.log('Cognito tokens:', tokens);
+           console.log("flow2----->")
+            //console.log('Cognito tokens:', tokens);
           let id = uuidv4()?.replace(/-/g, "");
           const newUserOtp = await UserOtp.create({
-            id: id,
+            uuid: id,
             email: req.body.email,
             otp: otp,
             creationTime: currentTime,
@@ -1037,11 +1040,29 @@ class UserServices {
 
           // console.log(Data, "dayayayaya");
         }
-        return res.status(200).json({
-          message: "Otp sent to registered email",
-          statusCode: 200,
-          success: true,
+        // let confirmUse=await confirmUserByEmail(email);
+        // console.log(confirmUse,"confirmedd---->")
+        const tokens = await signin(req.body,(err, user) => {
+          console.log(err,"error---->")
+          if (err) {
+            console.log("hiiiiii---->")
+            return res.status(400).json({
+              message: `Authentication failed`,
+              statusCode: 400,
+              success: false,
+            });
+          } else {
+            console.log(user,"user-->data")
+            return res.status(200).json({
+              message: "Otp sent to registered email",
+              statusCode: 200,
+              success: true,
+            });
+            //return res.status(200).send({message:"Logged in ",data:user});
+          }
         });
+       // console.log(tokens,"tokenerror")
+        
       } else {
         // console.log("enddddd");
         return res

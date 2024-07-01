@@ -3,10 +3,16 @@ import sequelize from '../config/dbConfig.js'; // Adjust the path as needed
 
 const Roles = sequelize.define('Roles', {
   id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.BIGINT,
     primaryKey: true,
     autoIncrement: true,
     allowNull: false,
+  },
+  uuid: {
+    type: DataTypes.CHAR(36),
+    defaultValue: DataTypes.UUIDV4,
+    allowNull: false,
+    unique: true,
   },
   name: {
     type: DataTypes.STRING,

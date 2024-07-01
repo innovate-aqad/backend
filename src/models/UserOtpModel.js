@@ -13,7 +13,7 @@ import sequelize from "../config/dbConfig.js";
 // Define the UserOtp model
 const UserOtp = sequelize.define('UserOtp', {
   id: {
-    type: DataTypes.STRING,
+    type: DataTypes.BIGINT,
     primaryKey: true,
   },
   uuid: {

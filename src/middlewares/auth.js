@@ -61,15 +61,8 @@ export const authorize = async (req, res, next) => {
       algorithm: "HS512",
     });
     // console.log("proof", "proof qwerty", proof);
-    const findDataExist = await dynamoDBClient.send(
-      new QueryCommand({
-        TableName: "users",
-        KeyConditionExpression: "id= :id",
-        ExpressionAttributeValues: {
-          ":id": { S: proof?.id },
-        },
-      })
-    );
+    const findDataExist = await User.findOne({where:{id:proof}})
+    
     if (findDataExist && findDataExist?.Count == 0) {
       return res
         .status(400)
