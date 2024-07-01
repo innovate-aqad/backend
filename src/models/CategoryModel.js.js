@@ -1,10 +1,11 @@
-import dynamoose from "dynamoose";
-import { DynamoDB } from "@aws-sdk/client-dynamodb";
-import { marshall } from "@aws-sdk/util-dynamodb";
-import { DataMapper } from "@aws/dynamodb-data-mapper";
-import { v4 as uuidv4 } from "uuid";
+// import dynamoose from "dynamoose";
+// // import AWS from "aws-sdk";
+// import { DynamoDB } from "@aws-sdk/client-dynamodb";
+// import { marshall } from "@aws-sdk/util-dynamodb";
+// import { DataMapper } from "@aws/dynamodb-data-mapper";
+// import { v4 as uuidv4 } from "uuid";
 
-// Update AWS configuration
+// // Update AWS configuration
 // const dynamoDBClient = new DynamoDB({ region: process.env.Aws_region });
 // dynamoose.aws.sdk = dynamoDBClient;
 
@@ -14,15 +15,14 @@ import { v4 as uuidv4 } from "uuid";
 //       type: String,
 //       required: false,
 //     },
-//     category_id: { type: String, required: true },
-//     name: {
+//     title: {
 //       type: String,
 //       required: true,
 //     },
 //     status: {
-//       type: Boolean,
+//       type: string,
 //       required: false,
-//       default: true
+//       default: 'active'
 //     },
 //   },
 //   {
@@ -30,15 +30,20 @@ import { v4 as uuidv4 } from "uuid";
 //   }
 // );
 
-// const SubCategoryModel = dynamoose.model("sub_category", schema
+// const mapper = new DataMapper({
+//   client: dynamoDBClient, // Use the AWS SDK v3 client
+// });
+
+// const CategoryModel = dynamoose.model("category", schema
 // );
-// export default SubCategoryModel;
+
+// export default CategoryModel ;
 
 import { DataTypes } from "sequelize";
 import dbConnection from "../config/dbConfig.js";
 
-const SubCategoryModel = dbConnection.define(
-  "subcategory",
+const CategoryModel = dbConnection.define(
+  "category",
   {
     id: {
       type: DataTypes.BIGINT,
@@ -46,9 +51,8 @@ const SubCategoryModel = dbConnection.define(
       autoIncrement: true,
       primaryKey: true
     },
-    category_id: {
-      type: DataTypes.BIGINT,
-      allowNull: false
+    image: {
+      type: DataTypes.STRING
     },
     title: {
       type: DataTypes.STRING,
@@ -67,7 +71,7 @@ const SubCategoryModel = dbConnection.define(
       defaultValue: DataTypes.NOW
     }
   },
-  { timestamps: false, tableName: "subcategory" }
+  { timestamps: false, tableName: "category" }
 );
 
-export default SubCategoryModel;
+export default CategoryModel;

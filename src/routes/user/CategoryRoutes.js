@@ -8,7 +8,7 @@ const CategoryRoutes = express.Router();
 
 CategoryRoutes.post(
   "/add",
-  authorize,
+  // authorize,
   uploadCategory.fields([
     {
       name: "category_image",
@@ -18,7 +18,7 @@ CategoryRoutes.post(
   CategoryControllerObj.add_cat
 );
 CategoryRoutes.get("/get", /*authorize,*/ CategoryControllerObj.get_cat);
-CategoryRoutes.put("/edit_status", authorize, CategoryControllerObj.editStatus);
-CategoryRoutes.delete("/delete", authorize, CategoryControllerObj.deleteData);
+CategoryRoutes.put("/edit_status", /*authorize,*/ CategoryControllerObj.editStatus);
+CategoryRoutes.delete("/delete", /*authorize,*/ CategoryControllerObj.deleteData);
 
 export default CategoryRoutes;

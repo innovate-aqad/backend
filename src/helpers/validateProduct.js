@@ -14,7 +14,7 @@ export const addProductchema = Joi.object({
     .required()
     .label("title"),
   summary: Joi.string().min(10).max(1000).trim().label("Summary"),
-  brand_id: Joi.string().min(10).max(90).trim().required().label("brand_id"),
+  brand_id: Joi.string().max(90).trim().required().label("brand_id"),
   description: Joi.string()
     .min(10)
     .max(3000)
