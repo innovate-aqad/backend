@@ -41,7 +41,7 @@ import {
 } from "../../helpers/datafetch.js";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import generatePassword from 'generate-password';
-import { signup, signin, confirmUser,resendOTP,getUserStatus} from "../../services/cognito/cognito.js";
+import { signup, signin, confirmUser,resendOTP,getUserStatus, updatePassword} from "../../services/cognito/cognito.js";
 import User from "../../models/UserModel.js";
 import UserOtp from "../../models/UserOtpModel.js";
 // const dynamoDBClient = new DynamoDBClient({ region: process.env.Aws_region });
@@ -119,7 +119,8 @@ class UserServices {
       });
     }
     
-    if (slide == 2 || slide == 3 || doc_id) {
+    if (slide ==1 || slide == 2 || slide == 3 || doc_id) {
+
       console.log(req.files, "req.files is here");
 
       findData = await User.findOne({ where: { uuid: doc_id } });
@@ -559,7 +560,7 @@ class UserServices {
       profile_photo = req.files.profile_photo[0].filename;
     }
 
-    const newUser = await User.create({
+    await findData.update({
       id,
       profile_photo: profile_photo || "",
       name,
@@ -571,16 +572,19 @@ class UserServices {
       country,
       password: hashPassword,
       account_status: "activated",
-      is_verified: false,
+      is_verified: true,
     });
-
+    let slicedPassword= password.slice(0,13)
     let obj = {
       email,
-      randomPassword: password.slice(0,13),
+      randomPassword: slicedPassword,
       name,
     };
     console.log(obj, "password data is here---->");
     sendPasswordViaEmailOf(obj);
+    
+    let setPassword= await updatePassword(email,slicedPassword);
+    console.log(setPassword,"reset password--->")
     if (req.files?.profile_photo?.length) {
       try {
         uploadImageToS3(
@@ -693,34 +697,7 @@ async getUserByEmail(req, res) {
   async sendOtpEmail(req, res) {
     try {
       console.log("floww---->1")
-      const userStatus = await getUserStatus(req.query.email);
-      console.log(userStatus,"userStatus--->")
-  if (userStatus && !userStatus.UserStatus.includes('CONFIRMED')) {
-    const findData = await User.findOne({
-      where: {
-        email: email,
-      },
-    });
-    //let rawData = simplifyDynamoDBResponse(findData?.Items[0]);
-    let sendData={password:findData.password,doc_id:findData.id}
-    console.log('User exists but is not verified, resending OTP...');
-    await resendOTP(req.query.email,sendData);
-  }else if(userStatus==0){
-   const findData = await User.findOne({
-      where: {
-        email: req.query.email,
-        account_status:"activated",
-        is_verified:1
-      },
-    });
-    if(findData!=null){
-    return res.status(400).json({
-        message: "Email already exist",
-        statusCode: 400,
-        success: false,
-      });
-    }
-    let salt = environmentVars.salt;
+      let salt = environmentVars.salt;
       let randomPassword = generatePassword.generate({
         length: 12,
         numbers: true,
@@ -730,7 +707,64 @@ async getUserByEmail(req, res) {
         excludeSimilarCharacters: true,
         strict: true
       });
-      let hashPassword = await bcrypt.hash(`${randomPassword}`, `${salt}`);
+      const saniPassword = randomPassword.replace(/"/g, 'a');
+      let hashPassword = await bcrypt.hash(`${saniPassword}`, `${salt}`);
+      let tempPassword = generatePassword.generate({
+        length: 24,
+        numbers: true,
+        symbols: true,
+        uppercase: true,
+        lowercase: true,
+        excludeSimilarCharacters: true,
+        strict: true
+      });
+
+        const findData = await User.findOne({
+          where: {
+            email: req.query.email,
+            account_status:"activated",
+            is_verified:1
+          },
+        });
+        if(findData!=null){
+        return res.status(400).json({
+            message: "Email already exist",
+            statusCode: 400,
+            success: false,
+          });
+        }
+      const userStatus = await getUserStatus(req.query.email);
+      console.log(userStatus,"userStatus--->")
+  if (userStatus && userStatus.UserStatus !='CONFIRMED') {
+    const findData = await User.findOne({
+      where: {
+        email: req.query.email,
+      },
+    });
+    //let rawData = simplifyDynamoDBResponse(findData?.Items[0]);
+    await findData.update({
+      password:hashPassword
+    })
+    let sendData={name:saniPassword+tempPassword,doc_id:findData.uuid}
+    console.log('User exists but is not verified, resending OTP...');
+    let result=await resendOTP(req.query.email,sendData);
+    if(result==1){
+       return res.status(200).json({
+      message: "OTP resent successfully",
+      data:sendData,
+      statusCode: 200,
+      success: true,
+    });
+    }else{
+      return res.status(500).json({
+      message: "Internal error,Please try again",
+      statusCode: 500,
+      success: false,
+    });
+    }
+    console.log(result,"result----->")
+  }else if(userStatus==0){
+    
       let id = uuidv4();
       id = id?.replace(/-/g, "");
 
@@ -744,7 +778,7 @@ async getUserByEmail(req, res) {
       });
   
     const cognitoUser = await new Promise((resolve, reject) => {
-      signup(req.query.email,randomPassword, (err, user) => {
+      signup(req.query.email,saniPassword, (err, user) => {
         if (err) {
           reject(err);
         } else {
@@ -753,16 +787,7 @@ async getUserByEmail(req, res) {
         }
       });
     });
-    let tempPassword = generatePassword.generate({
-      length: 24,
-      numbers: true,
-      symbols: true,
-      uppercase: true,
-      lowercase: true,
-      excludeSimilarCharacters: true,
-      strict: true
-    });
-      let data= {name:randomPassword+tempPassword,
+      let data= {name:saniPassword+tempPassword,
               doc_id:id
       }
       return res.status(200).json({
@@ -910,7 +935,7 @@ async getUserByEmail(req, res) {
   async loginUser(req, res) {
     try {
       let { email, password } = req.body;
-
+   console.log(req.body,"jai sriram--->")
     // Step 1: Authenticate User with Cognito
     // try {
     //   const tokens = await signin(req.body,(err, user) => {
@@ -935,7 +960,7 @@ async getUserByEmail(req, res) {
         email: email,
       },
     });
-     console.log(findData.Count,"findData----->")
+     console.log(findData,"findData----->")
       // console.log(findData?.Items[0], "dinffdddaa", "findData");
       if (
         findData.user_type != "super_admin" &&
@@ -995,6 +1020,8 @@ async getUserByEmail(req, res) {
         });
         // console.log(find, "Asdad", find);
         if (find && find!=null) {
+          console.log("flow1----->")
+
           const updatedUserOtp = await UserOtp.update(
             { 
               otp: otp,
@@ -1003,30 +1030,18 @@ async getUserByEmail(req, res) {
             },
             {
               where: {
-                id: find.id,
+                uuid: find.id,
               },
               returning: true, // This option returns the updated object
               plain: true, // This option returns only the updated object, not an array
             }
           );
         } else {
-          
-            const tokens = await signin(req.body,(err, user) => {
-              if (err) {
-                return res.status(400).json({
-                  message: `Authentication failed ${err}`,
-                  statusCode: 400,
-                  success: false,
-                });
-              } else {
-                console.log(user,"user-->data")
-                //return res.status(200).send({message:"Logged in ",data:user});
-              }
-            });
+           console.log("flow2----->")
             //console.log('Cognito tokens:', tokens);
           let id = uuidv4()?.replace(/-/g, "");
           const newUserOtp = await UserOtp.create({
-            id: id,
+            uuid: id,
             email: req.body.email,
             otp: otp,
             creationTime: currentTime,
@@ -1036,11 +1051,27 @@ async getUserByEmail(req, res) {
       
           // console.log(Data, "dayayayaya");
         }
-        return res.status(200).json({
-          message: "Otp sent to registered email",
-          statusCode: 200,
-          success: true,
+        const tokens = await signin(req.body,(err, user) => {
+          console.log(err,"error---->")
+          if (err) {
+            console.log("hiiiiii---->")
+            return res.status(400).json({
+              message: `Authentication failed`,
+              statusCode: 400,
+              success: false,
+            });
+          } else {
+            console.log(user,"user-->data")
+            return res.status(200).json({
+              message: "Otp sent to registered email",
+              statusCode: 200,
+              success: true,
+            });
+            //return res.status(200).send({message:"Logged in ",data:user});
+          }
         });
+       // console.log(tokens,"tokenerror")
+        
       } else {
         // console.log("enddddd");
         return res
